@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Meridian Capital Portfolio Intelligence: an institutional portfolio analytics workstation demo running on simulated data."
+    />
+    <meta name="theme-color" content="#0b0e13" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>Meridian Capital · Portfolio Intelligence</title>
+    <script>
+      // Pre-paint: apply the cached theme variables before CSS renders to avoid a theme flash.
+      (function () {
+        try {
+          var cached = JSON.parse(localStorage.getItem('meridian:theme-vars') || 'null');
+          if (!cached || typeof cached.vars !== 'object') return;
+          var root = document.documentElement;
+          for (var name in cached.vars) {
+            if (
+              /^--color-[a-z0-9-]+$/.test(name) &&
+              /^\d{1,3} \d{1,3} \d{1,3}$/.test(cached.vars[name])
+            ) {
+              root.style.setProperty(name, cached.vars[name]);
+            }
+          }
+          if (cached.mode === 'light' || cached.mode === 'dark') {
+            root.dataset.themeMode = cached.mode;
+            root.style.colorScheme = cached.mode;
+          }
+        } catch (e) {
+          /* ignore: defaults from CSS apply */
+        }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <noscript>Meridian Capital Portfolio Intelligence requires JavaScript.</noscript>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
