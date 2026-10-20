@@ -1,0 +1,294 @@
+import { memo, Suspense, useCallback, useMemo, type ReactNode } from 'react';
+import { Button, IconButton } from '@/components/Button';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
+import {
+  IconAlert,
+  IconClose,
+  IconCopy,
+  IconDrag,
+  IconRefresh,
+  IconSettings,
+  IconWifiOff,
+} from '@/components/Icons';
+import { DisconnectedState, EmptyState, ErrorState } from '@/components/StateViews';
+import { useToast } from '@/components/Toast';
+import { InfoTooltip } from '@/components/Tooltip';
+import { WidgetSkeleton } from '@/components/WidgetSkeleton';
+import { setSimulatedOutage } from '@/data/connection';
+import { useConnection } from '@/hooks/useConnection';
+import { useElementSize } from '@/hooks/useElementSize';
+import { useDataSource } from '@/hooks/useEndpoint';
+import { useNow } from '@/hooks/useNow';
+import { useThrottledValue } from '@/hooks/useThrottledValue';
+import type { WidgetEntry } from '@/registry/defineWidget';
+import { getWidget } from '@/registry/registry';
+import { duplicateWidget, removeWidget, restoreWidget } from '@/store/actions';
+import { useWidgetStore } from '@/store/widgetStore';
+import type { PageId, WidgetInstance } from '@/types';
+import { cx } from '@/utils/cx';
+import { formatIstTime } from '@/utils/time';
+
+export const DRAG_HANDLE_CLASS = 'widget-drag-handle';
+export const NO_DRAG_CLASS = 'widget-no-drag';
+
+/** Data older than this multiple of the refresh interval is flagged as stale. */
+export const STALE_MULTIPLIER = 2;
+
+export function isStale(updatedAt: number, refreshIntervalMs: number, now: number): boolean {
+  return updatedAt > 0 && now - updatedAt > refreshIntervalMs * STALE_MULTIPLIER;
+}
+
+function errorMessage(error: Error | null): string {
+  if (!error) return 'Unknown error.';
+  if (error.name === 'ValidationError')
+    return `${error.message}. The response was rejected and not displayed.`;
+  return error.message;
+}
+
+interface FrameBodyProps {
+  page: PageId;
+  instance: WidgetInstance;
+  entry: WidgetEntry;
+}
+
+function FrameBody({ page, instance, entry }: FrameBodyProps) {
+  const { definition } = entry;
+  const refresh = definition.dataSource.refreshIntervalMs;
+  const query = useDataSource(definition.dataSource);
+  const connection = useConnection();
+  const now = useNow(5000);
+  const [bodyRef, size] = useElementSize<HTMLDivElement>();
+  const openSettings = useWidgetStore((s) => s.openSettings);
+  const notify = useToast();
+
+  const { data, dataUpdatedAt, isPending, isError, error, isFetching, refetch } = query;
+  const stale = data !== undefined && isStale(dataUpdatedAt, refresh, now);
+  const disconnected = !connection.connected;
+  const config = useMemo(() => entry.resolveConfig(instance.config), [entry, instance.config]);
+  const summary = useMemo(
+    () => (data === undefined ? '' : entry.summarize(data, instance.config)),
+    [data, entry, instance.config],
+  );
+  const liveSummary = useThrottledValue(summary, 15_000);
+  const updated = dataUpdatedAt > 0 ? formatIstTime(dataUpdatedAt) : null;
+
+  const onRefresh = useCallback(() => {
+    void refetch();
+  }, [refetch]);
+
+  const onRemove = useCallback(() => {
+    const removed = removeWidget(page, instance.id);
+    if (removed) {
+      notify({
+        message: `Removed “${instance.title}”`,
+        action: { label: 'Undo', onClick: () => restoreWidget(removed) },
+      });
+    }
+  }, [instance.id, instance.title, notify, page]);
+
+  const onDuplicate = useCallback(() => {
+    if (duplicateWidget(page, instance.id))
+      notify({ message: `Duplicated “${instance.title}”`, tone: 'success' });
+  }, [instance.id, instance.title, notify, page]);
+
+  let body: ReactNode;
+  if (disconnected && data === undefined) {
+    body = (
+      <DisconnectedState
+        since={formatIstTime(connection.changedAt, false)}
+        onReconnect={() => {
+          setSimulatedOutage(false);
+          onRefresh();
+        }}
+      />
+    );
+  } else if (isPending) {
+    body = <WidgetSkeleton variant={entry.skeleton} />;
+  } else if (isError && data === undefined) {
+    body = <ErrorState message={errorMessage(error)} onRetry={onRefresh} retrying={isFetching} />;
+  } else if (data !== undefined && entry.isEmpty(data)) {
+    body = <EmptyState message="The data source returned no rows for this widget." />;
+  } else {
+    body = (
+      <ErrorBoundary
+        resetKeys={[data, instance.config]}
+        fallback={(err, reset) => (
+          <ErrorState
+            message={`This widget failed to render: ${err.message}`}
+            onRetry={() => {
+              reset();
+              onRefresh();
+            }}
+          />
+        )}
+      >
+        <Suspense fallback={<WidgetSkeleton variant={entry.skeleton} />}>
+          {size.width > 0 ? (
+            <entry.Render
+              instanceId={instance.id}
+              config={config}
+              data={data}
+              width={size.width}
+              height={size.height}
+            />
+          ) : null}
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+
+  return (
+    <section
+      role="region"
+      aria-label={instance.title}
+      aria-busy={isFetching}
+      data-stale={stale || undefined}
+      data-testid={`widget-${instance.id}`}
+      className={cx(
+        'flex h-full flex-col overflow-hidden rounded border bg-panel',
+        stale ? 'border-warn' : 'border-line',
+      )}
+    >
+      <header className="flex h-8 shrink-0 items-center gap-1 border-b border-line pl-1 pr-1">
+        <div
+          className={cx(
+            DRAG_HANDLE_CLASS,
+            'flex min-w-0 flex-1 cursor-grab items-center gap-1 active:cursor-grabbing',
+          )}
+        >
+          <IconDrag size={14} className="shrink-0 text-subtle" />
+          <h3 className="truncate text-xs font-semibold text-fg">{instance.title}</h3>
+        </div>
+        <div className={cx(NO_DRAG_CLASS, 'flex shrink-0 items-center gap-0.5')}>
+          <InfoTooltip
+            label={`About ${instance.title}`}
+            content={
+              <>
+                <span className="block font-medium">{definition.name}</span>
+                <span className="block text-muted">{definition.description}</span>
+                <span className="mt-1 block text-2xs text-subtle">
+                  Source {definition.dataSource.endpoint} · refresh every{' '}
+                  {Math.round(refresh / 1000)}s · simulated data
+                </span>
+              </>
+            }
+          />
+          {updated ? (
+            <span
+              className={cx(
+                'num hidden whitespace-nowrap px-1 text-2xs sm:inline',
+                stale ? 'font-medium text-warn' : 'text-subtle',
+              )}
+              title={
+                stale
+                  ? `Data is older than ${STALE_MULTIPLIER}× the ${Math.round(refresh / 1000)}s refresh interval`
+                  : 'Last updated'
+              }
+            >
+              {stale ? (
+                <>
+                  <IconAlert size={11} className="mr-0.5 inline align-[-1px]" />
+                  Stale · {updated}
+                </>
+              ) : (
+                updated
+              )}
+            </span>
+          ) : null}
+          <IconButton
+            label="Refresh"
+            icon={IconRefresh}
+            size="xs"
+            onClick={onRefresh}
+            disabled={disconnected}
+          />
+          <IconButton
+            label={`Configure ${instance.title}`}
+            icon={IconSettings}
+            size="xs"
+            onClick={() => openSettings(instance.id)}
+          />
+          <IconButton
+            label={`Duplicate ${instance.title}`}
+            icon={IconCopy}
+            size="xs"
+            onClick={onDuplicate}
+          />
+          <IconButton
+            label={`Remove ${instance.title}`}
+            icon={IconClose}
+            size="xs"
+            onClick={onRemove}
+          />
+        </div>
+      </header>
+      {data !== undefined && disconnected ? (
+        <p
+          role="status"
+          className="flex shrink-0 items-center gap-1.5 border-b border-warn/30 bg-warn/10 px-3 py-1 text-2xs text-warn"
+        >
+          <IconWifiOff size={12} /> Disconnected · showing data from {updated ?? 'earlier'}
+        </p>
+      ) : null}
+      {data !== undefined && isError && !disconnected ? (
+        <p
+          role="alert"
+          className="flex shrink-0 items-center gap-1.5 border-b border-neg/30 bg-neg/10 px-3 py-1 text-2xs text-neg"
+        >
+          <IconAlert size={12} /> Refresh failed · showing last good data
+          <button type="button" onClick={onRefresh} className="ml-auto font-semibold underline">
+            Retry
+          </button>
+        </p>
+      ) : null}
+      <div
+        ref={bodyRef}
+        className={cx(
+          'relative min-h-0 flex-1',
+          disconnected && data !== undefined && 'opacity-70',
+        )}
+      >
+        {body}
+      </div>
+      <p className="sr-only" aria-live="polite">
+        {liveSummary}
+      </p>
+    </section>
+  );
+}
+
+function UnknownWidget({ page, instance }: { page: PageId; instance: WidgetInstance | undefined }) {
+  return (
+    <section
+      role="region"
+      aria-label="Unavailable widget"
+      className="flex h-full flex-col rounded border border-line bg-panel"
+    >
+      <EmptyState
+        title="Widget unavailable"
+        message={`Widget type “${instance?.type ?? 'unknown'}” is not installed in this build.`}
+        action={
+          instance ? (
+            <Button size="sm" onClick={() => removeWidget(page, instance.id)}>
+              Remove from page
+            </Button>
+          ) : undefined
+        }
+      />
+    </section>
+  );
+}
+
+/** Frame around every widget: header, actions and all loading / error / stale states. */
+export const WidgetFrame = memo(function WidgetFrame({
+  page,
+  instanceId,
+}: {
+  page: PageId;
+  instanceId: string;
+}) {
+  const instance = useWidgetStore((s) => s.instances[instanceId]);
+  const entry = instance ? getWidget(instance.type) : undefined;
+  if (!instance || !entry) return <UnknownWidget page={page} instance={instance} />;
+  return <FrameBody page={page} instance={instance} entry={entry} />;
+});
