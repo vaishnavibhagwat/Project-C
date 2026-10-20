@@ -1,0 +1,112 @@
+@import 'react-grid-layout/css/styles.css';
+@import 'react-resizable/css/styles.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Default tokens (Midnight Graphite) so the first paint is correct even before JS runs. */
+:root {
+  --color-bg: 11 14 19;
+  --color-panel: 17 23 32;
+  --color-raised: 24 32 44;
+  --color-border: 30 39 51;
+  --color-border-strong: 44 55 71;
+  --color-text: 232 237 245;
+  --color-text-muted: 154 168 188;
+  --color-text-subtle: 114 128 151;
+  --color-accent: 34 211 238;
+  --color-accent-contrast: 4 19 26;
+  --color-positive: 52 211 153;
+  --color-negative: 255 107 107;
+  --color-warning: 251 191 36;
+  --color-focus: 103 232 249;
+  --color-chart-1: 34 211 238;
+  --color-chart-2: 167 139 250;
+  --color-chart-3: 251 191 36;
+  --color-chart-4: 52 211 153;
+  --color-chart-5: 96 165 250;
+  --color-chart-6: 244 114 182;
+  color-scheme: dark;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  body {
+    @apply bg-bg font-sans text-base text-fg antialiased;
+    font-feature-settings: 'cv11', 'ss01';
+  }
+  :focus-visible {
+    outline: 2px solid rgb(var(--color-focus));
+    outline-offset: 1px;
+  }
+  ::selection {
+    background: rgb(var(--color-accent) / 0.3);
+  }
+}
+
+@layer components {
+  /* Numbers: tabular figures everywhere data is shown. */
+  .num {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: 'tnum';
+  }
+  .skeleton {
+    background-color: rgb(var(--color-raised));
+    background-image: linear-gradient(
+      90deg,
+      rgb(var(--color-raised)) 0px,
+      rgb(var(--color-border-strong) / 0.55) 120px,
+      rgb(var(--color-raised)) 240px
+    );
+    background-size: 800px 100%;
+    @apply animate-shimmer rounded-sm;
+  }
+  .scroll-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(var(--color-border-strong)) transparent;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+  }
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* react-grid-layout: themed placeholder and resize handle. */
+.react-grid-item.react-grid-placeholder {
+  background: rgb(var(--color-accent) / 0.18);
+  border: 1px dashed rgb(var(--color-accent));
+  border-radius: 4px;
+  opacity: 1;
+}
+.react-grid-item > .react-resizable-handle::after {
+  border-right-color: rgb(var(--color-text-subtle));
+  border-bottom-color: rgb(var(--color-text-subtle));
+}
+.react-grid-item.react-draggable-dragging {
+  z-index: 30;
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.35);
+}
+.react-grid-layout.is-locked .react-resizable-handle {
+  display: none;
+}
+
+/* Recharts: crisp gridlines and no focus outline on the svg wrapper. */
+.recharts-wrapper svg:focus {
+  outline: none;
+}
+.recharts-cartesian-grid line {
+  shape-rendering: crispEdges;
+}
