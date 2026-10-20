@@ -1,0 +1,11 @@
+node_modules
+dist
+coverage
+storybook-static
+*.log
+.env
+.env.local
+.env.*.local
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
