@@ -106,3 +106,17 @@ export function directionWord(value: number): string {
   if (d === 'down') return 'down';
   return 'unchanged';
 }
+
+export type MoneyCurrency = 'INR' | 'USD';
+
+/** Compact money in the chosen display currency, converting INR with the configured FX rate. */
+export function formatMoneyCompact(
+  inr: number,
+  currency: MoneyCurrency,
+  fxUsdInr: number,
+  signed = false,
+): string {
+  return currency === 'USD'
+    ? formatUsdCompact(inr / fxUsdInr, signed)
+    : formatInrCompact(inr, signed);
+}
