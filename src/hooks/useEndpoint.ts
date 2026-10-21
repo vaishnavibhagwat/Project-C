@@ -1,8 +1,20 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import { fetchEndpoint, type EndpointDataMap } from '@/data';
+import { createContext, useContext } from 'react';
+import { fetchEndpoint, type EndpointDataMap, type FetchOptions } from '@/data';
 import type { DataSourceConfig, EndpointId } from '@/types';
 
 export const endpointKey = (endpoint: EndpointId) => ['endpoint', endpoint] as const;
+
+export type EndpointFetcher = <E extends EndpointId>(
+  endpoint: E,
+  options: FetchOptions,
+) => Promise<EndpointDataMap[E]>;
+
+/**
+ * Where widget data comes from. Defaults to the mock API; stories and tests can provide a
+ * fetcher that never resolves, fails or returns empty data to show each widget state.
+ */
+export const EndpointFetcherContext = createContext<EndpointFetcher>(fetchEndpoint);
 
 /**
  * Each widget subscribes to its own endpoint with its own refresh interval. Widgets that share
@@ -13,9 +25,10 @@ export function useEndpoint<E extends EndpointId>(
   refreshIntervalMs: number,
   enabled = true,
 ): UseQueryResult<EndpointDataMap[E], Error> {
+  const fetcher = useContext(EndpointFetcherContext);
   return useQuery({
     queryKey: endpointKey(endpoint),
-    queryFn: ({ signal }) => fetchEndpoint(endpoint, { signal }),
+    queryFn: ({ signal }) => fetcher(endpoint, { signal }),
     refetchInterval: refreshIntervalMs,
     refetchIntervalInBackground: false,
     staleTime: refreshIntervalMs / 2,
