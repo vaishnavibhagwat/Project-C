@@ -1,5 +1,6 @@
 import { z, type ZodType, type ZodTypeDef } from 'zod';
 import type { PersistStorage, StorageValue } from 'zustand/middleware';
+import { v4 as uuidv4 } from 'uuid';
 import { env } from '@/utils/env';
 
 const EnvelopeSchema = z.object({ state: z.unknown(), version: z.number().int().optional() });
@@ -47,11 +48,10 @@ export function createValidatedStorage<S>(
 
 export const devtoolsEnabled = import.meta.env.DEV && env.VITE_ENABLE_DEVTOOLS;
 
-/** Short random id for widget instances and saved layouts. */
+/**
+ * Id for widget instances, saved layouts and custom themes: a readable prefix plus a v4 UUID
+ * (uuid works in every browser context, unlike crypto.randomUUID on non-HTTPS origins).
+ */
 export function createId(prefix: string): string {
-  const random =
-    typeof crypto !== 'undefined' && 'randomUUID' in crypto
-      ? crypto.randomUUID().slice(0, 8)
-      : Math.random().toString(36).slice(2, 10);
-  return `${prefix}-${random}`;
+  return `${prefix}-${uuidv4()}`;
 }
