@@ -10,8 +10,15 @@ export default defineConfig({
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    // Pin every variable so results never depend on a developer's local .env.
     env: {
       VITE_APP_NAME: 'Meridian Capital',
+      VITE_API_BASE_URL: '/api',
+      VITE_WS_URL: 'ws://localhost:5173/ws',
+      VITE_DEFAULT_THEME: 'dark',
+      VITE_DATA_REFRESH_INTERVAL: '30000',
+      VITE_MAX_WIDGETS: '20',
+      VITE_ENABLE_MOCK_AUTH: 'true',
       VITE_DATA_SEED: '20240615',
       VITE_API_LATENCY_MS: '0',
       VITE_MOCK_ERROR_RATE: '0',

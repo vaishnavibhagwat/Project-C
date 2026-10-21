@@ -3,7 +3,7 @@ import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { ThemeDefinition, ThemeTokenKey } from '@/types';
-import { BUILT_IN_THEMES, DEFAULT_THEME_ID, MIDNIGHT_GRAPHITE } from '@/theme/themes';
+import { BUILT_IN_THEMES, DEFAULT_THEME_ID, defaultTheme } from '@/theme/themes';
 import { sanitizeText } from '@/utils/sanitize';
 import { ThemeDefinitionSchema } from './schemas';
 import { createId, createValidatedStorage, devtoolsEnabled } from './storage';
@@ -41,7 +41,7 @@ export function allThemes(custom: readonly ThemeDefinition[]): ThemeDefinition[]
 }
 
 export function resolveTheme(id: string, custom: readonly ThemeDefinition[]): ThemeDefinition {
-  return allThemes(custom).find((t) => t.id === id) ?? MIDNIGHT_GRAPHITE;
+  return allThemes(custom).find((t) => t.id === id) ?? defaultTheme();
 }
 
 const PersistedSchema = z.object({

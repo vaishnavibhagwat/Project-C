@@ -8,7 +8,14 @@ import { useToast } from '@/components/Toast';
 import { PAGES } from '@/registry/pages';
 import { resetPage } from '@/store/actions';
 import { useDashboardStore, type DisplayCurrency } from '@/store/dashboardStore';
+import { env } from '@/utils/env';
 import { ShortcutsList } from './ShortcutsList';
+
+/** Identity shown in the menu. There is no real authentication: VITE_ENABLE_MOCK_AUTH signs in
+ * the demo user; otherwise the app runs as an anonymous guest with the same simulated data. */
+export const CURRENT_USER = env.VITE_ENABLE_MOCK_AUTH
+  ? { name: 'Portfolio Manager', detail: 'Mumbai desk (demo sign-in)' }
+  : { name: 'Guest', detail: 'Not signed in' };
 
 /** User menu: display preference, shortcuts, workspace reset and the about/honesty notes. */
 export function UserMenu() {
@@ -33,8 +40,8 @@ export function UserMenu() {
               <IconUser size={14} />
             </span>
             <span className="hidden text-left leading-tight xl:block">
-              <span className="block text-xs text-fg">Portfolio Manager</span>
-              <span className="block text-2xs text-subtle">Mumbai desk (demo)</span>
+              <span className="block text-xs text-fg">{CURRENT_USER.name}</span>
+              <span className="block text-2xs text-subtle">{CURRENT_USER.detail}</span>
             </span>
           </button>
         )}

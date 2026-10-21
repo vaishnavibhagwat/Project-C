@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { IconAreaChart } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
 import { registerWidget } from '@/registry/defineWidget';
+import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatPct } from '@/utils/format';
 import { formatDateKey } from '@/utils/time';
@@ -38,7 +39,10 @@ export const drawdownDefinition: WidgetDefinition<DrawdownConfig, DrawdownData> 
   defaultConfig: { range: '5Y', showBenchmark: true, thresholdPct: 20 },
   component: lazy(() => import('./index')),
   icon: IconAreaChart,
-  dataSource: { endpoint: 'portfolio/nav-history', refreshIntervalMs: 60_000 },
+  dataSource: {
+    endpoint: 'portfolio/nav-history',
+    refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL,
+  },
 };
 
 export function summarizeDrawdown(data: DrawdownData, config: DrawdownConfig): string {

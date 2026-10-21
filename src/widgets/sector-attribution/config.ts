@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { IconBars } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
 import { registerWidget } from '@/registry/defineWidget';
+import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatPct } from '@/utils/format';
 import {
@@ -44,7 +45,10 @@ export const sectorAttributionDefinition: WidgetDefinition<
   defaultConfig: { period: '3M', effect: 'stacked', showTable: true },
   component: lazy(() => import('./index')),
   icon: IconBars,
-  dataSource: { endpoint: 'performance/attribution', refreshIntervalMs: 60_000 },
+  dataSource: {
+    endpoint: 'performance/attribution',
+    refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL,
+  },
 };
 
 export function summarizeAttribution(

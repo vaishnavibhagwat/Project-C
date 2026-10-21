@@ -47,6 +47,12 @@ function wait(ms: number, signal?: AbortSignal): Promise<void> {
   });
 }
 
+/** Request path for an endpoint under VITE_API_BASE_URL, e.g. /api/risk/var. Used for labels and
+ * error messages: the mock API answers in the browser and makes no network request. */
+export function endpointUrl(endpoint: EndpointId, base: string = env.VITE_API_BASE_URL): string {
+  return `${base.replace(/\/+$/, '')}/${endpoint}`;
+}
+
 export function buildContext(nowMs: number): DeriveContext {
   const dataset = getDataset(nowMs);
   const market = getMarketSnapshot(dataset, nowMs, createTradeSchedule(dataset));
@@ -92,9 +98,11 @@ export async function fetchEndpoint<E extends EndpointId>(
   const jitter = latency > 0 ? Math.round(latency * 0.5 * Math.random()) : 0;
   await wait(latency + jitter, options.signal);
 
-  if (!isConnected()) throw new ConnectionError('Data feed disconnected');
+  if (!isConnected()) {
+    throw new ConnectionError(`GET ${endpointUrl(endpoint)} failed: data feed disconnected`);
+  }
   if (errorRate > 0 && Math.random() < errorRate) {
-    throw new ApiError(`Upstream service returned 503 for ${endpoint}`);
+    throw new ApiError(`GET ${endpointUrl(endpoint)} returned 503 (simulated upstream failure)`);
   }
 
   const nowMs = (options.now ?? Date.now)();

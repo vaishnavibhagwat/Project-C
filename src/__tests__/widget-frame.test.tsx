@@ -67,10 +67,14 @@ describe('WidgetFrame states', () => {
   });
 
   it('shows the error state with a message and recovers on Retry', async () => {
-    fetchMock.mockRejectedValueOnce(new ApiError('Upstream service returned 503'));
+    fetchMock.mockRejectedValueOnce(
+      new ApiError('GET /api/portfolio/summary returned 503 (simulated upstream failure)'),
+    );
     fetchMock.mockResolvedValue(fixture('portfolio/summary'));
     renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />);
-    expect(await screen.findByText(/Upstream service returned 503/)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/GET \/api\/portfolio\/summary returned 503/),
+    ).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Retry' }));
     expect(await screen.findByText('$45.0B')).toBeInTheDocument();
   });

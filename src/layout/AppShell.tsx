@@ -8,7 +8,7 @@ import { DashboardGrid } from '@/grid/DashboardGrid';
 import { useHashRoute } from '@/hooks/useHashRoute';
 import { SymbolDetailContext, type SymbolDetailApi } from '@/hooks/useSymbolDetail';
 import { getPageMeta } from '@/registry/pages';
-import { addWidget, resetPage } from '@/store/actions';
+import { addWidget, MAX_WIDGETS_PER_PAGE, resetPage } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { PageIdSchema } from '@/store/schemas';
 import { useThemeStore } from '@/store/themeStore';
@@ -108,6 +108,11 @@ export function AppShell() {
           if (addWidget(page, r.type)) {
             if (route === 'marketplace') go(page);
             notify({ message: `Added ${r.label} to ${meta.short}`, tone: 'success' });
+          } else {
+            notify({
+              message: `This page already has the maximum of ${MAX_WIDGETS_PER_PAGE} widgets. Remove one first.`,
+              tone: 'error',
+            });
           }
           break;
         case 'action':

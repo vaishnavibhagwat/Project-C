@@ -6,7 +6,8 @@ import { IconPlus, IconSearch } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
 import { PAGES } from '@/registry/pages';
 import { CATEGORIES, CATEGORY_LABELS, WIDGETS } from '@/registry/registry';
-import { addWidget } from '@/store/actions';
+import { addWidget, MAX_WIDGETS_PER_PAGE } from '@/store/actions';
+import { useDashboardStore } from '@/store/dashboardStore';
 import { PageIdSchema } from '@/store/schemas';
 import type { PageId, WidgetCategory } from '@/types';
 import { cx } from '@/utils/cx';
@@ -36,6 +37,8 @@ export function WidgetMarketplace({
   }, [query, category]);
 
   const targetMeta = PAGES.find((p) => p.id === target);
+  const targetCount = useDashboardStore((s) => s.pages[target].itemIds.length);
+  const targetFull = targetCount >= MAX_WIDGETS_PER_PAGE;
 
   return (
     <div className="flex flex-col gap-3">
@@ -78,6 +81,7 @@ export function WidgetMarketplace({
         <div className="ml-auto w-56">
           <SelectField
             label="Add widgets to"
+            description={`${targetCount} of ${MAX_WIDGETS_PER_PAGE} widgets used${targetFull ? ' · page full' : ''}`}
             value={target}
             options={PAGES.map((p) => ({ value: p.id, label: p.title }))}
             onValueChange={(v) => {
@@ -117,6 +121,8 @@ export function WidgetMarketplace({
               <Button
                 size="sm"
                 icon={IconPlus}
+                disabled={targetFull}
+                title={targetFull ? `${targetMeta?.short ?? target} is full` : undefined}
                 onClick={() => {
                   if (addWidget(target, d.id)) {
                     notify({

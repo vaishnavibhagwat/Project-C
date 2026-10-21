@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { IconLineChart } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
 import { registerWidget } from '@/registry/defineWidget';
+import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { directionWord, formatPct } from '@/utils/format';
 import { buildNavSeries } from './model';
@@ -41,7 +42,10 @@ export const navPerformanceDefinition: WidgetDefinition<NavPerformanceConfig, Na
     defaultConfig: { range: '1Y', showBenchmark: true, mode: 'rebased' },
     component: lazy(() => import('./index')),
     icon: IconLineChart,
-    dataSource: { endpoint: 'portfolio/nav-history', refreshIntervalMs: 60_000 },
+    dataSource: {
+      endpoint: 'portfolio/nav-history',
+      refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL,
+    },
   };
 
 export function summarizeNav(data: NavPerformanceData, config: NavPerformanceConfig): string {

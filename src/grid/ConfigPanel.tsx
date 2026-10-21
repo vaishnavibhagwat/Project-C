@@ -5,6 +5,7 @@ import { Drawer } from '@/components/Overlay';
 import { SchemaForm } from '@/components/SchemaForm';
 import { useToast } from '@/components/Toast';
 import type { WidgetEntry } from '@/registry/defineWidget';
+import { endpointUrl } from '@/data/api';
 import { getWidget } from '@/registry/registry';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { ConfigValue, WidgetConfig, WidgetInstance } from '@/types';
@@ -64,7 +65,7 @@ function ConfigForm({ instance, entry, onDone }: ConfigFormProps) {
         <dt className="text-muted">Category</dt>
         <dd className="text-fg">{def.category}</dd>
         <dt className="text-muted">Data source</dt>
-        <dd className="num text-fg">{def.dataSource.endpoint} (simulated)</dd>
+        <dd className="num text-fg">GET {endpointUrl(def.dataSource.endpoint)} (simulated)</dd>
         <dt className="text-muted">Refresh</dt>
         <dd className="num text-fg">
           every {Math.round(def.dataSource.refreshIntervalMs / 1000)}s · stale after{' '}

@@ -32,9 +32,12 @@ function SavedRow({
 
   const load = (version = latest) => {
     if (!version) return;
-    applySnapshot(pageId, version.snapshot);
+    const result = applySnapshot(pageId, version.snapshot);
     setActive(pageId, layout.id);
-    notify({ message: `Loaded “${layout.name}” v${version.version}`, tone: 'success' });
+    notify({
+      message: `Loaded “${layout.name}” v${version.version}${result.dropped > 0 ? ` (${result.dropped} widget${result.dropped === 1 ? '' : 's'} left out)` : ''}`,
+      tone: 'success',
+    });
   };
 
   return (
@@ -137,8 +140,11 @@ export function LayoutManager({
         );
         return;
       }
-      applySnapshot(page.id, { ...parsed.data, page: page.id });
-      notify({ message: 'Layout imported', tone: 'success' });
+      const result = applySnapshot(page.id, { ...parsed.data, page: page.id });
+      notify({
+        message: `Layout imported${result.dropped > 0 ? ` (${result.dropped} widget${result.dropped === 1 ? '' : 's'} left out)` : ''}`,
+        tone: 'success',
+      });
     } catch {
       setImportError('That file is not valid JSON.');
     }

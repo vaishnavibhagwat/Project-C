@@ -6,7 +6,7 @@ import { WidgetCanvas } from './helpers';
 const meta = {
   title: 'Components/StateViews',
   component: ErrorState,
-  args: { message: 'Upstream service returned 503 for risk/var', onRetry: fn() },
+  args: { message: 'GET /api/risk/var returned 503 (simulated upstream failure)', onRetry: fn() },
   render: (args) => (
     <WidgetCanvas width={360} height={200}>
       <ErrorState {...args} />

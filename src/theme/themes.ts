@@ -1,3 +1,4 @@
+import { env } from '@/utils/env';
 import type { ThemeDefinition, ThemeTokenKey, ThemeTokens } from '@/types';
 
 export const MIDNIGHT_GRAPHITE: ThemeDefinition = {
@@ -92,7 +93,19 @@ export const BUILT_IN_THEMES: readonly ThemeDefinition[] = [
   PORCELAIN,
   HIGH_CONTRAST,
 ];
-export const DEFAULT_THEME_ID = MIDNIGHT_GRAPHITE.id;
+/** Maps VITE_DEFAULT_THEME (`light`, `dark` or a built-in id) to a built-in theme id. */
+export function themeIdForSetting(setting: string): string {
+  if (setting === 'light') return PORCELAIN.id;
+  if (setting === 'dark') return MIDNIGHT_GRAPHITE.id;
+  return BUILT_IN_THEMES.some((t) => t.id === setting) ? setting : MIDNIGHT_GRAPHITE.id;
+}
+
+/** Theme for first-time visitors, from VITE_DEFAULT_THEME. */
+export const DEFAULT_THEME_ID = themeIdForSetting(env.VITE_DEFAULT_THEME);
+
+export function defaultTheme(): ThemeDefinition {
+  return BUILT_IN_THEMES.find((t) => t.id === DEFAULT_THEME_ID) ?? MIDNIGHT_GRAPHITE;
+}
 
 export const TOKEN_LABELS: Record<ThemeTokenKey, string> = {
   bg: 'Background',

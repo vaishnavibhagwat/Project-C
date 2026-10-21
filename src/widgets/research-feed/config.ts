@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { IconNews } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
 import { registerWidget } from '@/registry/defineWidget';
+import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { filterResearch } from './model';
 import { ResearchFeedConfigSchema, type ResearchFeedConfig, type ResearchFeedData } from './types';
@@ -37,7 +38,7 @@ export const researchFeedDefinition: WidgetDefinition<ResearchFeedConfig, Resear
   defaultConfig: { sentiment: 'ALL', category: 'ALL', showSummary: true },
   component: lazy(() => import('./index')),
   icon: IconNews,
-  dataSource: { endpoint: 'research/feed', refreshIntervalMs: 30_000 },
+  dataSource: { endpoint: 'research/feed', refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL },
 };
 
 export function summarizeResearch(data: ResearchFeedData, config: ResearchFeedConfig): string {

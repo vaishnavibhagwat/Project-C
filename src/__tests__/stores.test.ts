@@ -17,7 +17,7 @@ import { createValidatedStorage } from '@/store/storage';
 import { selectPaintedTheme, useThemeStore } from '@/store/themeStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import { PageSnapshotSchema } from '@/store/schemas';
-import { MIDNIGHT_GRAPHITE } from '@/theme/themes';
+import { DEFAULT_THEME_ID, MIDNIGHT_GRAPHITE } from '@/theme/themes';
 
 const initial = {
   dashboard: useDashboardStore.getState(),
@@ -151,7 +151,7 @@ describe('ThemeStore', () => {
     useThemeStore.getState().setDraftToken('accent', '#ff00ff');
     expect(selectPaintedTheme(useThemeStore.getState()).tokens.accent).toBe('#ff00ff');
     useThemeStore.getState().closeBuilder();
-    expect(selectPaintedTheme(useThemeStore.getState()).id).toBe(MIDNIGHT_GRAPHITE.id);
+    expect(selectPaintedTheme(useThemeStore.getState()).id).toBe(DEFAULT_THEME_ID);
   });
 
   it('saves a custom theme and makes it active', () => {

@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { IconGauge } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
 import { registerWidget } from '@/registry/defineWidget';
+import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { buildTiles } from './model';
 import { RiskMetricsConfigSchema, type RiskMetricsConfig, type RiskMetricsData } from './types';
@@ -30,7 +31,7 @@ export const riskMetricsDefinition: WidgetDefinition<RiskMetricsConfig, RiskMetr
   defaultConfig: { period: 'full', showDefinitions: true },
   component: lazy(() => import('./index')),
   icon: IconGauge,
-  dataSource: { endpoint: 'risk/metrics', refreshIntervalMs: 60_000 },
+  dataSource: { endpoint: 'risk/metrics', refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL },
 };
 
 export function summarizeMetrics(data: RiskMetricsData, config: RiskMetricsConfig): string {

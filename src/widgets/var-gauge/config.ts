@@ -2,6 +2,7 @@ import { lazy } from 'react';
 import { IconShield } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
 import { registerWidget } from '@/registry/defineWidget';
+import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatInrCompact, formatPct } from '@/utils/format';
 import { selectVar, STATUS_LABEL } from './model';
@@ -58,7 +59,7 @@ export const varGaugeDefinition: WidgetDefinition<VarGaugeConfig, VarGaugeData> 
   },
   component: lazy(() => import('./index')),
   icon: IconShield,
-  dataSource: { endpoint: 'risk/var', refreshIntervalMs: 60_000 },
+  dataSource: { endpoint: 'risk/var', refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL },
 };
 
 export function summarizeVar(data: VarGaugeData, config: VarGaugeConfig): string {

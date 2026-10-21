@@ -22,6 +22,7 @@ import { DisconnectedState, EmptyState, ErrorState } from '@/components/StateVie
 import { useToast } from '@/components/Toast';
 import { InfoTooltip } from '@/components/Tooltip';
 import { WidgetSkeleton } from '@/components/WidgetSkeleton';
+import { endpointUrl } from '@/data/api';
 import { setSimulatedOutage } from '@/data/connection';
 import { useConnection } from '@/hooks/useConnection';
 import { useElementSize } from '@/hooks/useElementSize';
@@ -30,7 +31,12 @@ import { useNow } from '@/hooks/useNow';
 import { useThrottledValue } from '@/hooks/useThrottledValue';
 import type { WidgetEntry } from '@/registry/defineWidget';
 import { getWidget } from '@/registry/registry';
-import { duplicateWidget, removeWidget, restoreWidget } from '@/store/actions';
+import {
+  duplicateWidget,
+  MAX_WIDGETS_PER_PAGE,
+  removeWidget,
+  restoreWidget,
+} from '@/store/actions';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { PageId, WidgetInstance } from '@/types';
 import { cx } from '@/utils/cx';
@@ -99,8 +105,14 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   }, [instance.id, instance.title, notify, page]);
 
   const onDuplicate = useCallback(() => {
-    if (duplicateWidget(page, instance.id))
+    if (duplicateWidget(page, instance.id)) {
       notify({ message: `Duplicated “${instance.title}”`, tone: 'success' });
+    } else {
+      notify({
+        message: `This page already has the maximum of ${MAX_WIDGETS_PER_PAGE} widgets. Remove one first.`,
+        tone: 'error',
+      });
+    }
   }, [instance.id, instance.title, notify, page]);
 
   let body: ReactNode;
@@ -184,7 +196,7 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
                 <span className="block font-medium">{definition.name}</span>
                 <span className="block text-muted">{definition.description}</span>
                 <span className="mt-1 block text-2xs text-subtle">
-                  Source {definition.dataSource.endpoint} · refresh every{' '}
+                  Source GET {endpointUrl(definition.dataSource.endpoint)} · refresh every{' '}
                   {Math.round(refresh / 1000)}s · simulated data
                 </span>
               </>

@@ -2,6 +2,7 @@ import type { Breakpoint, GridItemLayout, PageId, PageSnapshot, WidgetInstance }
 import { getWidget } from '@/registry/registry';
 import { defaultSnapshot } from '@/registry/pages';
 import { useDashboardStore } from './dashboardStore';
+import { env } from '@/utils/env';
 import { createId } from './storage';
 import { useWidgetStore } from './widgetStore';
 
@@ -12,9 +13,21 @@ const BREAKPOINT_KEYS: readonly Breakpoint[] = ['lg', 'md', 'sm', 'xs'];
  * (DashboardStore) and the widget instances (WidgetStore) consistent with each other.
  */
 
+/** Widgets allowed on one page (VITE_MAX_WIDGETS). */
+export const MAX_WIDGETS_PER_PAGE = env.VITE_MAX_WIDGETS;
+
+export function widgetCount(page: PageId): number {
+  return useDashboardStore.getState().pages[page].itemIds.length;
+}
+
+export function canAddWidget(page: PageId): boolean {
+  return widgetCount(page) < MAX_WIDGETS_PER_PAGE;
+}
+
+/** Add a widget at the bottom of a page. Returns null for unknown types or a full page. */
 export function addWidget(page: PageId, type: string): string | null {
   const entry = getWidget(type);
-  if (!entry) return null;
+  if (!entry || !canAddWidget(page)) return null;
   const { definition } = entry;
   const id = useWidgetStore.getState().createInstance(type, definition.name, {});
   useDashboardStore.getState().addItem(page, {
@@ -53,7 +66,9 @@ export function restoreWidget(removed: RemovedWidget): void {
   useDashboardStore.getState().restoreItem(removed.page, removed.instance.id, removed.layouts);
 }
 
+/** Duplicate a widget with its settings. Returns null when the page is full. */
 export function duplicateWidget(page: PageId, id: string): string | null {
+  if (!canAddWidget(page)) return null;
   const copyId = useWidgetStore.getState().duplicateInstance(id);
   if (!copyId) return null;
   const grid = useDashboardStore.getState().pages[page];
@@ -84,12 +99,19 @@ export function captureSnapshot(page: PageId): PageSnapshot {
   };
 }
 
+export interface ApplyResult {
+  applied: number;
+  /** Widgets left out: unknown types, or beyond the per-page limit. */
+  dropped: number;
+}
+
 /**
  * Replace a page with a snapshot. Instance ids are re-issued so a snapshot can be applied to
- * any page without colliding with widgets elsewhere. Unknown widget types are skipped.
+ * any page without colliding with widgets elsewhere. Unknown widget types are skipped and at
+ * most MAX_WIDGETS_PER_PAGE widgets are kept.
  */
-export function applySnapshot(page: PageId, snapshot: PageSnapshot, keepIds = false): void {
-  const known = snapshot.instances.filter((i) => getWidget(i.type));
+export function applySnapshot(page: PageId, snapshot: PageSnapshot, keepIds = false): ApplyResult {
+  const known = snapshot.instances.filter((i) => getWidget(i.type)).slice(0, MAX_WIDGETS_PER_PAGE);
   const idMap = new Map(known.map((i) => [i.id, keepIds ? i.id : createId(i.type)]));
   const instances = known.map((i) => ({ ...i, id: idMap.get(i.id) ?? i.id }));
   const layouts: PageSnapshot['layouts'] = {};
@@ -107,8 +129,9 @@ export function applySnapshot(page: PageId, snapshot: PageSnapshot, keepIds = fa
     .removeInstances(previous.filter((id) => !instances.some((i) => i.id === id)));
   useWidgetStore.getState().upsertInstances(instances);
   useDashboardStore.getState().replacePage(page, { itemIds: instances.map((i) => i.id), layouts });
+  return { applied: instances.length, dropped: snapshot.instances.length - instances.length };
 }
 
 export function resetPage(page: PageId): void {
-  applySnapshot(page, defaultSnapshot(page), true);
+  void applySnapshot(page, defaultSnapshot(page), true);
 }

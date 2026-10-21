@@ -27,7 +27,7 @@ export const pendingFetcher: EndpointFetcher = () => new Promise(() => undefined
 
 /** Always fails like an upstream outage. */
 export const failingFetcher: EndpointFetcher = () =>
-  Promise.reject(new ApiError('Upstream service returned 503 for this endpoint'));
+  Promise.reject(new ApiError('GET /api/… returned 503 (simulated upstream failure)'));
 
 /** Serves validated fixtures immediately (no latency). */
 export const fixtureFetcher: EndpointFetcher = (endpoint) => Promise.resolve(fixture(endpoint));

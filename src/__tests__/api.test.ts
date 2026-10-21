@@ -69,7 +69,9 @@ describe('mock API', () => {
   });
 
   it('injects upstream failures at the configured error rate', async () => {
-    await expect(fetchEndpoint('risk/var', { latencyMs: 0, errorRate: 1 })).rejects.toThrow(/503/);
+    await expect(fetchEndpoint('risk/var', { latencyMs: 0, errorRate: 1 })).rejects.toThrow(
+      'GET /api/risk/var returned 503',
+    );
   });
 
   it('honours abort signals during simulated latency', async () => {

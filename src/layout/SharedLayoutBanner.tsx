@@ -50,9 +50,12 @@ export function SharedLayoutBanner({
         size="sm"
         variant="primary"
         onClick={() => {
-          applySnapshot(snapshot.page, snapshot);
+          const result = applySnapshot(snapshot.page, snapshot);
           if (themeId) setActiveTheme(themeId);
-          notify({ message: 'Shared layout applied', tone: 'success' });
+          notify({
+            message: `Shared layout applied${result.dropped > 0 ? ` (${result.dropped} widget${result.dropped === 1 ? '' : 's'} left out)` : ''}`,
+            tone: 'success',
+          });
           onDone();
         }}
       >
