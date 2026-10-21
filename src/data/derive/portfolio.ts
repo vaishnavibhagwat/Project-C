@@ -164,6 +164,7 @@ export function deriveSectorReturns(ctx: DeriveContext): SectorReturnsData {
   }
   if (market.mode !== 'frozen') columns.push({ key: 'live', label: 'Live', intraday: true });
 
+  const dateIndex = new Map(dataset.dates.map((d, i) => [d, i]));
   const sectors = SECTORS.filter((s) => live.some((h) => h.holding.sector === s));
   const cells: SectorReturnsData['cells'] = [];
   for (const sector of sectors) {
@@ -178,7 +179,7 @@ export function deriveSectorReturns(ctx: DeriveContext): SectorReturnsData {
         if (column.intraday) {
           r = m.ltp / m.prevClose - 1;
         } else {
-          const k = dataset.dates.indexOf(column.key);
+          const k = dateIndex.get(column.key) ?? -1;
           const closes = dataset.stockCloses[m.holding.constituentIndex] ?? [];
           const prev = closes[k - 1] ?? 0;
           r = prev === 0 ? 0 : (closes[k] ?? prev) / prev - 1;

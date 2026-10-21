@@ -4,7 +4,7 @@ import { isConnected } from './connection';
 import { getDataset } from './dataset';
 import { createTradeSchedule } from './derive/trades';
 import { ENDPOINTS, type EndpointDataMap } from './endpoints';
-import { getMarketSnapshot } from './market';
+import { getMarketSnapshot, primeMarket } from './market';
 import type { DeriveContext } from './derive/context';
 
 /** Thrown when the (simulated) data feed is unreachable. Shown as the disconnected state. */
@@ -98,6 +98,8 @@ export async function fetchEndpoint<E extends EndpointId>(
   }
 
   const nowMs = (options.now ?? Date.now)();
+  const dataset = getDataset(nowMs);
+  await primeMarket(dataset, nowMs, createTradeSchedule(dataset));
   const payload = ENDPOINTS[endpoint].derive(buildContext(nowMs));
   const wire: unknown = JSON.parse(JSON.stringify(payload));
   return parseEndpoint(endpoint, wire);

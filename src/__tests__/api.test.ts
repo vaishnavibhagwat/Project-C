@@ -9,7 +9,7 @@ import {
   setSimulatedOutage,
   ValidationError,
 } from '@/data';
-import { getMarketSnapshot } from '@/data/market';
+import { getMarketSnapshot, primeMarket, resetMarketSimulation } from '@/data/market';
 import { buildDataset } from '@/data/dataset';
 import { createTradeSchedule } from '@/data/derive/trades';
 import { istTimeMs } from '@/utils/time';
@@ -151,6 +151,20 @@ describe('trades and the intraday tape', () => {
     const b = getMarketSnapshot(ds, now, createTradeSchedule(ds), 5000, true).prices;
     expect(b).toEqual(a);
     expect(later).not.toEqual(a);
+  });
+
+  it('primes a full day of ticks in slices with identical results', async () => {
+    const ds = buildDataset(20240615, '2026-10-20', 83.5);
+    const now = istTimeMs('2026-10-21', 23, 0);
+    resetMarketSimulation();
+    const direct = getMarketSnapshot(ds, now, createTradeSchedule(ds), 5000, true).prices;
+    resetMarketSimulation();
+    const partial = getMarketSnapshot(ds, now, createTradeSchedule(ds), 5000, true, 100);
+    expect(partial.caughtUp).toBe(false);
+    await primeMarket(ds, now, createTradeSchedule(ds), 5000, true);
+    const primed = getMarketSnapshot(ds, now, createTradeSchedule(ds), 5000, true);
+    expect(primed.caughtUp).toBe(true);
+    expect(primed.prices).toEqual(direct);
   });
 
   it('freezes prices at the last close outside hours when simulation is off', () => {

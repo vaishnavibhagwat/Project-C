@@ -68,8 +68,8 @@ describe('AppShell', () => {
       screen.getByRole('heading', { level: 1, name: 'Portfolio Workstation' }),
     ).toBeInTheDocument();
     expect(screen.getAllByRole('region')).toHaveLength(10);
-    expect(await screen.findByText('$45.0B', {}, { timeout: 8000 })).toBeInTheDocument();
-  });
+    expect(await screen.findByText('$45.0B', {}, { timeout: 15000 })).toBeInTheDocument();
+  }, 20000);
 
   it('switches between app areas', () => {
     renderWithProviders(<AppShell />);

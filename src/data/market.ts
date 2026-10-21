@@ -49,6 +49,8 @@ export interface MarketSnapshot {
   tradeWindow: TradeWindow;
   /** Session date (IST) the tape belongs to. */
   sessionDate: string;
+  /** False when the tape was advanced only part of the way (see maxSteps). */
+  caughtUp: boolean;
   /** Fill prices for scheduled trades that have printed, keyed by `${tick}:${index}`. */
   fills: ReadonlyMap<string, number>;
 }
@@ -116,17 +118,18 @@ export function getMarketSnapshot(
   schedule: (key: string, window: TradeWindow) => readonly ScheduledTrade[],
   tickMs: number = env.VITE_TICK_INTERVAL_MS,
   simulateOutsideHours: boolean = env.VITE_SIMULATE_MARKET_OPEN,
+  maxSteps: number = Number.POSITIVE_INFINITY,
 ): MarketSnapshot {
   const clock = sessionClock(nowMs, simulateOutsideHours);
   const maxTicks = Math.max(1, Math.floor(clock.lengthMs / tickMs));
-  const tick =
+  const targetTick =
     clock.mode === 'frozen'
       ? 0
       : Math.min(maxTicks, Math.max(0, Math.floor((nowMs - clock.startMs) / tickMs)));
   const key = marketKey(dataset, clock, tickMs);
   const n = dataset.constituents.length;
 
-  if (state?.key !== key || state.tick > tick) {
+  if (state?.key !== key || state.tick > targetTick) {
     state = { key, tick: 0, logCum: new Array<number>(n).fill(0), factorCum: 0, fills: new Map() };
   }
 
@@ -151,6 +154,8 @@ export function getMarketSnapshot(
     }
   };
   if (state.tick === 0) recordFills(0, state);
+  // Optionally advance only part of the way so callers can yield between slices.
+  const tick = Math.min(targetTick, state.tick + maxSteps);
 
   for (let t = state.tick + 1; t <= tick; t += 1) {
     const rng = createRng(hashSeed(key, t));
@@ -184,8 +189,37 @@ export function getMarketSnapshot(
     ),
     referenceCloses,
     benchmarkChange: Math.exp(current.factorCum) - 1,
+    caughtUp: tick === targetTick,
     fills: current.fills,
   };
+}
+
+/** Ticks simulated per slice when catching up (roughly 10 ms of work). */
+export const PRIME_SLICE_TICKS = 1200;
+
+/**
+ * Catch the simulated tape up to `nowMs` in slices, yielding to the browser between slices so
+ * the first request after load (which may replay a whole day of ticks) never blocks input.
+ */
+export async function primeMarket(
+  dataset: Dataset,
+  nowMs: number,
+  schedule: (key: string, window: TradeWindow) => readonly ScheduledTrade[],
+  tickMs: number = env.VITE_TICK_INTERVAL_MS,
+  simulateOutsideHours: boolean = env.VITE_SIMULATE_MARKET_OPEN,
+): Promise<void> {
+  for (;;) {
+    const snap = getMarketSnapshot(
+      dataset,
+      nowMs,
+      schedule,
+      tickMs,
+      simulateOutsideHours,
+      PRIME_SLICE_TICKS,
+    );
+    if (snap.caughtUp) return;
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  }
 }
 
 /** For tests: forget the cached simulation state. */
