@@ -1,4 +1,12 @@
-import { memo, Profiler, Suspense, useCallback, useMemo, type ReactNode } from 'react';
+import {
+  memo,
+  Profiler,
+  Suspense,
+  useCallback,
+  useDeferredValue,
+  useMemo,
+  type ReactNode,
+} from 'react';
 import { Button, IconButton } from '@/components/Button';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
@@ -62,7 +70,10 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   const openSettings = useWidgetStore((s) => s.openSettings);
   const notify = useToast();
 
-  const { data, dataUpdatedAt, isPending, isError, error, isFetching, refetch } = query;
+  const { dataUpdatedAt, isPending, isError, error, isFetching, refetch } = query;
+  // Re-render widget bodies for new data at transition priority, so React can split the work
+  // across frames (and between widgets) instead of one long blocking task.
+  const data = useDeferredValue(query.data);
   const stale = data !== undefined && isStale(dataUpdatedAt, refresh, now);
   const disconnected = !connection.connected;
   const config = useMemo(() => entry.resolveConfig(instance.config), [entry, instance.config]);
@@ -107,6 +118,9 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
     body = <WidgetSkeleton variant={entry.skeleton} />;
   } else if (isError && data === undefined) {
     body = <ErrorState message={errorMessage(error)} onRetry={onRefresh} retrying={isFetching} />;
+  } else if (data === undefined) {
+    // The deferred value can trail the query by one render; keep the skeleton meanwhile.
+    body = <WidgetSkeleton variant={entry.skeleton} />;
   } else if (data !== undefined && entry.isEmpty(data)) {
     body = <EmptyState message="The data source returned no rows for this widget." />;
   } else {

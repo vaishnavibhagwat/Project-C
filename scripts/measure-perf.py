@@ -22,7 +22,12 @@ READY = """() => {
   if (document.querySelector('[data-testid^=skeleton]')) return false;
   return [...regions].every((r) => {
     const body = r.querySelector('[data-widget-body]');
-    return body && body.querySelector('svg, table, ul, dl, article') !== null;
+    return (
+      body !== null &&
+      body.childElementCount > 0 &&
+      !body.querySelector('[data-testid^=skeleton]') &&
+      (body.textContent.trim().length > 0 || body.querySelector('svg') !== null)
+    );
   });
 }"""
 
@@ -39,24 +44,29 @@ def initial_load(browser, runs=5):
     return times
 
 
-def theme_switch(page, runs=6):
-    results = []
-    page.get_by_role('button', name='Theme', exact=True).click()
-    for i in range(runs):
-        target = 'Porcelain' if i % 2 == 0 else 'Midnight Graphite'
-        ms = page.evaluate(
-            """async (name) => {
-              const btn = [...document.querySelectorAll('[role=option] button')].find((b) => b.textContent.includes(name));
-              const t0 = performance.now();
-              btn.click();
-              await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
-              return performance.now() - t0;
-            }""",
-            target,
-        )
-        results.append(ms)
-    page.keyboard.press('Escape')
-    return results
+SWITCH = """async (name) => {
+  const btn = [...document.querySelectorAll('[role=option] button')].find((b) => b.textContent.includes(name));
+  const t0 = performance.now();
+  btn.click();
+  await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+  return performance.now() - t0;
+}"""
+
+
+def theme_switch(browser, loads=5, switches=4):
+    """Click-to-next-paint for theme switches. The first switch on a fresh load is the worst case."""
+    first, later = [], []
+    for _ in range(loads):
+        ctx = browser.new_context(viewport={'width': 1600, 'height': 1000})
+        page = ctx.new_page()
+        page.goto(PROD)
+        page.wait_for_function(READY, timeout=20000)
+        page.get_by_role('button', name='Theme', exact=True).click()
+        for i in range(switches):
+            ms = page.evaluate(SWITCH, 'Porcelain' if i % 2 == 0 else 'Midnight Graphite')
+            (first if i == 0 else later).append(ms)
+        ctx.close()
+    return first, later
 
 
 def drag_fps(page):
@@ -119,12 +129,16 @@ def main():
             'runs': [round(t) for t in loads],
             'median': round(statistics.median(loads)),
         }
+        first, later = theme_switch(browser)
+        out['theme_switch_to_next_paint_ms'] = {
+            'first_switch_per_fresh_load': [round(t, 1) for t in first],
+            'later_switches_max': round(max(later), 1),
+            'max': round(max(first + later), 1),
+        }
         ctx = browser.new_context(viewport={'width': 1600, 'height': 1000})
         page = ctx.new_page()
         page.goto(PROD)
         page.wait_for_function(READY, timeout=20000)
-        sw = theme_switch(page)
-        out['theme_switch_to_next_paint_ms'] = {'runs': [round(t, 1) for t in sw], 'max': round(max(sw), 1)}
         out['drag'] = drag_fps(page)
         ctx.close()
         if '--no-dev' not in sys.argv:

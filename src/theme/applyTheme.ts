@@ -20,7 +20,17 @@ export function applyTheme(
   root: HTMLElement = document.documentElement,
 ): void {
   const vars = themeToCssVars(theme);
+  // Suspend colour transitions for this frame: the switch is instant (no fade or flash) and
+  // the browser does not start hundreds of transitions at once.
+  root.classList.add('theme-switching');
   for (const [name, value] of Object.entries(vars)) root.style.setProperty(name, value);
+  if (typeof requestAnimationFrame === 'function') {
+    requestAnimationFrame(() =>
+      requestAnimationFrame(() => root.classList.remove('theme-switching')),
+    );
+  } else {
+    root.classList.remove('theme-switching');
+  }
   root.dataset.themeMode = theme.mode;
   root.dataset.theme = theme.id;
   root.style.colorScheme = theme.mode;

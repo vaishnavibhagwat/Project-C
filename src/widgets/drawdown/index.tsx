@@ -16,6 +16,8 @@ import {
   AXIS_TICK,
   ChartTooltipBody,
   CURSOR_STYLE,
+  chartPointBudget,
+  xTickInterval,
   downsample,
   GRID_STROKE,
 } from '@/components/charts';
@@ -66,10 +68,7 @@ function Drawdown({
   const updateConfig = useWidgetStore((s) => s.updateConfig);
   const model = useMemo(() => buildDrawdown(data, config), [data, config]);
   const points = useMemo(() => {
-    const sampled = downsample(
-      model.points,
-      Math.max(60, Math.min(500, Math.floor(width / 2) || 300)),
-    );
+    const sampled = downsample(model.points, chartPointBudget(width));
     // Always keep the trough so the marker sits on the line.
     const trough = model.points.find((p) => p.date === model.troughDate);
     if (trough && !sampled.some((p) => p.date === trough.date)) {
@@ -119,7 +118,7 @@ function Drawdown({
               tick={AXIS_TICK}
               tickLine={false}
               axisLine={{ stroke: GRID_STROKE }}
-              minTickGap={56}
+              interval={xTickInterval(points.length, width)}
               tickFormatter={(d: string) => formatDateKey(d)}
             />
             <YAxis

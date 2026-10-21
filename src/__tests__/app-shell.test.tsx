@@ -67,15 +67,19 @@ describe('AppShell', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Portfolio Workstation' }),
     ).toBeInTheDocument();
-    expect(screen.getAllByRole('region')).toHaveLength(10);
+    await waitFor(() => expect(screen.getAllByRole('region')).toHaveLength(10), {
+      timeout: 5000,
+    });
     expect(await screen.findByText('$45.0B', {}, { timeout: 15000 })).toBeInTheDocument();
   }, 20000);
 
-  it('switches between app areas', () => {
+  it('switches between app areas', async () => {
     renderWithProviders(<AppShell />);
     goTo('#/risk');
     expect(screen.getByRole('heading', { level: 1, name: 'Risk Analytics' })).toBeInTheDocument();
-    expect(screen.getAllByRole('region')).toHaveLength(5);
+    await waitFor(() => expect(screen.getAllByRole('region')).toHaveLength(5), {
+      timeout: 5000,
+    });
     goTo('#/marketplace');
     expect(
       screen.getByRole('heading', { level: 1, name: 'Widget Marketplace' }),

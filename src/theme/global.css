@@ -72,6 +72,13 @@
   }
 }
 
+/* Set by applyTheme for one frame so a theme switch never animates colours. */
+.theme-switching *,
+.theme-switching *::before,
+.theme-switching *::after {
+  transition: none !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .skeleton {
     animation: none;

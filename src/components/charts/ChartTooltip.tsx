@@ -42,6 +42,23 @@ export const CURSOR_STYLE = {
   strokeDasharray: '3 3',
 } as const;
 
+/**
+ * How many points a line/area chart of this pixel width needs: about one per 3 px, capped.
+ * Recharts work grows with point count, so this keeps renders cheap without visible loss.
+ */
+export function chartPointBudget(width: number): number {
+  return Math.max(60, Math.min(300, Math.floor(width / 3) || 200));
+}
+
+/**
+ * Fixed x-axis tick interval for a category axis. Passing a number stops Recharts from
+ * measuring every label in the DOM to decide which ticks fit (one forced layout per label).
+ */
+export function xTickInterval(pointCount: number, width: number, labelPx = 96): number {
+  const slots = Math.max(2, Math.floor(width / labelPx));
+  return Math.max(0, Math.ceil(pointCount / slots) - 1);
+}
+
 /** Keep at most `max` points by striding, always keeping the final point. */
 export function downsample<T>(points: readonly T[], max: number): T[] {
   if (points.length <= max) return [...points];

@@ -14,6 +14,8 @@ import {
   AXIS_TICK,
   ChartTooltipBody,
   CURSOR_STYLE,
+  chartPointBudget,
+  xTickInterval,
   downsample,
   GRID_STROKE,
 } from '@/components/charts';
@@ -72,7 +74,7 @@ function NavPerformance({
   const updateConfig = useWidgetStore((s) => s.updateConfig);
   const series = useMemo(() => buildNavSeries(data, config), [data, config]);
   const points = useMemo(
-    () => downsample(series.points, Math.max(60, Math.min(500, Math.floor(width / 2) || 300))),
+    () => downsample(series.points, chartPointBudget(width)),
     [series.points, width],
   );
   const byDate = useMemo(() => new Map(points.map((p) => [p.date, p])), [points]);
@@ -132,7 +134,7 @@ function NavPerformance({
               tick={AXIS_TICK}
               tickLine={false}
               axisLine={{ stroke: GRID_STROKE }}
-              minTickGap={48}
+              interval={xTickInterval(points.length, width)}
               tickFormatter={(d: string) =>
                 formatDateKey(d, config.range === '1M' || config.range === '3M' ? false : true)
               }

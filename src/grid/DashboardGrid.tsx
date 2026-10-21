@@ -1,14 +1,13 @@
 import { memo, useCallback, useMemo } from 'react';
-import { Responsive, WidthProvider, type Layout, type Layouts } from 'react-grid-layout';
+import { Responsive, type Layout, type Layouts } from 'react-grid-layout';
 import { useShallow } from 'zustand/react/shallow';
+import { useElementSize } from '@/hooks/useElementSize';
 import { getWidget } from '@/registry/registry';
 import { GRID_BREAKPOINTS, GRID_COLS, useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { Breakpoint, BreakpointLayouts, GridItemLayout, PageId } from '@/types';
 import { cx } from '@/utils/cx';
 import { DRAG_HANDLE_CLASS, NO_DRAG_CLASS, WidgetFrame } from './WidgetFrame';
-
-const ResponsiveGrid = WidthProvider(Responsive);
 
 export const ROW_HEIGHT = 28;
 export const GRID_MARGIN: [number, number] = [8, 8];
@@ -38,6 +37,9 @@ function DashboardGridImpl({ page }: { page: PageId }) {
   const grid = useDashboardStore((s) => s.pages[page]);
   const locked = useDashboardStore((s) => s.locked);
   const setLayouts = useDashboardStore((s) => s.setLayouts);
+  // Measure the container ourselves (instead of WidthProvider) so the grid first renders at
+  // its real width: widgets lay out and render once rather than at a default width and again.
+  const [containerRef, { width }] = useElementSize<HTMLDivElement>();
   const types = useWidgetStore(
     useShallow((s) => grid.itemIds.map((id) => s.instances[id]?.type ?? '')),
   );
@@ -98,26 +100,30 @@ function DashboardGridImpl({ page }: { page: PageId }) {
   );
 
   return (
-    <ResponsiveGrid
-      className={cx('layout', locked && 'is-locked')}
-      layouts={layouts}
-      breakpoints={GRID_BREAKPOINTS}
-      cols={GRID_COLS}
-      rowHeight={ROW_HEIGHT}
-      margin={GRID_MARGIN}
-      containerPadding={[0, 0]}
-      isDraggable={!locked}
-      isResizable={!locked}
-      draggableHandle={`.${DRAG_HANDLE_CLASS}`}
-      draggableCancel={`.${NO_DRAG_CLASS}`}
-      compactType="vertical"
-      useCSSTransforms
-      measureBeforeMount={false}
-      onLayoutChange={onLayoutChange}
-      resizeHandles={['se']}
-    >
-      {children}
-    </ResponsiveGrid>
+    <div ref={containerRef} className="w-full">
+      {width > 0 ? (
+        <Responsive
+          width={width}
+          className={cx('layout', locked && 'is-locked')}
+          layouts={layouts}
+          breakpoints={GRID_BREAKPOINTS}
+          cols={GRID_COLS}
+          rowHeight={ROW_HEIGHT}
+          margin={GRID_MARGIN}
+          containerPadding={[0, 0]}
+          isDraggable={!locked}
+          isResizable={!locked}
+          draggableHandle={`.${DRAG_HANDLE_CLASS}`}
+          draggableCancel={`.${NO_DRAG_CLASS}`}
+          compactType="vertical"
+          useCSSTransforms
+          onLayoutChange={onLayoutChange}
+          resizeHandles={['se']}
+        >
+          {children}
+        </Responsive>
+      ) : null}
+    </div>
   );
 }
 
