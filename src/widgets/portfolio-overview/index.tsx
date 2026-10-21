@@ -45,7 +45,7 @@ function PortfolioOverview({
   return (
     <div
       className={cx(
-        'grid h-full items-stretch py-1',
+        'scroll-thin grid h-full items-stretch overflow-y-auto py-1',
         narrow ? 'grid-cols-2 gap-y-2' : 'grid-flow-col auto-cols-fr',
       )}
     >

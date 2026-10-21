@@ -12,10 +12,13 @@ function RiskMetrics({ data, config }: WidgetComponentProps<RiskMetricsConfig, R
   const tiles = useMemo(() => buildTiles(data, config), [data, config]);
   return (
     <div className="scroll-thin h-full overflow-y-auto p-2">
-      <dl className="grid grid-cols-[repeat(auto-fill,minmax(128px,1fr))] gap-px overflow-hidden rounded bg-line">
+      <dl className="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-1.5">
         {tiles.map((t) => (
-          <div key={t.key} className="flex flex-col gap-0.5 bg-panel px-2.5 py-2">
-            <dt className="flex items-center gap-0.5 text-2xs font-medium uppercase tracking-wide text-muted">
+          <div
+            key={t.key}
+            className="flex min-w-0 flex-col gap-0.5 rounded border border-line px-2.5 py-2"
+          >
+            <dt className="flex items-center gap-0.5 text-xs font-medium text-muted">
               <span className="truncate">{t.label}</span>
               <InfoTooltip content={t.definition} label={`About ${t.label}`} />
             </dt>

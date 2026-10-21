@@ -26,6 +26,16 @@ describe('SectorAttribution', () => {
     expect(screen.getByRole('table', { name: /Attribution by sector, 1Y/ })).toBeInTheDocument();
   });
 
+  it('shows active return in basis points (portfolio minus benchmark)', () => {
+    render(<SectorAttribution {...widgetProps(defaults, data)} />);
+    const p = data.periods.find((x) => x.period === defaults.period);
+    if (!p) throw new Error('period missing');
+    const bp = Math.round((p.portfolioReturnPct - p.benchmarkReturnPct) * 100);
+    const sign = bp >= 0 ? '+' : '−';
+    const active = screen.getByText('Active').nextElementSibling;
+    expect(active).toHaveTextContent(`${sign}${Math.abs(bp)} bp`);
+  });
+
   it('changes period from the in-widget toggle', () => {
     const id = 'performance-sector-attribution';
     render(<SectorAttribution {...widgetProps(defaults, data)} instanceId={id} />);

@@ -81,7 +81,8 @@ function SectorAttribution({
   );
   const showTable = config.showTable && width >= 900;
   if (!period) return null;
-  const active = (period.portfolioReturnPct - period.benchmarkReturnPct) / 100;
+  // Percent units, like the row effects; bp() converts percent to basis points.
+  const active = period.portfolioReturnPct - period.benchmarkReturnPct;
   const stacked = config.effect === 'stacked';
 
   return (
@@ -158,7 +159,7 @@ function SectorAttribution({
                 tick={AXIS_TICK}
                 tickLine={false}
                 axisLine={false}
-                width={width < 520 ? 92 : 140}
+                width={width < 520 ? 96 : 168}
                 interval={0}
               />
               <ReferenceLine x={0} stroke={cssColor('borderStrong')} />

@@ -28,11 +28,11 @@ export function CommandBar({ onOpenSearch }: { onOpenSearch: () => void }) {
       <button
         type="button"
         onClick={onOpenSearch}
-        className="flex h-7 min-w-0 flex-1 items-center gap-2 rounded border border-line bg-bg px-2 text-xs text-subtle hover:border-line-strong md:max-w-sm"
+        className="flex h-7 min-w-[1.75rem] items-center gap-2 rounded border border-line bg-bg px-2 text-xs text-subtle hover:border-line-strong sm:min-w-0 sm:flex-1 md:max-w-sm"
         aria-label="Search (Ctrl+K)"
       >
         <IconSearch size={13} />
-        <span className="truncate">Search symbols, widgets, pages…</span>
+        <span className="hidden truncate sm:inline">Search symbols, widgets, pages…</span>
         <kbd className="ml-auto hidden rounded border border-line-strong px-1 text-2xs sm:inline">
           Ctrl K
         </kbd>

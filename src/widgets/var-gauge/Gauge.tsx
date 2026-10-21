@@ -51,54 +51,40 @@ function GaugeImpl({ value, limit, status, size, label, sublabel }: GaugeProps) 
   const limitAngle = angle(limit);
 
   return (
-    <svg
-      width={size}
-      height={outer + 6}
-      viewBox={`${-outer - 4} ${-outer - 4} ${size + 8} ${outer + 10}`}
-      aria-hidden="true"
-    >
-      <path d={paths.track} fill={cssColor('raised')} />
-      <path d={paths.within} fill={cssColor('positive')} fillOpacity={0.14} />
-      <path d={paths.near} fill={cssColor('warning')} fillOpacity={0.18} />
-      <path d={paths.breach} fill={cssColor('negative')} fillOpacity={0.18} />
-      <path d={paths.value} fill={cssColor(STATUS_COLOR[status])} />
-      <line
-        x1={Math.sin(limitAngle) * (inner - 4)}
-        y1={-Math.cos(limitAngle) * (inner - 4)}
-        x2={Math.sin(limitAngle) * (outer + 4)}
-        y2={-Math.cos(limitAngle) * (outer + 4)}
-        stroke={cssColor('text')}
-        strokeWidth={1.5}
-      />
-      <line
-        x1={0}
-        y1={0}
-        x2={nx * 0.7}
-        y2={ny * 0.7}
-        stroke={cssColor('text')}
-        strokeWidth={1.5}
-        strokeLinecap="round"
-      />
-      <circle r={3} fill={cssColor('text')} />
-      <text
-        y={-outer * 0.3}
-        textAnchor="middle"
-        fontSize={Math.max(14, size / 9)}
-        fontWeight={600}
-        fill={cssColor('text')}
-        className="num"
+    <div className="flex flex-col items-center">
+      <svg
+        width={size}
+        height={outer + 6}
+        viewBox={`${-outer - 4} ${-outer - 4} ${size + 8} ${outer + 10}`}
+        aria-hidden="true"
       >
-        {label}
-      </text>
-      <text
-        y={-outer * 0.3 + Math.max(12, size / 14)}
-        textAnchor="middle"
-        fontSize={10}
-        fill={cssColor('textMuted')}
-      >
-        {sublabel}
-      </text>
-    </svg>
+        <path d={paths.track} fill={cssColor('raised')} />
+        <path d={paths.within} fill={cssColor('positive')} fillOpacity={0.14} />
+        <path d={paths.near} fill={cssColor('warning')} fillOpacity={0.18} />
+        <path d={paths.breach} fill={cssColor('negative')} fillOpacity={0.18} />
+        <path d={paths.value} fill={cssColor(STATUS_COLOR[status])} />
+        <line
+          x1={Math.sin(limitAngle) * (inner - 4)}
+          y1={-Math.cos(limitAngle) * (inner - 4)}
+          x2={Math.sin(limitAngle) * (outer + 4)}
+          y2={-Math.cos(limitAngle) * (outer + 4)}
+          stroke={cssColor('text')}
+          strokeWidth={1.5}
+        />
+        <line
+          x1={0}
+          y1={0}
+          x2={nx * 0.7}
+          y2={ny * 0.7}
+          stroke={cssColor('text')}
+          strokeWidth={1.5}
+          strokeLinecap="round"
+        />
+        <circle r={3} fill={cssColor('text')} />
+      </svg>
+      <span className="num -mt-0.5 text-xl font-semibold leading-tight text-fg">{label}</span>
+      <span className="num text-2xs text-muted">{sublabel}</span>
+    </div>
   );
 }
 
