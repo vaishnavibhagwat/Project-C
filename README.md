@@ -27,7 +27,7 @@ npm run dev                 # http://localhost:5173
 | `npm run dev`             | Vite dev server                                                    |
 | `npm run build`           | Type-check (`tsc`, strict) then production build to `dist/`        |
 | `npm run preview`         | Serve the production build                                         |
-| `npm run test`            | Vitest + React Testing Library (233 tests)                         |
+| `npm run test`            | Vitest + React Testing Library (234 tests)                         |
 | `npm run test:coverage`   | Tests with v8 coverage (text + HTML report in `coverage/`)         |
 | `npm run lint`            | ESLint with `typescript-eslint` `recommended-type-checked`         |
 | `npm run format:check`    | Prettier (`printWidth` 100, `singleQuote`)                         |
@@ -157,7 +157,7 @@ These are measurements on one machine, not guarantees. Method and raw output:
 | Re-render < 100 ms on new data  | **≤ 12.5 ms** per widget render (React Profiler, development build)                                                                                                                                        |
 | Lighthouse > 85                 | Desktop preset: **Performance 98–99, Accessibility 100, Best Practices 100, SEO 100** (3 runs). Mobile preset (4× CPU throttling): Performance **60–62**: the chart-heavy workstation is built for desktop |
 | Layout JSON < 50 KB             | Default pages **< 5 KB** each; enforced at share time                                                                                                                                                      |
-| Coverage > 70%                  | **94.6% lines, 80.6% branches, 80.1% functions** (v8, 233 tests)                                                                                                                                           |
+| Coverage > 70%                  | **94.6% lines, 80.6% branches, 80.1% functions** (v8, 234 tests)                                                                                                                                           |
 | Storybook ≥ 90% of components   | **54 / 54** production components referenced by a story (`npm run story-coverage`)                                                                                                                         |
 
 A WCAG contrast check runs for every built-in theme in the test suite. No formal WCAG
