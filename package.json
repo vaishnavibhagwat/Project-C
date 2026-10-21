@@ -6,9 +6,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc --noEmit -p tsconfig.json && vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -b --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -18,7 +18,9 @@
     "test:coverage": "vitest run --coverage",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build",
-    "analyze": "node scripts/bundle-report.mjs"
+    "analyze": "node scripts/bundle-report.mjs",
+    "story-coverage": "node scripts/story-coverage.mjs --min 0.9",
+    "check": "npm run typecheck && npm run lint && npm run format:check && npm run test"
   },
   "engines": {
     "node": ">=18.18"
