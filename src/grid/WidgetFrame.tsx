@@ -1,4 +1,4 @@
-import { memo, Suspense, useCallback, useMemo, type ReactNode } from 'react';
+import { memo, Profiler, Suspense, useCallback, useMemo, type ReactNode } from 'react';
 import { Button, IconButton } from '@/components/Button';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import {
@@ -26,6 +26,7 @@ import { duplicateWidget, removeWidget, restoreWidget } from '@/store/actions';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { PageId, WidgetInstance } from '@/types';
 import { cx } from '@/utils/cx';
+import { recordWidgetRender } from '@/utils/perf';
 import { formatIstTime } from '@/utils/time';
 
 export const DRAG_HANDLE_CLASS = 'widget-drag-handle';
@@ -124,13 +125,15 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
       >
         <Suspense fallback={<WidgetSkeleton variant={entry.skeleton} />}>
           {size.width > 0 ? (
-            <entry.Render
-              instanceId={instance.id}
-              config={config}
-              data={data}
-              width={size.width}
-              height={size.height}
-            />
+            <Profiler id={entry.definition.id} onRender={recordWidgetRender}>
+              <entry.Render
+                instanceId={instance.id}
+                config={config}
+                data={data}
+                width={size.width}
+                height={size.height}
+              />
+            </Profiler>
           ) : null}
         </Suspense>
       </ErrorBoundary>
@@ -243,6 +246,7 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
       ) : null}
       <div
         ref={bodyRef}
+        data-widget-body
         className={cx(
           'relative min-h-0 flex-1',
           disconnected && data !== undefined && 'opacity-70',

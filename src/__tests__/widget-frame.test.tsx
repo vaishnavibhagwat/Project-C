@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as ApiModule from '@/data/api';
 import { ApiError, fetchEndpoint, parseEndpoint } from '@/data/api';
@@ -53,6 +54,16 @@ describe('WidgetFrame states', () => {
     for (const name of [/^Refresh$/, /Configure/, /Duplicate/, /Remove/]) {
       expect(screen.getByRole('button', { name })).toBeInTheDocument();
     }
+  });
+
+  it('renders widget bodies under React StrictMode (dev double effects)', async () => {
+    fetchMock.mockResolvedValue(fixture('portfolio/summary'));
+    renderWithProviders(
+      <StrictMode>
+        <WidgetFrame page="workstation" instanceId={OVERVIEW} />
+      </StrictMode>,
+    );
+    expect(await screen.findByText('$45.0B')).toBeInTheDocument();
   });
 
   it('shows the error state with a message and recovers on Retry', async () => {
