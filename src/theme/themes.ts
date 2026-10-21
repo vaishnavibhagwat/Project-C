@@ -13,7 +13,7 @@ export const MIDNIGHT_GRAPHITE: ThemeDefinition = {
     borderStrong: '#2c3747',
     text: '#e8edf5',
     textMuted: '#9aa8bc',
-    textSubtle: '#728097',
+    textSubtle: '#7c8aa0',
     accent: '#22d3ee',
     accentContrast: '#04131a',
     positive: '#34d399',

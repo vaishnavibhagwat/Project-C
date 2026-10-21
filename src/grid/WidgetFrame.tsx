@@ -174,7 +174,7 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
           )}
         >
           <IconDrag size={14} className="shrink-0 text-subtle" />
-          <h3 className="truncate text-xs font-semibold text-fg">{instance.title}</h3>
+          <h2 className="truncate text-xs font-semibold text-fg">{instance.title}</h2>
         </div>
         <div className={cx(NO_DRAG_CLASS, 'flex shrink-0 items-center gap-0.5')}>
           <InfoTooltip

@@ -21,7 +21,7 @@ interface Check {
 export const CONTRAST_CHECKS: Check[] = [
   { label: 'Primary text on panel', fg: 'text', bg: 'panel', min: 4.5 },
   { label: 'Secondary text on panel', fg: 'textMuted', bg: 'panel', min: 4.5 },
-  { label: 'Tertiary text on panel', fg: 'textSubtle', bg: 'panel', min: 3 },
+  { label: 'Tertiary text on panel', fg: 'textSubtle', bg: 'panel', min: 4.5 },
   { label: 'Accent on panel', fg: 'accent', bg: 'panel', min: 3 },
   { label: 'Positive on panel', fg: 'positive', bg: 'panel', min: 3 },
   { label: 'Negative on panel', fg: 'negative', bg: 'panel', min: 3 },

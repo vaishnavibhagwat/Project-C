@@ -23,6 +23,11 @@ export function FeedControl() {
         <button
           type="button"
           {...props}
+          aria-label={
+            connected
+              ? `Feed live${last > 0 ? `, last update ${formatIstTime(last)}` : ''}`
+              : 'Feed disconnected'
+          }
           className={cx(
             'flex h-7 items-center gap-1.5 rounded border px-2 text-xs',
             connected
