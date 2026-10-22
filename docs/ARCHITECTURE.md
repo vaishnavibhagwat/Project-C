@@ -108,6 +108,10 @@ JSON files go through the same zod schemas.
 
 ## Security notes
 
+- A Content Security Policy in `index.html` allows scripts only from the app's own origin
+  (`script-src 'self'`): no inline scripts, no `eval`. The pre-paint theme script lives in
+  `public/theme-init.js` for that reason. Only the Vite dev server relaxes the policy (for the
+  React Fast Refresh preamble); a test checks `index.html` has no inline scripts.
 - No `innerHTML` or `dangerouslySetInnerHTML` anywhere (ESLint rules forbid both). Untrusted text
   (layout names, imported titles, research summaries) is stripped with DOMPurify and rendered
   as React text nodes.

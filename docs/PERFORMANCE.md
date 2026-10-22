@@ -20,7 +20,7 @@ npx lighthouse http://localhost:4173/#/workstation --preset=desktop
 
 | Chunk                         | gzip                            | Notes                                                                                    |
 | ----------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------- |
-| Main entry                    | **123.4 KB**                    | React, react-grid-layout, TanStack Query, Zustand, zod, data layer, shell. Budget 150 KB |
+| Main entry                    | **124.6 KB**                    | React, react-grid-layout, TanStack Query, Zustand, zod, data layer, shell. Budget 150 KB |
 | Each widget chunk             | **0.7–2.1 KB**                  | One `React.lazy` chunk per widget. Budget 50 KB                                          |
 | Animation features            | 18.2 KB                         | Framer Motion `domAnimation`, loaded via `LazyMotion` after first paint                  |
 | Theme builder                 | 1.6 KB (+3.8 KB react-colorful) | Loaded only when opened                                                                  |
