@@ -1,11 +1,27 @@
+# Dependencies
 node_modules
+
+# Build and report output
 dist
+dist-ssr
 coverage
 storybook-static
+*.tsbuildinfo
+
+# Logs and caches
 *.log
+npm-debug.log*
+.eslintcache
+.vite
+
+# Environment: commit .env.example only
 .env
 .env.local
 .env.*.local
-.DS_Store
+
+# Editors and OS
 .vscode/*
 !.vscode/extensions.json
+.idea
+.DS_Store
+Thumbs.db
