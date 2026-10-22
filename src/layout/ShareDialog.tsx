@@ -7,6 +7,7 @@ import { captureSnapshot } from '@/store/actions';
 import { useLayoutStore } from '@/store/layoutStore';
 import { buildShareUrl, encodeShare, snapshotBytes } from '@/store/share';
 import { useThemeStore } from '@/store/themeStore';
+import { toIstIso } from '@/utils/time';
 
 /** Share the current page layout as a compressed, validated link (lz-string). */
 export function ShareDialog({
@@ -32,7 +33,7 @@ export function ShareDialog({
 
 function ShareBody({ page }: { page: PageMeta }) {
   const themeId = useThemeStore((s) => s.activeThemeId);
-  const setLastShareUrl = useLayoutStore((s) => s.setLastShareUrl);
+  const recordShare = useLayoutStore((s) => s.recordShare);
   const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle');
   const result = useMemo(() => {
     const snapshot = captureSnapshot(page.id);
@@ -57,7 +58,12 @@ function ShareBody({ page }: { page: PageMeta }) {
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(result.url);
-      setLastShareUrl(result.url);
+      recordShare({
+        page: page.id,
+        url: result.url,
+        bytes: result.bytes,
+        createdAt: toIstIso(Date.now()),
+      });
       setCopied('copied');
     } catch {
       setCopied('failed');

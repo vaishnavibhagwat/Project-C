@@ -127,22 +127,53 @@ accessibility summary, resize and drag.
 Money is INR, percentages are in percent units (1.25 means 1.25%) and timestamps are IST ISO
 strings. Unrealised P&L and previous close are derived from a `Holding` in
 `src/utils/holdings.ts` rather than stored. `Layout` (a saved layout with versions), `Theme` and
-`GridConfig` live in `src/types/layout.ts` and `src/types/theme.ts`; the grid's breakpoints,
-columns, row height and margins are the single `GRID_CONFIG` constant in DashboardStore.
+`GridConfig` live in `src/types/layout.ts` and `src/types/theme.ts`.
 
 ## State: four stores
 
-| Store            | Owns                                                                                                    | Persisted (localStorage, zod-validated on load) |
-| ---------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `DashboardStore` | grid layouts per page and breakpoint, item order, lock, AUM currency preference, acknowledged alert ids | yes                                             |
-| `WidgetStore`    | widget instances (type, title, settings); which settings panel is open                                  | instances only                                  |
-| `ThemeStore`     | active theme id, custom themes, builder draft (live preview)                                            | active id + custom themes                       |
-| `LayoutStore`    | saved layouts with up to 20 versions each, active layout per page, last share URL                       | saved layouts + active ids                      |
+| Store            | Owns                                                                                                                  | Persisted (localStorage, zod-validated on load) |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `DashboardStore` | `gridConfig`, grid layouts per page and breakpoint, item order, lock, AUM currency preference, acknowledged alert ids | yes                                             |
+| `WidgetStore`    | widget instances keyed by instanceId (type, title, settings, position); which settings panel is open                  | instances only                                  |
+| `ThemeStore`     | active theme id, custom themes, builder draft (live preview)                                                          | active id + custom themes                       |
+| `LayoutStore`    | `savedLayouts` with up to 20 versions each, active layout per page, the last 10 `shares`                              | everything                                      |
+
+Actions per store:
+
+- **DashboardStore**: `setGridConfig`, `resetGridConfig`, `addWidget`, `removeWidget`,
+  `restoreWidget` (undo), `moveWidget`, `resizeWidget`, `setLayouts`, `replacePage`,
+  `setLocked`, `setDisplayCurrency`, `acknowledgeAlerts`.
+- **WidgetStore**: `createInstance`, `upsertInstances`, `updateConfig`, `replaceConfig`,
+  `renameInstance`, `setPositions`, `removeInstances`, `duplicateInstance`, `openSettings`,
+  `closeSettings`.
+- **ThemeStore**: `setActiveTheme`, `openBuilder`, `closeBuilder`, `setDraftToken`,
+  `setDraftName`, `setDraftMode`, `saveDraft`, `deleteCustomTheme`, `importTheme`.
+- **LayoutStore**: `saveLayout`, `saveVersion`, `renameLayout`, `deleteLayout`, `setActive`,
+  `recordShare`, `removeShare`, `clearShares`.
 
 All four use `devtools(persist(immer(…)))`. The devtools bridge is enabled only in development
 when `VITE_ENABLE_DEVTOOLS=true`. Components subscribe with narrow selectors
-(`useShallow` where several fields are needed). Operations that touch two stores (add, remove
-with undo, duplicate, apply snapshot, reset page) live in `src/store/actions.ts`.
+(`useShallow` where several fields are needed). Operations that touch two stores
+(`addWidgetToPage`, `removeWidgetFromPage` with `restoreRemovedWidget`, `duplicateWidget`,
+`applyGridConfig`, `captureSnapshot`, `applySnapshot`, `resetPage`) live in
+`src/store/actions.ts`.
+
+### Grid settings
+
+`gridConfig` holds `cols` (6 to 24, default 12), `rowHeight` (30 to 100 px, default 60), `gap`
+(4 to 20 px, default 8) and `compaction` (`vertical` or `none`). Narrower breakpoints derive
+their columns from `cols` (12 gives 12/10/6/2). `setGridConfig` validates the merged settings
+with zod and converts every page's layouts so widgets keep their width share and roughly their
+pixel height. Widget `defaultSize`/`minSize`/`maxSize` and the default pages are written for
+the default grid and converted on use. `moveWidget`, `resizeWidget` and `addWidget` keep
+layouts valid on their own (inside the columns, no overlaps, compacted when `vertical`), using
+the pure helpers in `src/utils/gridLayout.ts`; per-widget minimum and maximum sizes are
+enforced by react-grid-layout in the UI.
+
+Snapshots (saved versions and share links) record the grid they were captured on and are
+converted when applied. Data saved before grid settings existed used 12 columns and 28 px rows;
+the version 2 persist migrations convert it, and snapshots without a grid are treated as that
+old grid.
 
 Layout JSON contains grid positions, widget settings, theme and preferences, never datasets.
 The default workstation snapshot is under 5 KB. Share links are capped at 50 KB before

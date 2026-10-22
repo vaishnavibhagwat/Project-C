@@ -17,8 +17,8 @@ export const sectorHeatmapDefinition: WidgetDefinition<SectorHeatmapConfig, Sect
   description:
     'Daily returns of each sector in the equity sleeve (holdings-weighted), plus the live simulated session. Built with D3 scales.',
   category: WidgetCategory.ANALYSIS,
-  defaultSize: { w: 6, h: 10 },
-  minSize: { w: 4, h: 7 },
+  defaultSize: { w: 6, h: 5 },
+  minSize: { w: 4, h: 4 },
   configSchema: {
     type: 'object',
     properties: {

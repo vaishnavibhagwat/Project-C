@@ -29,7 +29,7 @@ export function PageToolbar({
   const locked = useDashboardStore((s) => s.locked);
   const setLocked = useDashboardStore((s) => s.setLocked);
   const activeId = useLayoutStore((s) => s.activeByPage[page.id]);
-  const activeName = useLayoutStore((s) => s.saved.find((l) => l.id === activeId)?.name);
+  const activeName = useLayoutStore((s) => s.savedLayouts.find((l) => l.id === activeId)?.name);
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pb-2">

@@ -18,8 +18,8 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
   description:
     'Position-level table of the equity sleeve with live simulated prices. Virtualised for large books; sortable and filterable.',
   category: WidgetCategory.TABLE,
-  defaultSize: { w: 8, h: 11 },
-  minSize: { w: 4, h: 6 },
+  defaultSize: { w: 8, h: 6 },
+  minSize: { w: 4, h: 3 },
   configSchema: {
     type: 'object',
     properties: {

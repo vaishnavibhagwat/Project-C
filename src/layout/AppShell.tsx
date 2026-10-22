@@ -8,7 +8,7 @@ import { DashboardGrid } from '@/grid/DashboardGrid';
 import { useHashRoute } from '@/hooks/useHashRoute';
 import { SymbolDetailContext, type SymbolDetailApi } from '@/hooks/useSymbolDetail';
 import { getPageMeta } from '@/registry/pages';
-import { addWidget, MAX_WIDGETS_PER_PAGE, resetPage } from '@/store/actions';
+import { addWidgetToPage, MAX_WIDGETS_PER_PAGE, resetPage } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { PageIdSchema } from '@/store/schemas';
 import { useThemeStore } from '@/store/themeStore';
@@ -105,7 +105,7 @@ export function AppShell() {
           setSymbol(r.symbol);
           break;
         case 'widget':
-          if (addWidget(page, r.type)) {
+          if (addWidgetToPage(page, r.type)) {
             if (route === 'marketplace') go(page);
             notify({ message: `Added ${r.label} to ${meta.short}`, tone: 'success' });
           } else {

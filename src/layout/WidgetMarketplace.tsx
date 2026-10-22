@@ -6,7 +6,7 @@ import { IconPlus, IconSearch } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
 import { PAGES } from '@/registry/pages';
 import { CATEGORIES, CATEGORY_LABELS, widgetRegistry } from '@/registry/registry';
-import { addWidget, MAX_WIDGETS_PER_PAGE } from '@/store/actions';
+import { addWidgetToPage, MAX_WIDGETS_PER_PAGE } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { PageIdSchema } from '@/store/schemas';
 import type { PageId, WidgetCategory } from '@/types';
@@ -124,7 +124,7 @@ export function WidgetMarketplace({
                 disabled={targetFull}
                 title={targetFull ? `${targetMeta?.short ?? target} is full` : undefined}
                 onClick={() => {
-                  if (addWidget(target, w.id)) {
+                  if (addWidgetToPage(target, w.id)) {
                     notify({
                       message: `Added ${w.name} to ${targetMeta?.short ?? target}`,
                       tone: 'success',

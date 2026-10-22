@@ -20,8 +20,8 @@ export const drawdownDefinition: WidgetDefinition<DrawdownConfig, DrawdownData> 
   description:
     'Underwater chart: percentage below the running NAV high-water mark, with the worst drawdown in the window marked.',
   category: WidgetCategory.CHART,
-  defaultSize: { w: 6, h: 8 },
-  minSize: { w: 3, h: 6 },
+  defaultSize: { w: 6, h: 4 },
+  minSize: { w: 3, h: 3 },
   configSchema: {
     type: 'object',
     properties: {

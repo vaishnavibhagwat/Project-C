@@ -13,8 +13,8 @@ export const tradeBlotterDefinition: WidgetDefinition<TradeBlotterConfig, TradeB
   description:
     'Simulated NSE executions for today and the previous session, with T+1 settlement dates. Times in IST.',
   category: WidgetCategory.TABLE,
-  defaultSize: { w: 12, h: 10 },
-  minSize: { w: 4, h: 6 },
+  defaultSize: { w: 12, h: 5 },
+  minSize: { w: 4, h: 3 },
   configSchema: {
     type: 'object',
     properties: {

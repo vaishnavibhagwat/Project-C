@@ -19,8 +19,8 @@ export const researchFeedDefinition: WidgetDefinition<ResearchFeedConfig, Resear
   description:
     'Sample research notes generated for the demo (not real news, not advice). Filter by sentiment and category.',
   category: WidgetCategory.FEED,
-  defaultSize: { w: 6, h: 8 },
-  minSize: { w: 3, h: 6 },
+  defaultSize: { w: 6, h: 4 },
+  minSize: { w: 3, h: 3 },
   configSchema: {
     type: 'object',
     properties: {

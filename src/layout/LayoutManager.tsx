@@ -24,7 +24,7 @@ function SavedRow({
   pageId: PageMeta['id'];
 }) {
   const saveVersion = useLayoutStore((s) => s.saveVersion);
-  const remove = useLayoutStore((s) => s.remove);
+  const deleteLayout = useLayoutStore((s) => s.deleteLayout);
   const setActive = useLayoutStore((s) => s.setActive);
   const notify = useToast();
   const [showVersions, setShowVersions] = useState(false);
@@ -67,7 +67,7 @@ function SavedRow({
         <IconButton
           label={`Delete ${layout.name}`}
           icon={IconTrash}
-          onClick={() => remove(layout.id)}
+          onClick={() => deleteLayout(layout.id)}
         />
       </div>
       <div className="mt-2 flex gap-2">
@@ -115,9 +115,9 @@ export function LayoutManager({
   onClose: () => void;
   page: PageMeta;
 }) {
-  const saved = useLayoutStore((s) => s.saved);
+  const saved = useLayoutStore((s) => s.savedLayouts);
   const activeId = useLayoutStore((s) => s.activeByPage[page.id]);
-  const saveNew = useLayoutStore((s) => s.saveNew);
+  const saveLayout = useLayoutStore((s) => s.saveLayout);
   const notify = useToast();
   const [name, setName] = useState('');
   const [importError, setImportError] = useState<string | null>(null);
@@ -162,7 +162,11 @@ export function LayoutManager({
           className="flex items-end gap-2"
           onSubmit={(e) => {
             e.preventDefault();
-            saveNew(name || `${page.short} layout`, captureSnapshot(page.id), toIstIso(Date.now()));
+            saveLayout(
+              name || `${page.short} layout`,
+              captureSnapshot(page.id),
+              toIstIso(Date.now()),
+            );
             setName('');
             notify({ message: 'Layout saved', tone: 'success' });
           }}

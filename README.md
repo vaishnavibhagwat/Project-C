@@ -168,9 +168,10 @@ Every folder has an `index.ts` barrel (widget folders use `index.tsx`).
   and outages. It serialises each response to JSON and validates it with zod (no NaN, Infinity
   or non-positive prices; allocations must sum to 100%). TanStack Query handles caching,
   polling and de-duplication; queries pause while the feed is disconnected.
-- **Four stores.** DashboardStore (grid layouts per page and breakpoint, lock, preferences),
-  WidgetStore (instances and settings), ThemeStore (active and custom themes, builder draft),
-  LayoutStore (saved layouts, versions, share). Components select small slices. Persisted state
+- **Four stores.** DashboardStore (grid settings, layouts per page and breakpoint, add, remove,
+  move and resize, lock, preferences), WidgetStore (instances and settings), ThemeStore (active
+  and custom themes, builder draft), LayoutStore (saved layouts, versions, share links). Every
+  store action has a unit test. Components select small slices. Persisted state
   is validated with zod on load and holds only layouts, settings, theme and preferences, never
   datasets.
 - **Themes without re-renders.** Tokens are CSS custom properties. Tailwind classes and SVG fills

@@ -21,8 +21,8 @@ export const sectorAttributionDefinition: WidgetDefinition<
   description:
     'Simplified single-period Brinson-Fachler attribution of equity active return vs the Nifty 50: allocation and selection by sector.',
   category: WidgetCategory.CHART,
-  defaultSize: { w: 12, h: 11 },
-  minSize: { w: 4, h: 7 },
+  defaultSize: { w: 12, h: 6 },
+  minSize: { w: 4, h: 4 },
   configSchema: {
     type: 'object',
     properties: {

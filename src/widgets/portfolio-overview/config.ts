@@ -19,9 +19,9 @@ export const portfolioOverviewDefinition: WidgetDefinition<
   description:
     'Headline figures: AUM at last close (exactly USD 45.0B), intraday market value, day P&L, NAV per unit and period returns.',
   category: WidgetCategory.ANALYSIS,
-  defaultSize: { w: 12, h: 3 },
-  minSize: { w: 4, h: 3 },
-  maxSize: { w: 12, h: 6 },
+  defaultSize: { w: 12, h: 2 },
+  minSize: { w: 4, h: 2 },
+  maxSize: { w: 12, h: 3 },
   configSchema: {
     type: 'object',
     properties: {

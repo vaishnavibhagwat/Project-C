@@ -17,8 +17,8 @@ export const alertsMonitorDefinition: WidgetDefinition<AlertsMonitorConfig, Aler
   description:
     'Rule-based alerts derived from the same data as every other widget: VaR limits, concentration, large price moves, drawdown and T+1 settlement.',
   category: WidgetCategory.FEED,
-  defaultSize: { w: 4, h: 10 },
-  minSize: { w: 3, h: 5 },
+  defaultSize: { w: 4, h: 5 },
+  minSize: { w: 3, h: 3 },
   configSchema: {
     type: 'object',
     properties: {

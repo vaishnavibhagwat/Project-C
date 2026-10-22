@@ -14,8 +14,8 @@ export const varGaugeDefinition: WidgetDefinition<VarGaugeConfig, VarGaugeData> 
   description:
     '1-day VaR from historical simulation (252-day lookback) and the parametric normal method, against a configurable limit.',
   category: WidgetCategory.GAUGE,
-  defaultSize: { w: 3, h: 10 },
-  minSize: { w: 3, h: 7 },
+  defaultSize: { w: 3, h: 5 },
+  minSize: { w: 3, h: 4 },
   configSchema: {
     type: 'object',
     properties: {

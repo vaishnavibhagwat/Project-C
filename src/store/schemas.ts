@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import type { ThemeTokens } from '@/types';
+import type { GridConfig, ShareRecord, ThemeTokens } from '@/types';
+import { GRID_LIMITS } from '@/utils/gridLayout';
 
 /** zod schemas for everything that is persisted or shared. Datasets are never included. */
 
@@ -71,11 +72,28 @@ export const WidgetInstanceSchema = z.preprocess((raw) => {
   };
 }, CurrentWidgetInstanceSchema);
 
+/** Grid settings, each within the range the brief allows. */
+export const GridConfigSchema = z.object({
+  cols: z.number().int().min(GRID_LIMITS.cols.min).max(GRID_LIMITS.cols.max),
+  rowHeight: z.number().int().min(GRID_LIMITS.rowHeight.min).max(GRID_LIMITS.rowHeight.max),
+  gap: z.number().int().min(GRID_LIMITS.gap.min).max(GRID_LIMITS.gap.max),
+  compaction: z.enum(['vertical', 'none']),
+}) satisfies z.ZodType<GridConfig>;
+
 export const PageSnapshotSchema = z.object({
   page: PageIdSchema,
   layouts: BreakpointLayoutsSchema,
   instances: z.array(WidgetInstanceSchema).max(60),
+  grid: GridConfigSchema.optional(),
 });
+
+export const ShareRecordSchema = z.object({
+  id: z.string().min(1).max(80),
+  page: PageIdSchema,
+  url: z.string().url().max(120_000),
+  bytes: z.number().int().nonnegative(),
+  createdAt: z.string(),
+}) satisfies z.ZodType<ShareRecord>;
 
 export const LayoutVersionSchema = z.object({
   version: z.number().int().positive(),

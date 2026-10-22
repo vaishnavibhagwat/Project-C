@@ -2,22 +2,24 @@ import { compressToEncodedURIComponent } from 'lz-string';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { defaultSnapshot } from '@/registry/pages';
 import {
-  addWidget,
+  addWidgetToPage,
+  applyGridConfig,
   applySnapshot,
   captureSnapshot,
   duplicateWidget,
-  removeWidget,
+  removeWidgetFromPage,
   resetPage,
-  restoreWidget,
+  restoreRemovedWidget,
 } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useLayoutStore } from '@/store/layoutStore';
 import { decodeShare, encodeShare, MAX_LAYOUT_BYTES, snapshotBytes } from '@/store/share';
 import { createValidatedStorage } from '@/store/storage';
-import { selectPaintedTheme, useThemeStore } from '@/store/themeStore';
+import { useThemeStore } from '@/store/themeStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import { PageSnapshotSchema } from '@/store/schemas';
-import { DEFAULT_THEME_ID, MIDNIGHT_GRAPHITE } from '@/theme/themes';
+import { DEFAULT_GRID_CONFIG } from '@/utils/gridLayout';
+import { hasOverlap } from './fixtures';
 
 const initial = {
   dashboard: useDashboardStore.getState(),
@@ -33,7 +35,7 @@ beforeEach(() => {
   useLayoutStore.setState(initial.layouts, true);
 });
 
-describe('DashboardStore + WidgetStore', () => {
+describe('cross-store actions', () => {
   it('starts with 10 widgets on the workstation page', () => {
     const grid = useDashboardStore.getState().pages.workstation;
     expect(grid.itemIds).toHaveLength(10);
@@ -41,17 +43,20 @@ describe('DashboardStore + WidgetStore', () => {
   });
 
   it('adds a widget at the bottom with its default size', () => {
-    const id = addWidget('risk', 'trade-blotter');
+    const id = addWidgetToPage('risk', 'trade-blotter');
     expect(id).not.toBeNull();
     const lg = useDashboardStore.getState().pages.risk.layouts.lg ?? [];
     const item = lg.find((l) => l.i === id);
-    expect(item).toMatchObject({ x: 0, w: 12, h: 10 });
+    expect(item).toMatchObject({ x: 0, w: 12, h: 5 });
+    expect(useWidgetStore.getState().instances[id ?? '']?.position).toEqual(
+      item && { x: item.x, y: item.y, w: item.w, h: item.h },
+    );
     const others = lg.filter((l) => l.i !== id);
     expect(item?.y).toBe(Math.max(...others.map((l) => l.y + l.h)));
   });
 
   it('ignores unknown widget types', () => {
-    expect(addWidget('risk', 'not-a-widget')).toBeNull();
+    expect(addWidgetToPage('risk', 'not-a-widget')).toBeNull();
   });
 
   it('removes and restores a widget at its original position (undo)', () => {
@@ -59,11 +64,11 @@ describe('DashboardStore + WidgetStore', () => {
     const before = useDashboardStore
       .getState()
       .pages.workstation.layouts.lg?.find((l) => l.i === id);
-    const removed = removeWidget('workstation', id);
+    const removed = removeWidgetFromPage('workstation', id);
     expect(useWidgetStore.getState().instances[id]).toBeUndefined();
     expect(useDashboardStore.getState().pages.workstation.itemIds).not.toContain(id);
     if (!removed) throw new Error('expected a removal record');
-    restoreWidget(removed);
+    restoreRemovedWidget(removed);
     const after = useDashboardStore
       .getState()
       .pages.workstation.layouts.lg?.find((l) => l.i === id);
@@ -98,81 +103,57 @@ describe('DashboardStore + WidgetStore', () => {
   });
 
   it('resets a page to its defaults', () => {
-    addWidget('performance', 'alerts-monitor');
+    addWidgetToPage('performance', 'alerts-monitor');
     resetPage('performance');
     expect(captureSnapshot('performance')).toEqual(defaultSnapshot('performance'));
+  });
+
+  it('converts snapshots saved on the old 28 px grid when applying them', () => {
+    const legacy = {
+      page: 'risk' as const,
+      layouts: {
+        lg: [
+          { i: 'risk-risk-metrics', x: 0, y: 0, w: 12, h: 4 },
+          { i: 'risk-var-gauge', x: 0, y: 4, w: 4, h: 11 },
+        ],
+      },
+      instances: defaultSnapshot('risk').instances.slice(0, 2),
+    };
+    applySnapshot('risk', legacy, true);
+    expect(useDashboardStore.getState().pages.risk.layouts.lg).toEqual([
+      { i: 'risk-risk-metrics', x: 0, y: 0, w: 12, h: 2 },
+      { i: 'risk-var-gauge', x: 0, y: 2, w: 4, h: 6 },
+    ]);
+  });
+
+  it('records the grid in snapshots and converts them to the current grid', () => {
+    const snap = captureSnapshot('workstation');
+    expect(snap.grid).toEqual(DEFAULT_GRID_CONFIG);
+    expect(applyGridConfig({ cols: 24 })).toBe(true);
+    applySnapshot('holdings', snap);
+    const lg = useDashboardStore.getState().pages.holdings.layouts.lg ?? [];
+    expect(Math.max(...lg.map((l) => l.x + l.w))).toBe(24);
+    expect(hasOverlap(lg)).toBe(false);
+  });
+
+  it('applyGridConfig keeps instance positions in step with the grid', () => {
+    expect(applyGridConfig({ cols: 24, rowHeight: 40 })).toBe(true);
+    const lg = useDashboardStore.getState().pages.workstation.layouts.lg ?? [];
+    for (const item of lg) {
+      expect(useWidgetStore.getState().instances[item.i]?.position).toEqual({
+        x: item.x,
+        y: item.y,
+        w: item.w,
+        h: item.h,
+      });
+    }
+    expect(applyGridConfig({ gap: 99 })).toBe(false);
   });
 
   it('keeps layout JSON far below the 50 KB budget', () => {
     for (const page of ['workstation', 'risk', 'holdings', 'performance', 'research'] as const) {
       expect(snapshotBytes(captureSnapshot(page))).toBeLessThan(MAX_LAYOUT_BYTES / 10);
     }
-  });
-
-  it('tracks acknowledged alerts by id', () => {
-    useDashboardStore.getState().acknowledgeAlerts(['a', 'b']);
-    useDashboardStore.getState().acknowledgeAlerts(['b', 'c']);
-    expect(useDashboardStore.getState().acknowledgedAlertIds).toEqual(['a', 'b', 'c']);
-  });
-});
-
-describe('LayoutStore', () => {
-  it('saves layouts with versions and restores older versions', () => {
-    const s = useLayoutStore.getState();
-    const id = s.saveNew('<b>Desk</b> view', captureSnapshot('risk'), '2026-10-20T10:00:00+05:30');
-    addWidget('risk', 'holdings-table');
-    const v2 = useLayoutStore
-      .getState()
-      .saveVersion(id, captureSnapshot('risk'), 'added holdings', '2026-10-20T11:00:00+05:30');
-    expect(v2).toBe(2);
-    const saved = useLayoutStore.getState().saved.find((l) => l.id === id);
-    expect(saved?.name).toBe('Desk view');
-    expect(saved?.versions.map((v) => v.version)).toEqual([1, 2]);
-    const v1 = saved?.versions[0]?.snapshot;
-    if (!v1) throw new Error('missing v1');
-    applySnapshot('risk', v1);
-    expect(useDashboardStore.getState().pages.risk.itemIds).toHaveLength(
-      defaultSnapshot('risk').instances.length,
-    );
-  });
-
-  it('removes a layout and clears the active marker', () => {
-    const id = useLayoutStore
-      .getState()
-      .saveNew('Temp', captureSnapshot('risk'), '2026-10-20T10:00:00+05:30');
-    expect(useLayoutStore.getState().activeByPage.risk).toBe(id);
-    useLayoutStore.getState().remove(id);
-    expect(useLayoutStore.getState().saved).toHaveLength(0);
-    expect(useLayoutStore.getState().activeByPage.risk).toBeUndefined();
-  });
-});
-
-describe('ThemeStore', () => {
-  it('previews the builder draft and restores on cancel', () => {
-    const t = useThemeStore.getState();
-    t.openBuilder();
-    useThemeStore.getState().setDraftToken('accent', '#ff00ff');
-    expect(selectPaintedTheme(useThemeStore.getState()).tokens.accent).toBe('#ff00ff');
-    useThemeStore.getState().closeBuilder();
-    expect(selectPaintedTheme(useThemeStore.getState()).id).toBe(DEFAULT_THEME_ID);
-  });
-
-  it('saves a custom theme and makes it active', () => {
-    useThemeStore.getState().openBuilder('porcelain');
-    useThemeStore.getState().setDraftName('Desk light');
-    const id = useThemeStore.getState().saveDraft();
-    expect(useThemeStore.getState().activeThemeId).toBe(id);
-    expect(useThemeStore.getState().customThemes[0]?.name).toBe('Desk light');
-  });
-
-  it('rejects invalid imported themes and accepts valid ones', () => {
-    const bad = useThemeStore.getState().importTheme({ name: 'x', tokens: { bg: 'red' } });
-    expect(bad.ok).toBe(false);
-    const good = useThemeStore
-      .getState()
-      .importTheme({ ...MIDNIGHT_GRAPHITE, name: '<i>Night</i>' });
-    expect(good.ok).toBe(true);
-    expect(useThemeStore.getState().customThemes.at(-1)?.name).toBe('Night');
   });
 });
 

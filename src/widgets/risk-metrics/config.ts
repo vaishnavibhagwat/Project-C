@@ -13,8 +13,8 @@ export const riskMetricsDefinition: WidgetDefinition<RiskMetricsConfig, RiskMetr
   description:
     'Sharpe, Sortino, volatility, drawdown, beta, tracking error and more, computed from simulated daily NAV returns.',
   category: WidgetCategory.ANALYSIS,
-  defaultSize: { w: 12, h: 4 },
-  minSize: { w: 3, h: 4 },
+  defaultSize: { w: 12, h: 2 },
+  minSize: { w: 3, h: 2 },
   configSchema: {
     type: 'object',
     properties: {

@@ -20,8 +20,8 @@ export const holdingsTreemapDefinition: WidgetDefinition<
   description:
     'Equity holdings sized by market value and coloured by day change or unrealised P&L. D3 squarified treemap.',
   category: WidgetCategory.ANALYSIS,
-  defaultSize: { w: 6, h: 10 },
-  minSize: { w: 3, h: 6 },
+  defaultSize: { w: 6, h: 5 },
+  minSize: { w: 3, h: 3 },
   configSchema: {
     type: 'object',
     properties: {

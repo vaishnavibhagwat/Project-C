@@ -19,8 +19,8 @@ export const assetAllocationDefinition: WidgetDefinition<
   description:
     'Allocation by asset class (whole fund) or by sector (equity sleeve). Weights always sum to 100%.',
   category: WidgetCategory.CHART,
-  defaultSize: { w: 3, h: 10 },
-  minSize: { w: 3, h: 7 },
+  defaultSize: { w: 3, h: 5 },
+  minSize: { w: 3, h: 4 },
   configSchema: {
     type: 'object',
     properties: {

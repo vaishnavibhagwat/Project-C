@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { endpointUrl } from '@/data/api';
 import { defaultSnapshot } from '@/registry/pages';
 import {
-  addWidget,
+  addWidgetToPage,
   applySnapshot,
   canAddWidget,
   duplicateWidget,
@@ -135,10 +135,10 @@ describe('per-page widget limit', () => {
 
   it('refuses to add or duplicate beyond the limit', () => {
     while (canAddWidget('research')) {
-      expect(addWidget('research', 'alerts-monitor')).not.toBeNull();
+      expect(addWidgetToPage('research', 'alerts-monitor')).not.toBeNull();
     }
     expect(widgetCount('research')).toBe(MAX_WIDGETS_PER_PAGE);
-    expect(addWidget('research', 'alerts-monitor')).toBeNull();
+    expect(addWidgetToPage('research', 'alerts-monitor')).toBeNull();
     const first = useDashboardStore.getState().pages.research.itemIds[0] ?? '';
     expect(duplicateWidget('research', first)).toBeNull();
     expect(widgetCount('research')).toBe(MAX_WIDGETS_PER_PAGE);
@@ -150,9 +150,9 @@ describe('per-page widget limit', () => {
     if (!template) throw new Error('no instances');
     const instances = Array.from({ length: MAX_WIDGETS_PER_PAGE + 5 }, (_, i) => ({
       ...template,
-      id: `bulk-${i}`,
+      instanceId: `bulk-${i}`,
     }));
-    const lg = instances.map((inst, i) => ({ i: inst.id, x: 0, y: i * 4, w: 4, h: 4 }));
+    const lg = instances.map((inst, i) => ({ i: inst.instanceId, x: 0, y: i * 4, w: 4, h: 4 }));
     const result = applySnapshot('research', { page: 'research', layouts: { lg }, instances });
     expect(result).toEqual({ applied: MAX_WIDGETS_PER_PAGE, dropped: 5 });
     expect(widgetCount('research')).toBe(MAX_WIDGETS_PER_PAGE);

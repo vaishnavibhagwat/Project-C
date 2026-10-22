@@ -23,8 +23,8 @@ export const Empty: Story = {};
 function WithSavedLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const s = useLayoutStore.getState();
-    if (!s.saved.some((l) => l.name === 'Morning desk')) {
-      const id = s.saveNew(
+    if (!s.savedLayouts.some((l) => l.name === 'Morning desk')) {
+      const id = s.saveLayout(
         'Morning desk',
         captureSnapshot('workstation'),
         '2026-10-20T09:10:00+05:30',

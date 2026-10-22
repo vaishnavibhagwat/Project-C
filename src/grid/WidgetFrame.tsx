@@ -34,8 +34,8 @@ import { widgetRegistry } from '@/registry/registry';
 import {
   duplicateWidget,
   MAX_WIDGETS_PER_PAGE,
-  removeWidget,
-  restoreWidget,
+  removeWidgetFromPage,
+  restoreRemovedWidget,
 } from '@/store/actions';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { PageId, WidgetConfig, WidgetInstance } from '@/types';
@@ -104,11 +104,11 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   }, [refetch]);
 
   const onRemove = useCallback(() => {
-    const removed = removeWidget(page, instanceId);
+    const removed = removeWidgetFromPage(page, instanceId);
     if (removed) {
       notify({
         message: `Removed “${title}”`,
-        action: { label: 'Undo', onClick: () => restoreWidget(removed) },
+        action: { label: 'Undo', onClick: () => restoreRemovedWidget(removed) },
       });
     }
   }, [instanceId, title, notify, page]);
@@ -308,7 +308,7 @@ function UnknownWidget({ page, instance }: { page: PageId; instance: WidgetInsta
         message={`Widget type “${instance?.widgetId ?? 'unknown'}” is not installed in this build.`}
         action={
           instance ? (
-            <Button size="sm" onClick={() => removeWidget(page, instance.instanceId)}>
+            <Button size="sm" onClick={() => removeWidgetFromPage(page, instance.instanceId)}>
               Remove from page
             </Button>
           ) : undefined

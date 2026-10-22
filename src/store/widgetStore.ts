@@ -4,6 +4,7 @@ import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
 import type { GridPosition, PageId, WidgetConfig, WidgetInstance } from '@/types';
 import { defaultSnapshot } from '@/registry/pages';
+import { convertPosition, DEFAULT_GRID_CONFIG, LEGACY_GRID_CONFIG } from '@/utils/gridLayout';
 import { PAGE_IDS, WidgetInstanceSchema } from './schemas';
 import { createId, createValidatedStorage, devtoolsEnabled } from './storage';
 
@@ -49,6 +50,24 @@ const PersistedSchema = z.object({
   instances: z.record(z.string(), WidgetInstanceSchema),
 });
 type Persisted = z.infer<typeof PersistedSchema>;
+
+/**
+ * Persisted state from an older version. Version 1 positions were on 28 px rows; convert them
+ * to the default 60 px grid (DashboardStore converts the layouts the same way).
+ */
+export function migrateWidgetState(persisted: unknown, version: number): Persisted | null {
+  const parsed = PersistedSchema.safeParse(persisted);
+  if (!parsed.success) return null;
+  if (version >= 2) return parsed.data;
+  const instances: Persisted['instances'] = {};
+  for (const [id, instance] of Object.entries(parsed.data.instances)) {
+    instances[id] = {
+      ...instance,
+      position: convertPosition(instance.position, LEGACY_GRID_CONFIG, DEFAULT_GRID_CONFIG),
+    };
+  }
+  return { instances };
+}
 
 export const useWidgetStore = create<WidgetState>()(
   devtools(
@@ -133,9 +152,11 @@ export const useWidgetStore = create<WidgetState>()(
       })),
       {
         name: 'meridian:widgets',
-        version: 1,
+        version: 2,
         storage: createValidatedStorage<Persisted>(PersistedSchema),
         partialize: (s): Persisted => ({ instances: s.instances }),
+        migrate: (persisted, version): Persisted =>
+          migrateWidgetState(persisted, version) ?? { instances: defaultInstances() },
       },
     ),
     { name: 'WidgetStore', enabled: devtoolsEnabled },

@@ -148,7 +148,7 @@ describe('AppShell', () => {
       target: { value: 'Morning desk' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Save' }));
-    expect(useLayoutStore.getState().saved[0]?.name).toBe('Morning desk');
+    expect(useLayoutStore.getState().savedLayouts[0]?.name).toBe('Morning desk');
     expect(screen.getByText('Morning desk')).toBeInTheDocument();
     expect(screen.getByText(/KB of 50 KB budget/)).toBeInTheDocument();
   });
