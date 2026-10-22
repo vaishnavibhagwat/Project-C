@@ -25,3 +25,7 @@ npm-debug.log*
 .idea
 .DS_Store
 Thumbs.db
+
+# Python bytecode (scripts/measure-perf.py)
+__pycache__/
+*.pyc
