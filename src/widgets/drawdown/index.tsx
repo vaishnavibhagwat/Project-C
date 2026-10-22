@@ -22,7 +22,6 @@ import {
   GRID_STROKE,
 } from '@/components/charts';
 import { Segmented } from '@/components/FormControls';
-import { useWidgetStore } from '@/store/widgetStore';
 import { cssColor } from '@/theme/themes';
 import type { WidgetComponentProps } from '@/types';
 import { formatPct } from '@/utils/format';
@@ -60,12 +59,11 @@ function DrawdownTooltip({
 }
 
 function Drawdown({
-  instanceId,
+  onConfigChange,
   data,
   config,
   width,
 }: WidgetComponentProps<DrawdownConfig, DrawdownData>) {
-  const updateConfig = useWidgetStore((s) => s.updateConfig);
   const model = useMemo(() => buildDrawdown(data, config), [data, config]);
   const points = useMemo(() => {
     const sampled = downsample(model.points, chartPointBudget(width));
@@ -79,8 +77,8 @@ function Drawdown({
   }, [model, width]);
   const byDate = useMemo(() => new Map(points.map((p) => [p.date, p])), [points]);
   const setRange = useCallback(
-    (range: DrawdownRange) => updateConfig(instanceId, { range }),
-    [instanceId, updateConfig],
+    (range: DrawdownRange) => onConfigChange({ range }),
+    [onConfigChange],
   );
 
   return (

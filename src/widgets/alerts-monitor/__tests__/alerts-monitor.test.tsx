@@ -4,6 +4,7 @@ import { widgetProps } from '@/__tests__/render';
 import { alertsMonitorDefinition, summarizeAlerts } from '../config';
 import AlertsMonitor from '../index';
 import { filterAlerts } from '../model';
+import type { AlertsMonitorConfig } from '../types';
 import { configuredConfig, fixtureData } from './index';
 
 describe('AlertsMonitor', () => {
@@ -22,11 +23,12 @@ describe('AlertsMonitor', () => {
   });
 
   it('shows an all-clear message when nothing matches', () => {
-    render(
-      <AlertsMonitor
-        {...widgetProps({ ...defaults, source: 'Settlement', minSeverity: 'critical' }, data)}
-      />,
-    );
+    const config: AlertsMonitorConfig = {
+      ...defaults,
+      source: 'Settlement',
+      minSeverity: 'critical',
+    };
+    render(<AlertsMonitor {...widgetProps(config, data)} />);
     expect(screen.getByText('No alerts at this severity')).toBeInTheDocument();
   });
 

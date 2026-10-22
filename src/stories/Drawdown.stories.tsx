@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { drawdownDefinition } from '@/widgets/drawdown/config';
 import Drawdown from '@/widgets/drawdown/index';
 import { configuredConfig, fixtureData } from '@/widgets/drawdown/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-drawdown',
     config: drawdownDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 720,
     height: 300,
   },

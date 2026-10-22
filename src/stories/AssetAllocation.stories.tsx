@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { assetAllocationDefinition } from '@/widgets/asset-allocation/config';
 import AssetAllocation from '@/widgets/asset-allocation/index';
 import { configuredConfig, fixtureData } from '@/widgets/asset-allocation/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-asset-allocation',
     config: assetAllocationDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 380,
     height: 360,
   },

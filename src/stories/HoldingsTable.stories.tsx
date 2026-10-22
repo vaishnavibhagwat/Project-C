@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { holdingsTableDefinition } from '@/widgets/holdings-table/config';
 import HoldingsTable from '@/widgets/holdings-table/index';
 import { configuredConfig, fixtureData } from '@/widgets/holdings-table/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-holdings-table',
     config: holdingsTableDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 960,
     height: 400,
   },

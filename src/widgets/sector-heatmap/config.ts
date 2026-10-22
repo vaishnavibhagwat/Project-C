@@ -52,7 +52,12 @@ export const sectorHeatmapDefinition: WidgetDefinition<SectorHeatmapConfig, Sect
   defaultConfig: { days: '10', sortBy: 'weight', showValues: true, capPct: 2 },
   component: lazy(() => import('./index')),
   icon: IconHeatmap,
-  dataSource: { endpoint: 'market/sector-returns', refreshIntervalMs: 15_000 },
+  dataSource: {
+    endpoint: 'market/sector-returns',
+    wsChannel: 'market.sectors',
+    refreshInterval: 15_000,
+    latencyProfile: 'normal',
+  },
 };
 
 export function summarizeHeatmap(data: SectorHeatmapData, config: SectorHeatmapConfig): string {

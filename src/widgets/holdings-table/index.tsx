@@ -5,7 +5,6 @@ import { Delta } from '@/components/Delta';
 import { IconSearch } from '@/components/Icons';
 import { EmptyState } from '@/components/StateViews';
 import { useSymbolDetail } from '@/hooks/useSymbolDetail';
-import { useWidgetStore } from '@/store/widgetStore';
 import type { WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
 import { formatInr, formatInrCompact, formatNumber } from '@/utils/format';
@@ -84,12 +83,11 @@ function Cell({ col, h }: { col: Column; h: Holding }) {
 }
 
 function HoldingsTable({
-  instanceId,
+  onConfigChange,
   data,
   config,
   width,
 }: WidgetComponentProps<HoldingsTableConfig, HoldingsTableData>) {
-  const updateConfig = useWidgetStore((s) => s.updateConfig);
   const detail = useSymbolDetail();
   const [query, setQuery] = useState('');
   const rows = useMemo(
@@ -108,10 +106,10 @@ function HoldingsTable({
   const onSort = useCallback(
     (key: HoldingSortKey) => {
       if (config.sortBy === key)
-        updateConfig(instanceId, { sortDir: config.sortDir === 'asc' ? 'desc' : 'asc' });
-      else updateConfig(instanceId, { sortBy: key, sortDir: key === 'symbol' ? 'asc' : 'desc' });
+        onConfigChange({ sortDir: config.sortDir === 'asc' ? 'desc' : 'asc' });
+      else onConfigChange({ sortBy: key, sortDir: key === 'symbol' ? 'asc' : 'desc' });
     },
-    [config.sortBy, config.sortDir, instanceId, updateConfig],
+    [config.sortBy, config.sortDir, onConfigChange],
   );
 
   return (

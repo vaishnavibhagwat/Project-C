@@ -16,12 +16,30 @@ export interface GridSize {
   h: number;
 }
 
-/** Describes where a widget gets its data and how often it should refresh. */
+/** Placement of a widget on the desktop (lg) grid, in grid units. */
+export interface GridPosition {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Simulated network latency class of an endpoint (scales VITE_API_LATENCY_MS). */
+export type LatencyProfile = 'low' | 'normal' | 'high';
+
+/** Describes where a widget gets its data and how often it refreshes. */
 export interface DataSourceConfig {
   /** Mock API endpoint served from the shared dataset. */
   endpoint: EndpointId;
-  /** Poll interval. Data older than 2x this value is flagged as stale. */
-  refreshIntervalMs: number;
+  /**
+   * Channel the widget would subscribe to on a live WebSocket feed (VITE_WS_URL). Reserved: the
+   * simulated feed is polled, so no socket is opened in mock mode.
+   */
+  wsChannel?: string;
+  /** Poll interval in milliseconds. Data older than 2x this value is flagged as stale. */
+  refreshInterval: number;
+  /** Simulated latency class: low ≈ 0.4x, normal 1x, high ≈ 2.5x the configured latency. */
+  latencyProfile: LatencyProfile;
 }
 
 /** Props every widget component receives from its frame. */
@@ -29,6 +47,16 @@ export interface WidgetComponentProps<TConfig, TData> {
   instanceId: string;
   config: TConfig;
   data: TData;
+  /** True while a refresh is in flight (the widget is showing the previous data). */
+  isLoading: boolean;
+  /** Last refresh error while previous data is still shown, otherwise null. */
+  error: Error | null;
+  /** True when data is older than 2x the widget's refresh interval. */
+  isStale: boolean;
+  /** When the data was last refreshed, as an IST ISO timestamp; null before the first load. */
+  lastUpdated: string | null;
+  /** Persist a change to this widget's settings (e.g. an in-widget range toggle). */
+  onConfigChange: (patch: Partial<TConfig>) => void;
   /** Size of the widget body in pixels, measured by the frame. */
   width: number;
   height: number;
@@ -54,14 +82,18 @@ export interface WidgetDefinition<TConfig, TData> {
   dataSource: DataSourceConfig;
 }
 
-/** Plain JSON object used for persisted widget configuration. */
+/** Plain JSON values allowed in persisted widget configuration. */
 export type ConfigValue = string | number | boolean;
 export type WidgetConfig = Record<string, ConfigValue>;
 
-/** A placed widget on a page. Only settings are persisted, never datasets. */
+/** A placed widget. Only settings and placement are persisted, never datasets. */
 export interface WidgetInstance {
-  id: string;
-  type: string;
-  title: string;
+  instanceId: string;
+  /** Registry id of the widget type (WidgetDefinition.id). */
+  widgetId: string;
   config: WidgetConfig;
+  /** Desktop (lg) placement; other breakpoints live in DashboardStore. */
+  position: GridPosition;
+  /** Optional user-chosen title; the widget's name is shown when absent. */
+  title?: string;
 }

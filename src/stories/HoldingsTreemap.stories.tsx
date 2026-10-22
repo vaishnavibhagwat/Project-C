@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { holdingsTreemapDefinition } from '@/widgets/holdings-treemap/config';
 import HoldingsTreemap from '@/widgets/holdings-treemap/index';
 import { configuredConfig, fixtureData } from '@/widgets/holdings-treemap/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-holdings-treemap',
     config: holdingsTreemapDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 720,
     height: 360,
   },

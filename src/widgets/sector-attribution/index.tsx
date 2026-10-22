@@ -15,7 +15,6 @@ import { Delta } from '@/components/Delta';
 import { Segmented } from '@/components/FormControls';
 import { InfoTooltip } from '@/components/Tooltip';
 import type { AttributionRow } from '@/data/schemas';
-import { useWidgetStore } from '@/store/widgetStore';
 import { cssColor } from '@/theme/themes';
 import type { WidgetComponentProps } from '@/types';
 import { formatPct } from '@/utils/format';
@@ -63,22 +62,18 @@ function AttributionTooltip({
 }
 
 function SectorAttribution({
-  instanceId,
+  onConfigChange,
   data,
   config,
   width,
 }: WidgetComponentProps<SectorAttributionConfig, SectorAttributionData>) {
-  const updateConfig = useWidgetStore((s) => s.updateConfig);
   const period = useMemo(
     () => data.periods.find((p) => p.period === config.period) ?? data.periods[0],
     [data, config.period],
   );
   const rows = useMemo(() => period?.rows ?? [], [period]);
   const bySector = useMemo(() => new Map(rows.map((r) => [r.sector, r])), [rows]);
-  const setPeriod = useCallback(
-    (p: Period) => updateConfig(instanceId, { period: p }),
-    [instanceId, updateConfig],
-  );
+  const setPeriod = useCallback((p: Period) => onConfigChange({ period: p }), [onConfigChange]);
   const showTable = config.showTable && width >= 900;
   if (!period) return null;
   // Percent units, like the row effects; bp() converts percent to basis points.

@@ -41,7 +41,12 @@ export const portfolioOverviewDefinition: WidgetDefinition<
   defaultConfig: { currency: 'INR', showReturns: true, showBenchmark: true },
   component: lazy(() => import('./index')),
   icon: IconTiles,
-  dataSource: { endpoint: 'portfolio/summary', refreshIntervalMs: 5000 },
+  dataSource: {
+    endpoint: 'portfolio/summary',
+    wsChannel: 'portfolio.summary',
+    refreshInterval: 5000,
+    latencyProfile: 'low',
+  },
 };
 
 export function summarizePortfolioOverview(d: PortfolioOverviewData): string {

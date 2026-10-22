@@ -1,4 +1,4 @@
-import type { EndpointId } from '@/types';
+import type { EndpointId, LatencyProfile } from '@/types';
 import { env } from '@/utils/env';
 import { isConnected } from './connection';
 import { getDataset } from './dataset';
@@ -22,9 +22,18 @@ export class ApiError extends Error {
   override readonly name = 'ApiError';
 }
 
+/** Latency multipliers for DataSourceConfig.latencyProfile. */
+export const LATENCY_MULTIPLIER: Record<LatencyProfile, number> = {
+  low: 0.4,
+  normal: 1,
+  high: 2.5,
+};
+
 export interface FetchOptions {
   signal?: AbortSignal;
+  /** Base latency before the profile multiplier (defaults to VITE_API_LATENCY_MS). */
   latencyMs?: number;
+  latencyProfile?: LatencyProfile;
   errorRate?: number;
   now?: () => number;
 }
@@ -93,7 +102,10 @@ export async function fetchEndpoint<E extends EndpointId>(
   endpoint: E,
   options: FetchOptions = {},
 ): Promise<EndpointDataMap[E]> {
-  const latency = options.latencyMs ?? env.VITE_API_LATENCY_MS;
+  const latency = Math.round(
+    (options.latencyMs ?? env.VITE_API_LATENCY_MS) *
+      LATENCY_MULTIPLIER[options.latencyProfile ?? 'normal'],
+  );
   const errorRate = options.errorRate ?? env.VITE_MOCK_ERROR_RATE;
   const jitter = latency > 0 ? Math.round(latency * 0.5 * Math.random()) : 0;
   await wait(latency + jitter, options.signal);

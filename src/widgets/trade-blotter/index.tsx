@@ -4,7 +4,6 @@ import { virtuosoTableComponents } from '@/components/charts';
 import { Badge } from '@/components/Delta';
 import { Segmented } from '@/components/FormControls';
 import { EmptyState } from '@/components/StateViews';
-import { useWidgetStore } from '@/store/widgetStore';
 import type { WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
 import { formatInrCompact, formatNumber } from '@/utils/format';
@@ -19,18 +18,14 @@ const TABLE_PARTS = virtuosoTableComponents<Trade>();
 const STATUS_TONE = { Filled: 'accent', Settling: 'warning', Settled: 'neutral' } as const;
 
 function TradeBlotter({
-  instanceId,
+  onConfigChange,
   data,
   config,
   width,
 }: WidgetComponentProps<TradeBlotterConfig, TradeBlotterData>) {
-  const updateConfig = useWidgetStore((s) => s.updateConfig);
   const rows = useMemo(() => filterTrades(data.trades, config), [data.trades, config]);
   const f = useMemo(() => flows(rows), [rows]);
-  const setSide = useCallback(
-    (side: Side) => updateConfig(instanceId, { side }),
-    [instanceId, updateConfig],
-  );
+  const setSide = useCallback((side: Side) => onConfigChange({ side }), [onConfigChange]);
   const wide = width >= 640;
 
   const header = (

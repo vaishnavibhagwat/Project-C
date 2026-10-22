@@ -51,7 +51,12 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
   defaultConfig: { sortBy: 'weightPct', sortDir: 'desc', sector: 'All', showPnl: true },
   component: lazy(() => import('./index')),
   icon: IconTable,
-  dataSource: { endpoint: 'portfolio/holdings', refreshIntervalMs: 5000 },
+  dataSource: {
+    endpoint: 'portfolio/holdings',
+    wsChannel: 'portfolio.positions',
+    refreshInterval: 5000,
+    latencyProfile: 'low',
+  },
 };
 
 export function summarizeHoldings(data: HoldingsTableData, config: HoldingsTableConfig): string {

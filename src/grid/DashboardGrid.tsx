@@ -3,6 +3,7 @@ import { Responsive, type Layout, type Layouts } from 'react-grid-layout';
 import { useShallow } from 'zustand/react/shallow';
 import { useElementSize } from '@/hooks/useElementSize';
 import { getWidget } from '@/registry/registry';
+import { commitLayouts } from '@/store/actions';
 import { GRID_BREAKPOINTS, GRID_COLS, useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { Breakpoint, BreakpointLayouts, GridItemLayout, PageId } from '@/types';
@@ -36,12 +37,11 @@ function sameLayout(
 function DashboardGridImpl({ page }: { page: PageId }) {
   const grid = useDashboardStore((s) => s.pages[page]);
   const locked = useDashboardStore((s) => s.locked);
-  const setLayouts = useDashboardStore((s) => s.setLayouts);
   // Measure the container ourselves (instead of WidthProvider) so the grid first renders at
   // its real width: widgets lay out and render once rather than at a default width and again.
   const [containerRef, { width }] = useElementSize<HTMLDivElement>();
   const types = useWidgetStore(
-    useShallow((s) => grid.itemIds.map((id) => s.instances[id]?.type ?? '')),
+    useShallow((s) => grid.itemIds.map((id) => s.instances[id]?.widgetId ?? '')),
   );
 
   // Apply registry min/max sizes at render time; only x/y/w/h are persisted.
@@ -84,9 +84,9 @@ function DashboardGridImpl({ page }: { page: PageId }) {
         next[bp] = stored;
         if (!sameLayout(grid.layouts[bp], stored)) changed = true;
       }
-      if (changed) setLayouts(page, next);
+      if (changed) commitLayouts(page, next);
     },
-    [grid.layouts, page, setLayouts],
+    [grid.layouts, page],
   );
 
   const children = useMemo(

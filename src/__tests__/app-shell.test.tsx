@@ -167,8 +167,8 @@ describe('AppShell', () => {
     goTo(new URL(url).hash);
     expect(screen.getByText(/Shared layout for/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Apply layout' }));
-    expect(captureSnapshot('research').instances.map((i) => i.type)).toEqual(
-      snapshot.instances.map((i) => i.type),
+    expect(captureSnapshot('research').instances.map((i) => i.widgetId)).toEqual(
+      snapshot.instances.map((i) => i.widgetId),
     );
   });
 

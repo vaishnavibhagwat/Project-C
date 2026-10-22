@@ -1,7 +1,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { createContext, useContext } from 'react';
 import { fetchEndpoint, type EndpointDataMap, type FetchOptions } from '@/data';
-import type { DataSourceConfig, EndpointId } from '@/types';
+import type { DataSourceConfig, EndpointId, LatencyProfile } from '@/types';
 
 export const endpointKey = (endpoint: EndpointId) => ['endpoint', endpoint] as const;
 
@@ -22,16 +22,17 @@ export const EndpointFetcherContext = createContext<EndpointFetcher>(fetchEndpoi
  */
 export function useEndpoint<E extends EndpointId>(
   endpoint: E,
-  refreshIntervalMs: number,
+  refreshInterval: number,
   enabled = true,
+  latencyProfile: LatencyProfile = 'normal',
 ): UseQueryResult<EndpointDataMap[E], Error> {
   const fetcher = useContext(EndpointFetcherContext);
   return useQuery({
     queryKey: endpointKey(endpoint),
-    queryFn: ({ signal }) => fetcher(endpoint, { signal }),
-    refetchInterval: refreshIntervalMs,
+    queryFn: ({ signal }) => fetcher(endpoint, { signal, latencyProfile }),
+    refetchInterval: refreshInterval,
     refetchIntervalInBackground: false,
-    staleTime: refreshIntervalMs / 2,
+    staleTime: refreshInterval / 2,
     // Keep the validated object identity; validation tags objects by identity.
     structuralSharing: false,
     enabled,
@@ -39,5 +40,5 @@ export function useEndpoint<E extends EndpointId>(
 }
 
 export function useDataSource(source: DataSourceConfig, enabled = true) {
-  return useEndpoint(source.endpoint, source.refreshIntervalMs, enabled);
+  return useEndpoint(source.endpoint, source.refreshInterval, enabled, source.latencyProfile);
 }

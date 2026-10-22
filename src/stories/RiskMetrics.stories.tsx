@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { riskMetricsDefinition } from '@/widgets/risk-metrics/config';
 import RiskMetrics from '@/widgets/risk-metrics/index';
 import { configuredConfig, fixtureData } from '@/widgets/risk-metrics/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-risk-metrics',
     config: riskMetricsDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 1000,
     height: 170,
   },

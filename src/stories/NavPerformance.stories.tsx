@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { navPerformanceDefinition } from '@/widgets/nav-performance/config';
 import NavPerformance from '@/widgets/nav-performance/index';
 import { configuredConfig, fixtureData } from '@/widgets/nav-performance/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-nav-performance',
     config: navPerformanceDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 720,
     height: 340,
   },

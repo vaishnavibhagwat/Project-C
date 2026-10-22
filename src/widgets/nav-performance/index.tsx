@@ -21,7 +21,6 @@ import {
 } from '@/components/charts';
 import { Delta } from '@/components/Delta';
 import { Segmented } from '@/components/FormControls';
-import { useWidgetStore } from '@/store/widgetStore';
 import { cssColor } from '@/theme/themes';
 import type { WidgetComponentProps } from '@/types';
 import { formatPct } from '@/utils/format';
@@ -66,12 +65,11 @@ function NavTooltip({
 }
 
 function NavPerformance({
-  instanceId,
+  onConfigChange,
   data,
   config,
   width,
 }: WidgetComponentProps<NavPerformanceConfig, NavPerformanceData>) {
-  const updateConfig = useWidgetStore((s) => s.updateConfig);
   const series = useMemo(() => buildNavSeries(data, config), [data, config]);
   const points = useMemo(
     () => downsample(series.points, chartPointBudget(width)),
@@ -79,10 +77,7 @@ function NavPerformance({
   );
   const byDate = useMemo(() => new Map(points.map((p) => [p.date, p])), [points]);
   const rebased = config.mode === 'rebased';
-  const setRange = useCallback(
-    (range: NavRange) => updateConfig(instanceId, { range }),
-    [instanceId, updateConfig],
-  );
+  const setRange = useCallback((range: NavRange) => onConfigChange({ range }), [onConfigChange]);
   const active = series.portfolioReturn - series.benchmarkReturn;
 
   return (

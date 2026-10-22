@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { varGaugeDefinition } from '@/widgets/var-gauge/config';
 import VarGauge from '@/widgets/var-gauge/index';
 import { configuredConfig, fixtureData } from '@/widgets/var-gauge/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-var-gauge',
     config: varGaugeDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 380,
     height: 420,
   },

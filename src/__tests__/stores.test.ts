@@ -68,7 +68,7 @@ describe('DashboardStore + WidgetStore', () => {
       .getState()
       .pages.workstation.layouts.lg?.find((l) => l.i === id);
     expect(after).toEqual(before);
-    expect(useWidgetStore.getState().instances[id]?.type).toBe('var-gauge');
+    expect(useWidgetStore.getState().instances[id]?.widgetId).toBe('var-gauge');
   });
 
   it('duplicates a widget with its settings', () => {
@@ -85,11 +85,14 @@ describe('DashboardStore + WidgetStore', () => {
     const snap = defaultSnapshot('research');
     applySnapshot('holdings', {
       ...snap,
-      instances: [...snap.instances, { id: 'x', type: 'ghost', title: 'Ghost', config: {} }],
+      instances: [
+        ...snap.instances,
+        { instanceId: 'x', widgetId: 'ghost', config: {}, position: { x: 0, y: 0, w: 4, h: 4 } },
+      ],
     });
     const grid = useDashboardStore.getState().pages.holdings;
     expect(grid.itemIds).toHaveLength(snap.instances.length);
-    const originalIds = new Set(snap.instances.map((i) => i.id));
+    const originalIds = new Set(snap.instances.map((i) => i.instanceId));
     expect(grid.itemIds.some((id) => originalIds.has(id))).toBe(false);
     expect(grid.layouts.lg).toHaveLength(snap.instances.length);
   });

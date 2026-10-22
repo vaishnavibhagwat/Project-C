@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { portfolioOverviewDefinition } from '@/widgets/portfolio-overview/config';
 import PortfolioOverview from '@/widgets/portfolio-overview/index';
 import { configuredConfig, fixtureData } from '@/widgets/portfolio-overview/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-portfolio-overview',
     config: portfolioOverviewDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 1200,
     height: 110,
   },

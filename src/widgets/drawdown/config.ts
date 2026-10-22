@@ -41,7 +41,8 @@ export const drawdownDefinition: WidgetDefinition<DrawdownConfig, DrawdownData> 
   icon: IconAreaChart,
   dataSource: {
     endpoint: 'portfolio/nav-history',
-    refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL,
+    refreshInterval: env.VITE_DATA_REFRESH_INTERVAL,
+    latencyProfile: 'high',
   },
 };
 

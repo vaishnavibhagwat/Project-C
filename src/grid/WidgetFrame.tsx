@@ -38,10 +38,10 @@ import {
   restoreWidget,
 } from '@/store/actions';
 import { useWidgetStore } from '@/store/widgetStore';
-import type { PageId, WidgetInstance } from '@/types';
+import type { PageId, WidgetConfig, WidgetInstance } from '@/types';
 import { cx } from '@/utils/cx';
 import { recordWidgetRender } from '@/utils/perf';
-import { formatIstTime } from '@/utils/time';
+import { formatIstTime, toIstIso } from '@/utils/time';
 
 export const DRAG_HANDLE_CLASS = 'widget-drag-handle';
 export const NO_DRAG_CLASS = 'widget-no-drag';
@@ -68,12 +68,14 @@ interface FrameBodyProps {
 
 function FrameBody({ page, instance, entry }: FrameBodyProps) {
   const { definition } = entry;
-  const refresh = definition.dataSource.refreshIntervalMs;
+  const refresh = definition.dataSource.refreshInterval;
+  const title = instance.title ?? definition.name;
   const query = useDataSource(definition.dataSource);
   const connection = useConnection();
   const now = useNow(5000);
   const [bodyRef, size] = useElementSize<HTMLDivElement>();
   const openSettings = useWidgetStore((s) => s.openSettings);
+  const updateConfig = useWidgetStore((s) => s.updateConfig);
   const notify = useToast();
 
   const { dataUpdatedAt, isPending, isError, error, isFetching, refetch } = query;
@@ -89,31 +91,38 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   );
   const liveSummary = useThrottledValue(summary, 15_000);
   const updated = dataUpdatedAt > 0 ? formatIstTime(dataUpdatedAt) : null;
+  const lastUpdated = dataUpdatedAt > 0 ? toIstIso(dataUpdatedAt) : null;
+  const { instanceId } = instance;
+
+  const onConfigChange = useCallback(
+    (patch: WidgetConfig) => updateConfig(instanceId, patch),
+    [instanceId, updateConfig],
+  );
 
   const onRefresh = useCallback(() => {
     void refetch();
   }, [refetch]);
 
   const onRemove = useCallback(() => {
-    const removed = removeWidget(page, instance.id);
+    const removed = removeWidget(page, instanceId);
     if (removed) {
       notify({
-        message: `Removed “${instance.title}”`,
+        message: `Removed “${title}”`,
         action: { label: 'Undo', onClick: () => restoreWidget(removed) },
       });
     }
-  }, [instance.id, instance.title, notify, page]);
+  }, [instanceId, title, notify, page]);
 
   const onDuplicate = useCallback(() => {
-    if (duplicateWidget(page, instance.id)) {
-      notify({ message: `Duplicated “${instance.title}”`, tone: 'success' });
+    if (duplicateWidget(page, instanceId)) {
+      notify({ message: `Duplicated “${title}”`, tone: 'success' });
     } else {
       notify({
         message: `This page already has the maximum of ${MAX_WIDGETS_PER_PAGE} widgets. Remove one first.`,
         tone: 'error',
       });
     }
-  }, [instance.id, instance.title, notify, page]);
+  }, [instanceId, title, notify, page]);
 
   let body: ReactNode;
   if (disconnected && data === undefined) {
@@ -153,9 +162,14 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
           {size.width > 0 ? (
             <Profiler id={entry.definition.id} onRender={recordWidgetRender}>
               <entry.Render
-                instanceId={instance.id}
+                instanceId={instanceId}
                 config={config}
                 data={data}
+                isLoading={isFetching}
+                error={isError ? error : null}
+                isStale={stale}
+                lastUpdated={lastUpdated}
+                onConfigChange={onConfigChange}
                 width={size.width}
                 height={size.height}
               />
@@ -169,10 +183,10 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   return (
     <section
       role="region"
-      aria-label={instance.title}
+      aria-label={title}
       aria-busy={isFetching}
       data-stale={stale || undefined}
-      data-testid={`widget-${instance.id}`}
+      data-testid={`widget-${instanceId}`}
       className={cx(
         'flex h-full flex-col overflow-hidden rounded border bg-panel',
         stale ? 'border-warn' : 'border-line',
@@ -186,11 +200,11 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
           )}
         >
           <IconDrag size={14} className="shrink-0 text-subtle" />
-          <h2 className="truncate text-xs font-semibold text-fg">{instance.title}</h2>
+          <h2 className="truncate text-xs font-semibold text-fg">{title}</h2>
         </div>
         <div className={cx(NO_DRAG_CLASS, 'flex shrink-0 items-center gap-0.5')}>
           <InfoTooltip
-            label={`About ${instance.title}`}
+            label={`About ${title}`}
             content={
               <>
                 <span className="block font-medium">{definition.name}</span>
@@ -232,23 +246,18 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
             disabled={disconnected}
           />
           <IconButton
-            label={`Configure ${instance.title}`}
+            label={`Configure ${title}`}
             icon={IconSettings}
             size="xs"
-            onClick={() => openSettings(instance.id)}
+            onClick={() => openSettings(instanceId)}
           />
           <IconButton
-            label={`Duplicate ${instance.title}`}
+            label={`Duplicate ${title}`}
             icon={IconCopy}
             size="xs"
             onClick={onDuplicate}
           />
-          <IconButton
-            label={`Remove ${instance.title}`}
-            icon={IconClose}
-            size="xs"
-            onClick={onRemove}
-          />
+          <IconButton label={`Remove ${title}`} icon={IconClose} size="xs" onClick={onRemove} />
         </div>
       </header>
       {data !== undefined && disconnected ? (
@@ -296,10 +305,10 @@ function UnknownWidget({ page, instance }: { page: PageId; instance: WidgetInsta
     >
       <EmptyState
         title="Widget unavailable"
-        message={`Widget type “${instance?.type ?? 'unknown'}” is not installed in this build.`}
+        message={`Widget type “${instance?.widgetId ?? 'unknown'}” is not installed in this build.`}
         action={
           instance ? (
-            <Button size="sm" onClick={() => removeWidget(page, instance.id)}>
+            <Button size="sm" onClick={() => removeWidget(page, instance.instanceId)}>
               Remove from page
             </Button>
           ) : undefined
@@ -318,7 +327,7 @@ export const WidgetFrame = memo(function WidgetFrame({
   instanceId: string;
 }) {
   const instance = useWidgetStore((s) => s.instances[instanceId]);
-  const entry = instance ? getWidget(instance.type) : undefined;
+  const entry = instance ? getWidget(instance.widgetId) : undefined;
   if (!instance || !entry) return <UnknownWidget page={page} instance={instance} />;
   return <FrameBody page={page} instance={instance} entry={entry} />;
 });

@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { alertsMonitorDefinition } from '@/widgets/alerts-monitor/config';
 import AlertsMonitor from '@/widgets/alerts-monitor/index';
 import { configuredConfig, fixtureData } from '@/widgets/alerts-monitor/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-alerts-monitor',
     config: alertsMonitorDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 420,
     height: 380,
   },

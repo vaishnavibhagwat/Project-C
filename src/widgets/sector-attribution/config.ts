@@ -47,7 +47,8 @@ export const sectorAttributionDefinition: WidgetDefinition<
   icon: IconBars,
   dataSource: {
     endpoint: 'performance/attribution',
-    refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL,
+    refreshInterval: env.VITE_DATA_REFRESH_INTERVAL,
+    latencyProfile: 'high',
   },
 };
 

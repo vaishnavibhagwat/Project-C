@@ -1,6 +1,6 @@
-import { memo, useMemo, type ComponentType } from 'react';
+import { memo, useCallback, useMemo, type ComponentType } from 'react';
 import type { ZodType } from 'zod';
-import type { WidgetConfig, WidgetDefinition } from '@/types';
+import type { ConfigValue, WidgetConfig, WidgetDefinition } from '@/types';
 
 /** Skeleton shapes. Each widget picks the one that matches its layout. */
 export type SkeletonVariant =
@@ -15,12 +15,27 @@ export type SkeletonVariant =
   | 'heatmap'
   | 'treemap';
 
+/** WidgetComponentProps with config and data erased; checked at runtime in Render. */
 export interface ErasedWidgetProps {
   instanceId: string;
   config: WidgetConfig;
   data: unknown;
+  isLoading: boolean;
+  error: Error | null;
+  isStale: boolean;
+  lastUpdated: string | null;
+  onConfigChange: (patch: WidgetConfig) => void;
   width: number;
   height: number;
+}
+
+/** Drop keys whose value is undefined, so a Partial<TConfig> patch becomes plain WidgetConfig. */
+function definedEntries(patch: Partial<Record<string, ConfigValue>>): WidgetConfig {
+  const out: WidgetConfig = {};
+  for (const [key, value] of Object.entries(patch)) {
+    if (value !== undefined) out[key] = value;
+  }
+  return out;
 }
 
 /**
@@ -82,10 +97,14 @@ export function registerWidget<TConfig extends WidgetConfig, TData>(
   const isEmpty = options.isEmpty ?? (() => false);
   const resolve = (stored: WidgetConfig) => resolveWith(configParser, defaultConfig, stored);
 
-  function Render({ config, data, ...props }: ErasedWidgetProps) {
+  function Render({ config, data, onConfigChange, ...props }: ErasedWidgetProps) {
     const parsed = useMemo(() => resolve(config), [config]);
+    const onChange = useCallback(
+      (patch: Partial<TConfig>) => onConfigChange(definedEntries(patch)),
+      [onConfigChange],
+    );
     if (!isData(data)) return <InvalidData />;
-    return <Component {...props} config={parsed} data={data} />;
+    return <Component {...props} config={parsed} data={data} onConfigChange={onChange} />;
   }
   Render.displayName = `Widget(${definition.id})`;
 

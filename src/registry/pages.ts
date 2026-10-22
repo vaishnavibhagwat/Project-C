@@ -53,7 +53,7 @@ export function getPageMeta(id: PageId): PageMeta {
   return PAGE_LIST.find((p) => p.id === id) ?? FALLBACK_PAGE;
 }
 
-type Placement = [type: string, x: number, y: number, w: number, h: number, title: string];
+type Placement = [widgetId: string, x: number, y: number, w: number, h: number, title: string];
 
 const PLACEMENTS: Record<PageId, Placement[]> = {
   workstation: [
@@ -98,18 +98,16 @@ const PLACEMENTS: Record<PageId, Placement[]> = {
 /** Factory default snapshot for a page. Instance ids are stable so defaults are idempotent. */
 export function defaultSnapshot(page: PageId): PageSnapshot {
   const placements = PLACEMENTS[page];
-  const instances: WidgetInstance[] = placements.map(([type, , , , , title]) => ({
-    id: `${page}-${type}`,
-    type,
-    title,
+  const instances: WidgetInstance[] = placements.map(([widgetId, x, y, w, h, title]) => ({
+    instanceId: `${page}-${widgetId}`,
+    widgetId,
     config: {},
+    position: { x, y, w, h },
+    title,
   }));
-  const lg: GridItemLayout[] = placements.map(([type, x, y, w, h]) => ({
-    i: `${page}-${type}`,
-    x,
-    y,
-    w,
-    h,
+  const lg: GridItemLayout[] = instances.map(({ instanceId, position }) => ({
+    i: instanceId,
+    ...position,
   }));
   return { page, layouts: { lg }, instances };
 }

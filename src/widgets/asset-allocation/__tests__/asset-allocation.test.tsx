@@ -1,7 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
-import { useWidgetStore } from '@/store/widgetStore';
 import { assetAllocationDefinition, summarizeAllocation } from '../config';
 import AssetAllocation from '../index';
 import { buildSlices, MAX_SECTOR_SLICES } from '../model';
@@ -32,10 +31,10 @@ describe('AssetAllocation', () => {
   });
 
   it('switches breakdown from the in-widget toggle', () => {
-    const id = 'workstation-asset-allocation';
-    render(<AssetAllocation {...widgetProps(defaults, data)} instanceId={id} />);
+    const onConfigChange = vi.fn();
+    render(<AssetAllocation {...widgetProps(defaults, data, 800, 400, onConfigChange)} />);
     fireEvent.click(screen.getByRole('radio', { name: 'Sector' }));
-    expect(useWidgetStore.getState().instances[id]?.config.view).toBe('sector');
+    expect(onConfigChange).toHaveBeenCalledWith({ view: 'sector' });
   });
 
   it('summarises weights', () => {

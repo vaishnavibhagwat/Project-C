@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { researchFeedDefinition } from '@/widgets/research-feed/config';
 import ResearchFeed from '@/widgets/research-feed/index';
 import { configuredConfig, fixtureData } from '@/widgets/research-feed/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-research-feed',
     config: researchFeedDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 640,
     height: 380,
   },

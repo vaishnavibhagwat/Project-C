@@ -127,6 +127,18 @@ describe('WidgetFrame states', () => {
     expect(useDashboardStore.getState().pages.workstation.itemIds).toContain(OVERVIEW);
   });
 
+  it('passes the contract props and persists onConfigChange to the store', async () => {
+    fetchMock.mockResolvedValue(fixture('portfolio/nav-history'));
+    renderWithProviders(
+      <WidgetFrame page="workstation" instanceId="workstation-nav-performance" />,
+    );
+    // First render loads the widget's lazy chunk (Recharts), so allow for a cold import.
+    fireEvent.click(await screen.findByRole('radio', { name: '3Y' }, { timeout: 10_000 }));
+    expect(useWidgetStore.getState().instances['workstation-nav-performance']?.config.range).toBe(
+      '3Y',
+    );
+  }, 15_000);
+
   it('opens settings from the gear icon', () => {
     fetchMock.mockImplementation(never);
     renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />);
@@ -135,9 +147,14 @@ describe('WidgetFrame states', () => {
   });
 
   it('explains when a widget type is not installed', () => {
-    useWidgetStore
-      .getState()
-      .upsertInstances([{ id: 'ghost', type: 'ghost', title: 'Ghost', config: {} }]);
+    useWidgetStore.getState().upsertInstances([
+      {
+        instanceId: 'ghost',
+        widgetId: 'ghost',
+        config: {},
+        position: { x: 0, y: 0, w: 4, h: 4 },
+      },
+    ]);
     renderWithProviders(<WidgetFrame page="workstation" instanceId="ghost" />);
     expect(screen.getByText('Widget unavailable')).toBeInTheDocument();
   });

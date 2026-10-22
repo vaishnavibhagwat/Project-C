@@ -42,7 +42,12 @@ export const alertsMonitorDefinition: WidgetDefinition<AlertsMonitorConfig, Aler
   defaultConfig: { minSeverity: 'info', source: 'ALL', showDetail: true },
   component: lazy(() => import('./index')),
   icon: IconAlert,
-  dataSource: { endpoint: 'alerts/active', refreshIntervalMs: 15_000 },
+  dataSource: {
+    endpoint: 'alerts/active',
+    wsChannel: 'alerts',
+    refreshInterval: 15_000,
+    latencyProfile: 'normal',
+  },
 };
 
 export function summarizeAlerts(data: AlertsMonitorData, config: AlertsMonitorConfig): string {

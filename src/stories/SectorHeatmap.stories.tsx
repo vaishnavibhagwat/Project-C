@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { fn } from '@storybook/test';
 import { sectorHeatmapDefinition } from '@/widgets/sector-heatmap/config';
 import SectorHeatmap from '@/widgets/sector-heatmap/index';
 import { configuredConfig, fixtureData } from '@/widgets/sector-heatmap/__tests__';
@@ -12,6 +13,11 @@ const meta = {
     instanceId: 'story-sector-heatmap',
     config: sectorHeatmapDefinition.defaultConfig,
     data: fixtureData(),
+    isLoading: false,
+    error: null,
+    isStale: false,
+    lastUpdated: '2026-10-20T11:42:00+05:30',
+    onConfigChange: fn(),
     width: 720,
     height: 360,
   },

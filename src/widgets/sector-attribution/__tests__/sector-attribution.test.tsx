@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
-import { useWidgetStore } from '@/store/widgetStore';
 import { sectorAttributionDefinition, summarizeAttribution } from '../config';
 import SectorAttribution from '../index';
 import { configuredConfig, fixtureData } from './index';
@@ -37,10 +36,10 @@ describe('SectorAttribution', () => {
   });
 
   it('changes period from the in-widget toggle', () => {
-    const id = 'performance-sector-attribution';
-    render(<SectorAttribution {...widgetProps(defaults, data)} instanceId={id} />);
+    const onConfigChange = vi.fn();
+    render(<SectorAttribution {...widgetProps(defaults, data, 800, 400, onConfigChange)} />);
     fireEvent.click(screen.getByRole('radio', { name: '6M' }));
-    expect(useWidgetStore.getState().instances[id]?.config.period).toBe('6M');
+    expect(onConfigChange).toHaveBeenCalledWith({ period: '6M' });
   });
 
   it('summarises contributors and detractors', () => {

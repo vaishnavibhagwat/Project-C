@@ -27,7 +27,7 @@ function ConfigForm({ instance, entry, onDone }: ConfigFormProps) {
   const notify = useToast();
   const def = entry.definition;
   const [draft, setDraft] = useState<WidgetConfig>(() => entry.resolveConfig(instance.config));
-  const [title, setTitle] = useState(instance.title);
+  const [title, setTitle] = useState(instance.title ?? def.name);
 
   const errors = useMemo(() => validateConfig(def.configSchema, draft), [draft, def.configSchema]);
   const titleError = sanitizeText(title, 80).length === 0 ? 'Enter a title.' : null;
@@ -36,8 +36,10 @@ function ConfigForm({ instance, entry, onDone }: ConfigFormProps) {
 
   const save = () => {
     if (invalid) return;
-    replaceConfig(instance.id, entry.resolveConfig(draft));
-    renameInstance(instance.id, sanitizeText(title, 80));
+    replaceConfig(instance.instanceId, entry.resolveConfig(draft));
+    // Store a custom title only when it differs from the widget's name.
+    const clean = sanitizeText(title, 80);
+    renameInstance(instance.instanceId, clean === def.name ? undefined : clean);
     onDone();
     notify({ message: 'Widget settings saved', tone: 'success' });
   };
@@ -68,8 +70,8 @@ function ConfigForm({ instance, entry, onDone }: ConfigFormProps) {
         <dd className="num text-fg">GET {endpointUrl(def.dataSource.endpoint)} (simulated)</dd>
         <dt className="text-muted">Refresh</dt>
         <dd className="num text-fg">
-          every {Math.round(def.dataSource.refreshIntervalMs / 1000)}s · stale after{' '}
-          {Math.round((def.dataSource.refreshIntervalMs * 2) / 1000)}s
+          every {Math.round(def.dataSource.refreshInterval / 1000)}s · stale after{' '}
+          {Math.round((def.dataSource.refreshInterval * 2) / 1000)}s
         </dd>
         <dt className="text-muted">Size limits</dt>
         <dd className="num text-fg">
@@ -94,16 +96,23 @@ function ConfigForm({ instance, entry, onDone }: ConfigFormProps) {
 export function ConfigPanel() {
   const instance = useWidgetStore((s) => (s.settingsFor ? s.instances[s.settingsFor] : undefined));
   const closeSettings = useWidgetStore((s) => s.closeSettings);
-  const entry = instance ? getWidget(instance.type) : undefined;
+  const entry = instance ? getWidget(instance.widgetId) : undefined;
   return (
     <Drawer
       open={Boolean(instance && entry)}
       onClose={closeSettings}
-      title={instance ? `Configure · ${instance.title}` : 'Configure'}
+      title={
+        instance ? `Configure · ${instance.title ?? entry?.definition.name ?? ''}` : 'Configure'
+      }
       description={entry?.definition.description}
     >
       {instance && entry ? (
-        <ConfigForm key={instance.id} instance={instance} entry={entry} onDone={closeSettings} />
+        <ConfigForm
+          key={instance.instanceId}
+          instance={instance}
+          entry={entry}
+          onDone={closeSettings}
+        />
       ) : null}
     </Drawer>
   );

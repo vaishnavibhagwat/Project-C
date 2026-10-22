@@ -1,7 +1,6 @@
 import { memo, useCallback, useMemo, useState } from 'react';
 import { Cell, Pie, PieChart, ResponsiveContainer } from 'recharts';
 import { Segmented } from '@/components/FormControls';
-import { useWidgetStore } from '@/store/widgetStore';
 import { seriesColor } from '@/theme/themes';
 import type { WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
@@ -13,23 +12,19 @@ import type { AssetAllocationConfig, AssetAllocationData } from './types';
 type View = AssetAllocationConfig['view'];
 
 function AssetAllocation({
-  instanceId,
+  onConfigChange,
   data,
   config,
   width,
   height,
 }: WidgetComponentProps<AssetAllocationConfig, AssetAllocationData>) {
-  const updateConfig = useWidgetStore((s) => s.updateConfig);
   const slices = useMemo(() => buildSlices(data, config), [data, config]);
   const [hovered, setHovered] = useState<number | null>(null);
   const total =
     config.view === 'asset-class' ? data.totalInr : slices.reduce((s, x) => s + x.valueInr, 0);
   const money = (inr: number) => formatMoneyCompact(inr, config.currency, env.VITE_USD_INR_RATE);
   const side = width > 420 && height < width * 0.9;
-  const setView = useCallback(
-    (view: View) => updateConfig(instanceId, { view }),
-    [instanceId, updateConfig],
-  );
+  const setView = useCallback((view: View) => onConfigChange({ view }), [onConfigChange]);
   const focus = hovered === null ? null : slices[hovered];
 
   return (

@@ -31,7 +31,11 @@ export const riskMetricsDefinition: WidgetDefinition<RiskMetricsConfig, RiskMetr
   defaultConfig: { period: 'full', showDefinitions: true },
   component: lazy(() => import('./index')),
   icon: IconGauge,
-  dataSource: { endpoint: 'risk/metrics', refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL },
+  dataSource: {
+    endpoint: 'risk/metrics',
+    refreshInterval: env.VITE_DATA_REFRESH_INTERVAL,
+    latencyProfile: 'high',
+  },
 };
 
 export function summarizeMetrics(data: RiskMetricsData, config: RiskMetricsConfig): string {

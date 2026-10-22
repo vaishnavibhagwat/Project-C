@@ -49,7 +49,7 @@ export function decodeShare(encoded: string): DecodeResult {
         ...payload.snapshot,
         instances: payload.snapshot.instances.map((i) => ({
           ...i,
-          title: sanitizeText(i.title, 80),
+          title: i.title === undefined ? undefined : sanitizeText(i.title, 80) || undefined,
         })),
       },
     },

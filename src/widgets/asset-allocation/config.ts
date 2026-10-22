@@ -44,7 +44,12 @@ export const assetAllocationDefinition: WidgetDefinition<
   defaultConfig: { view: 'asset-class', currency: 'INR', showLegend: true },
   component: lazy(() => import('./index')),
   icon: IconPie,
-  dataSource: { endpoint: 'portfolio/allocation', refreshIntervalMs: 15_000 },
+  dataSource: {
+    endpoint: 'portfolio/allocation',
+    wsChannel: 'portfolio.positions',
+    refreshInterval: 15_000,
+    latencyProfile: 'normal',
+  },
 };
 
 export function summarizeAllocation(

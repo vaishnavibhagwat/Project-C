@@ -38,7 +38,7 @@ describe('widget registry', () => {
       expect(d.minSize.h).toBeLessThanOrEqual(d.defaultSize.h);
       if (d.maxSize) expect(d.maxSize.w).toBeGreaterThanOrEqual(d.defaultSize.w);
       expect(ENDPOINT_IDS).toContain(d.dataSource.endpoint);
-      expect(d.dataSource.refreshIntervalMs).toBeGreaterThanOrEqual(1000);
+      expect(d.dataSource.refreshInterval).toBeGreaterThanOrEqual(1000);
       // Defaults satisfy both the JSON Schema (form) and the zod parser (runtime).
       expect(validateConfig(d.configSchema, d.defaultConfig)).toEqual({});
       expect(w.resolveConfig({})).toEqual(d.defaultConfig);
@@ -58,7 +58,7 @@ describe('widget registry', () => {
   it('places only registered widgets on default pages', () => {
     for (const page of PAGES) {
       const snap = defaultSnapshot(page.id);
-      for (const i of snap.instances) expect(getWidget(i.type)).toBeDefined();
+      for (const i of snap.instances) expect(getWidget(i.widgetId)).toBeDefined();
       expect(snap.layouts.lg).toHaveLength(snap.instances.length);
     }
   });

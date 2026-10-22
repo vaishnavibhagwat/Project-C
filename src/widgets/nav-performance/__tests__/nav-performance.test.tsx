@@ -1,7 +1,6 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
-import { useWidgetStore } from '@/store/widgetStore';
 import { navPerformanceDefinition, summarizeNav } from '../config';
 import NavPerformance from '../index';
 import { buildNavSeries } from '../model';
@@ -31,11 +30,11 @@ describe('NavPerformance', () => {
     expect(screen.getByRole('radio', { name: '1Y' })).toHaveAttribute('aria-checked', 'true');
   });
 
-  it('persists the selected range to the widget config', () => {
-    const id = 'workstation-nav-performance';
-    render(<NavPerformance {...widgetProps(defaults, data)} instanceId={id} />);
+  it('reports the selected range through onConfigChange', () => {
+    const onConfigChange = vi.fn();
+    render(<NavPerformance {...widgetProps(defaults, data, 800, 400, onConfigChange)} />);
     fireEvent.click(screen.getByRole('radio', { name: '3Y' }));
-    expect(useWidgetStore.getState().instances[id]?.config.range).toBe('3Y');
+    expect(onConfigChange).toHaveBeenCalledWith({ range: '3Y' });
   });
 
   it('summarises active return', () => {

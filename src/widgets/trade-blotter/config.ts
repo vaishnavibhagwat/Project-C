@@ -41,7 +41,12 @@ export const tradeBlotterDefinition: WidgetDefinition<TradeBlotterConfig, TradeB
   defaultConfig: { side: 'ALL', status: 'ALL', showSettlement: true },
   component: lazy(() => import('./index')),
   icon: IconHistory,
-  dataSource: { endpoint: 'trades/blotter', refreshIntervalMs: 5000 },
+  dataSource: {
+    endpoint: 'trades/blotter',
+    wsChannel: 'trades.executions',
+    refreshInterval: 5000,
+    latencyProfile: 'low',
+  },
 };
 
 export function summarizeBlotter(data: TradeBlotterData, config: TradeBlotterConfig): string {

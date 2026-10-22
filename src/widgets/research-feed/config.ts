@@ -38,7 +38,12 @@ export const researchFeedDefinition: WidgetDefinition<ResearchFeedConfig, Resear
   defaultConfig: { sentiment: 'ALL', category: 'ALL', showSummary: true },
   component: lazy(() => import('./index')),
   icon: IconNews,
-  dataSource: { endpoint: 'research/feed', refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL },
+  dataSource: {
+    endpoint: 'research/feed',
+    wsChannel: 'research.notes',
+    refreshInterval: env.VITE_DATA_REFRESH_INTERVAL,
+    latencyProfile: 'normal',
+  },
 };
 
 export function summarizeResearch(data: ResearchFeedData, config: ResearchFeedConfig): string {

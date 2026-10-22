@@ -50,7 +50,12 @@ export const holdingsTreemapDefinition: WidgetDefinition<
   defaultConfig: { groupBy: 'sector', colorBy: 'dayChange', capPct: 3 },
   component: lazy(() => import('./index')),
   icon: IconTreemap,
-  dataSource: { endpoint: 'portfolio/holdings', refreshIntervalMs: 5000 },
+  dataSource: {
+    endpoint: 'portfolio/holdings',
+    wsChannel: 'portfolio.positions',
+    refreshInterval: 5000,
+    latencyProfile: 'low',
+  },
 };
 
 export function summarizeTreemap(data: HoldingsTreemapData, config: HoldingsTreemapConfig): string {

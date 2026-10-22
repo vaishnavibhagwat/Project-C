@@ -116,7 +116,7 @@ export function WidgetMarketplace({
                   {d.defaultSize.w}×{d.defaultSize.h}
                 </dd>
                 <dt>Refresh</dt>
-                <dd className="text-right">{Math.round(d.dataSource.refreshIntervalMs / 1000)}s</dd>
+                <dd className="text-right">{Math.round(d.dataSource.refreshInterval / 1000)}s</dd>
               </dl>
               <Button
                 size="sm"

@@ -1,9 +1,8 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
-import { useWidgetStore } from '@/store/widgetStore';
 import { holdingsTableDefinition, summarizeHoldings } from '../config';
 import HoldingsTable from '../index';
 import { selectHoldings, totals } from '../model';
@@ -58,14 +57,16 @@ describe('HoldingsTable', () => {
   });
 
   it('toggles sort direction from the column header and exposes aria-sort', () => {
-    const id = 'holdings-holdings-table';
+    const onConfigChange = vi.fn();
     render(
-      withViewport(<HoldingsTable {...widgetProps(defaults, data, 1000, 600)} instanceId={id} />),
+      withViewport(<HoldingsTable {...widgetProps(defaults, data, 1000, 600, onConfigChange)} />),
     );
     const header = screen.getByRole('columnheader', { name: /Weight/ });
     expect(header).toHaveAttribute('aria-sort', 'descending');
     fireEvent.click(screen.getByRole('button', { name: /Weight/ }));
-    expect(useWidgetStore.getState().instances[id]?.config.sortDir).toBe('asc');
+    expect(onConfigChange).toHaveBeenCalledWith({ sortDir: 'asc' });
+    fireEvent.click(screen.getByRole('button', { name: /Symbol/ }));
+    expect(onConfigChange).toHaveBeenLastCalledWith({ sortBy: 'symbol', sortDir: 'asc' });
   });
 
   it('summarises value and P&L', () => {

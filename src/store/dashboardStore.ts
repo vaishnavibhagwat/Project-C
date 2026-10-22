@@ -47,7 +47,7 @@ export type DashboardState = DashboardData & DashboardActions;
 
 function defaultGrid(page: PageId): PageGrid {
   const snapshot = defaultSnapshot(page);
-  return { itemIds: snapshot.instances.map((i) => i.id), layouts: snapshot.layouts };
+  return { itemIds: snapshot.instances.map((i) => i.instanceId), layouts: snapshot.layouts };
 }
 
 function defaultPages(): Record<PageId, PageGrid> {

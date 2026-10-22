@@ -59,7 +59,11 @@ export const varGaugeDefinition: WidgetDefinition<VarGaugeConfig, VarGaugeData> 
   },
   component: lazy(() => import('./index')),
   icon: IconShield,
-  dataSource: { endpoint: 'risk/var', refreshIntervalMs: env.VITE_DATA_REFRESH_INTERVAL },
+  dataSource: {
+    endpoint: 'risk/var',
+    refreshInterval: env.VITE_DATA_REFRESH_INTERVAL,
+    latencyProfile: 'high',
+  },
 };
 
 export function summarizeVar(data: VarGaugeData, config: VarGaugeConfig): string {

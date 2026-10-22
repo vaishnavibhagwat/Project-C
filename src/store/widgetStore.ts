@@ -2,26 +2,35 @@ import { z } from 'zod';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { PageId, WidgetConfig, WidgetInstance } from '@/types';
+import type { GridPosition, PageId, WidgetConfig, WidgetInstance } from '@/types';
 import { defaultSnapshot } from '@/registry/pages';
 import { PAGE_IDS, WidgetInstanceSchema } from './schemas';
 import { createId, createValidatedStorage, devtoolsEnabled } from './storage';
 
 interface WidgetData {
+  /** Widget instances keyed by instanceId. */
   instances: Record<string, WidgetInstance>;
   /** Instance whose configuration panel is open (UI state, not persisted). */
   settingsFor: string | null;
 }
 
 interface WidgetActions {
-  createInstance: (type: string, title: string, config?: WidgetConfig) => string;
+  createInstance: (
+    widgetId: string,
+    position: GridPosition,
+    config?: WidgetConfig,
+    title?: string,
+  ) => string;
   upsertInstances: (instances: WidgetInstance[]) => void;
-  updateConfig: (id: string, patch: WidgetConfig) => void;
-  replaceConfig: (id: string, config: WidgetConfig) => void;
-  renameInstance: (id: string, title: string) => void;
-  removeInstances: (ids: string[]) => void;
-  duplicateInstance: (id: string) => string | null;
-  openSettings: (id: string) => void;
+  updateConfig: (instanceId: string, patch: WidgetConfig) => void;
+  replaceConfig: (instanceId: string, config: WidgetConfig) => void;
+  /** Set a custom title, or clear it (undefined) to show the widget's name. */
+  renameInstance: (instanceId: string, title: string | undefined) => void;
+  /** Mirror desktop (lg) grid positions into the instances. */
+  setPositions: (positions: Record<string, GridPosition>) => void;
+  removeInstances: (instanceIds: string[]) => void;
+  duplicateInstance: (instanceId: string, position: GridPosition, title?: string) => string | null;
+  openSettings: (instanceId: string) => void;
   closeSettings: () => void;
 }
 
@@ -30,7 +39,7 @@ export type WidgetState = WidgetData & WidgetActions;
 function defaultInstances(): Record<string, WidgetInstance> {
   const out: Record<string, WidgetInstance> = {};
   for (const page of PAGE_IDS) {
-    for (const instance of defaultSnapshot(page).instances) out[instance.id] = instance;
+    for (const instance of defaultSnapshot(page).instances) out[instance.instanceId] = instance;
   }
   return out;
 }
@@ -47,61 +56,70 @@ export const useWidgetStore = create<WidgetState>()(
         instances: defaultInstances(),
         settingsFor: null,
 
-        createInstance: (type, title, config = {}) => {
-          const id = createId(type);
+        createInstance: (widgetId, position, config = {}, title) => {
+          const instanceId = createId(widgetId);
           set((s) => {
-            s.instances[id] = { id, type, title, config };
+            s.instances[instanceId] = { instanceId, widgetId, config, position, title };
           });
-          return id;
+          return instanceId;
         },
 
         upsertInstances: (instances) =>
           set((s) => {
-            for (const instance of instances) s.instances[instance.id] = instance;
+            for (const instance of instances) s.instances[instance.instanceId] = instance;
           }),
 
-        updateConfig: (id, patch) =>
+        updateConfig: (instanceId, patch) =>
           set((s) => {
-            const instance = s.instances[id];
+            const instance = s.instances[instanceId];
             if (instance) instance.config = { ...instance.config, ...patch };
           }),
 
-        replaceConfig: (id, config) =>
+        replaceConfig: (instanceId, config) =>
           set((s) => {
-            const instance = s.instances[id];
+            const instance = s.instances[instanceId];
             if (instance) instance.config = config;
           }),
 
-        renameInstance: (id, title) =>
+        renameInstance: (instanceId, title) =>
           set((s) => {
-            const instance = s.instances[id];
+            const instance = s.instances[instanceId];
             if (instance) instance.title = title;
           }),
 
-        removeInstances: (ids) =>
+        setPositions: (positions) =>
           set((s) => {
-            for (const id of ids) delete s.instances[id];
-            if (s.settingsFor && ids.includes(s.settingsFor)) s.settingsFor = null;
+            for (const [instanceId, position] of Object.entries(positions)) {
+              const instance = s.instances[instanceId];
+              if (instance) instance.position = position;
+            }
           }),
 
-        duplicateInstance: (id) => {
-          const source = get().instances[id];
+        removeInstances: (instanceIds) =>
+          set((s) => {
+            for (const id of instanceIds) delete s.instances[id];
+            if (s.settingsFor && instanceIds.includes(s.settingsFor)) s.settingsFor = null;
+          }),
+
+        duplicateInstance: (instanceId, position, title) => {
+          const source = get().instances[instanceId];
           if (!source) return null;
-          const copyId = createId(source.type);
+          const copyId = createId(source.widgetId);
           set((s) => {
             s.instances[copyId] = {
-              id: copyId,
-              type: source.type,
-              title: `${source.title} (copy)`.slice(0, 80),
+              instanceId: copyId,
+              widgetId: source.widgetId,
               config: { ...source.config },
+              position,
+              title,
             };
           });
           return copyId;
         },
 
-        openSettings: (id) =>
+        openSettings: (instanceId) =>
           set((s) => {
-            s.settingsFor = id;
+            s.settingsFor = instanceId;
           }),
 
         closeSettings: () =>

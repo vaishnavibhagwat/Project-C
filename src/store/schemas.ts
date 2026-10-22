@@ -30,12 +30,46 @@ export const BreakpointLayoutsSchema = z.object({
 
 export const ConfigValueSchema = z.union([z.string().max(200), z.number().finite(), z.boolean()]);
 
-export const WidgetInstanceSchema = z.object({
+export const GridPositionSchema = z.object({
+  x: gridInt,
+  y: gridInt,
+  w: z.number().int().min(1).max(24),
+  h: z.number().int().min(1).max(100),
+});
+
+const configRecord = z.record(z.string().max(64), ConfigValueSchema);
+
+const CurrentWidgetInstanceSchema = z.object({
+  instanceId: z.string().min(1).max(64),
+  widgetId: z.string().min(1).max(64),
+  config: configRecord,
+  position: GridPositionSchema,
+  title: z.string().max(80).optional(),
+});
+
+/** Shape used before the spec-aligned WidgetInstance (saved layouts and share links). */
+const LegacyWidgetInstanceSchema = z.object({
   id: z.string().min(1).max(64),
   type: z.string().min(1).max(64),
   title: z.string().max(80),
-  config: z.record(z.string().max(64), ConfigValueSchema),
+  config: configRecord,
 });
+
+/**
+ * Widget instance as persisted or shared. Older data ({ id, type, title, config }) is upgraded
+ * on load; its placeholder position is replaced by the grid layout when the page is shown.
+ */
+export const WidgetInstanceSchema = z.preprocess((raw) => {
+  const legacy = LegacyWidgetInstanceSchema.safeParse(raw);
+  if (!legacy.success) return raw;
+  return {
+    instanceId: legacy.data.id,
+    widgetId: legacy.data.type,
+    config: legacy.data.config,
+    title: legacy.data.title,
+    position: { x: 0, y: 0, w: 4, h: 6 },
+  };
+}, CurrentWidgetInstanceSchema);
 
 export const PageSnapshotSchema = z.object({
   page: PageIdSchema,
