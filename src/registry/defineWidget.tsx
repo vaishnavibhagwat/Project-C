@@ -1,6 +1,11 @@
-import { memo, useCallback, useMemo, type ComponentType } from 'react';
+import { lazy, memo, useCallback, useMemo } from 'react';
 import type { ZodType } from 'zod';
-import type { ConfigValue, WidgetConfig, WidgetDefinition } from '@/types';
+import type {
+  WidgetComponentProps,
+  WidgetComponentType,
+  WidgetConfig,
+  WidgetDefinition,
+} from '@/types';
 
 /** Skeleton shapes. Each widget picks the one that matches its layout. */
 export type SkeletonVariant =
@@ -15,39 +20,13 @@ export type SkeletonVariant =
   | 'heatmap'
   | 'treemap';
 
-/** WidgetComponentProps with config and data erased; checked at runtime in Render. */
-export interface ErasedWidgetProps {
-  instanceId: string;
-  config: WidgetConfig;
-  data: unknown;
-  isLoading: boolean;
-  error: Error | null;
-  isStale: boolean;
-  lastUpdated: string | null;
-  onConfigChange: (patch: WidgetConfig) => void;
-  width: number;
-  height: number;
-}
-
-/** Drop keys whose value is undefined, so a Partial<TConfig> patch becomes plain WidgetConfig. */
-function definedEntries(patch: Partial<Record<string, ConfigValue>>): WidgetConfig {
-  const out: WidgetConfig = {};
-  for (const [key, value] of Object.entries(patch)) {
-    if (value !== undefined) out[key] = value;
-  }
-  return out;
-}
-
 /**
- * Registry entry: the public WidgetDefinition fields plus type-erased helpers the grid uses.
- * Type erasure happens through runtime checks (zod config parsing and a data type guard),
- * so no `any` or unchecked casts are needed to store heterogeneous widgets in one list.
+ * What the app registers: a type-erased WidgetDefinition plus the helpers the grid needs.
+ * `component` checks config (zod) and data (type guard) at runtime before rendering the
+ * widget's own typed component, so widgets with different config and data types can share
+ * one registry without `any` or unchecked casts.
  */
-/** Contract fields minus the typed component (rendered through `Render` instead). */
-export type WidgetMeta = Omit<WidgetDefinition<WidgetConfig, unknown>, 'component'>;
-
-export interface WidgetEntry {
-  definition: WidgetMeta;
+export interface RegisteredWidget extends WidgetDefinition {
   skeleton: SkeletonVariant;
   /** Merge stored settings over defaults; invalid values fall back to defaults. */
   resolveConfig: (stored: WidgetConfig) => WidgetConfig;
@@ -55,10 +34,9 @@ export interface WidgetEntry {
   summarize: (data: unknown, config: WidgetConfig) => string;
   /** Loads the lazy chunk ahead of render (used on hover in the marketplace). */
   preload: () => void;
-  Render: ComponentType<ErasedWidgetProps>;
 }
 
-export interface RegisterOptions<TConfig extends WidgetConfig, TData> {
+export interface DefineWidgetOptions<TConfig extends WidgetConfig, TData> {
   configParser: ZodType<TConfig>;
   isData: (value: unknown) => value is TData;
   isEmpty?: (data: TData) => boolean;
@@ -88,28 +66,46 @@ function InvalidData() {
   return <p className="p-3 text-xs text-neg">Received data in an unexpected shape.</p>;
 }
 
-export function registerWidget<TConfig extends WidgetConfig, TData>(
+/**
+ * Turn a widget's typed definition into the erased RegisteredWidget that goes into the
+ * registry. Called once in each widget's config.ts; registration itself happens in
+ * registry.ts so every widget is validated in one place.
+ */
+export function defineWidget<TConfig extends WidgetConfig, TData>(
   definition: WidgetDefinition<TConfig, TData>,
-  options: RegisterOptions<TConfig, TData>,
-): WidgetEntry {
+  options: DefineWidgetOptions<TConfig, TData>,
+): RegisteredWidget {
   const { component: Component, defaultConfig, ...rest } = definition;
   const { configParser, isData, summarize } = options;
   const isEmpty = options.isEmpty ?? (() => false);
   const resolve = (stored: WidgetConfig) => resolveWith(configParser, defaultConfig, stored);
 
-  function Render({ config, data, onConfigChange, ...props }: ErasedWidgetProps) {
+  function Erased({
+    config,
+    data,
+    onConfigChange,
+    ...props
+  }: WidgetComponentProps<WidgetConfig, unknown>) {
     const parsed = useMemo(() => resolve(config), [config]);
     const onChange = useCallback(
-      (patch: Partial<TConfig>) => onConfigChange(definedEntries(patch)),
+      (patch: Partial<TConfig>) => onConfigChange(patch),
       [onConfigChange],
     );
     if (!isData(data)) return <InvalidData />;
     return <Component {...props} config={parsed} data={data} onConfigChange={onChange} />;
   }
-  Render.displayName = `Widget(${definition.id})`;
+  Erased.displayName = `Widget(${definition.id})`;
+  const ErasedWidget = memo(Erased);
 
   return {
-    definition: { ...rest, defaultConfig },
+    ...rest,
+    defaultConfig,
+    // Still a lazy component, as the contract requires: it resolves once the widget's chunk
+    // has loaded.
+    component: lazy<WidgetComponentType<WidgetConfig, unknown>>(async () => {
+      await options.preload();
+      return { default: ErasedWidget };
+    }),
     skeleton: options.skeleton,
     resolveConfig: resolve,
     isEmpty: (data) => isData(data) && isEmpty(data),
@@ -117,6 +113,5 @@ export function registerWidget<TConfig extends WidgetConfig, TData>(
     preload: () => {
       void options.preload();
     },
-    Render: memo(Render),
   };
 }

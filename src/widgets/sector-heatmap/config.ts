@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconHeatmap } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatPct } from '@/utils/format';
 import { buildHeatModel } from './model';
@@ -70,7 +70,7 @@ export function summarizeHeatmap(data: SectorHeatmapData, config: SectorHeatmapC
   return `${col?.intraday ? 'Live session' : 'Latest session'}: best sector ${best.sector} ${formatPct(best.latest / 100)}, weakest ${worst.sector} ${formatPct(worst.latest / 100)}.`;
 }
 
-export const sectorHeatmapWidget = registerWidget(sectorHeatmapDefinition, {
+export const sectorHeatmapWidget = defineWidget(sectorHeatmapDefinition, {
   configParser: SectorHeatmapConfigSchema,
   isData: isEndpointData('market/sector-returns'),
   isEmpty: (d) => d.cells.length === 0,

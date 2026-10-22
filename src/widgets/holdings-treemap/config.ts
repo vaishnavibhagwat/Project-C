@@ -2,7 +2,7 @@ import { lazy } from 'react';
 import { unrealisedPnLPercent } from '@/utils/holdings';
 import { IconTreemap } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatPct } from '@/utils/format';
 import {
@@ -69,7 +69,7 @@ export function summarizeTreemap(data: HoldingsTreemapData, config: HoldingsTree
   return `${data.holdings.length} holdings. Largest: ${parts.join(', ')}.`;
 }
 
-export const holdingsTreemapWidget = registerWidget(holdingsTreemapDefinition, {
+export const holdingsTreemapWidget = defineWidget(holdingsTreemapDefinition, {
   configParser: HoldingsTreemapConfigSchema,
   isData: isEndpointData('portfolio/holdings'),
   isEmpty: (d) => d.holdings.length === 0,

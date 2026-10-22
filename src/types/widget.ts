@@ -66,8 +66,11 @@ export type WidgetComponentType<TConfig, TData> = ComponentType<
   WidgetComponentProps<TConfig, TData>
 >;
 
-/** The widget contract. Field names are fixed by the assessment brief. */
-export interface WidgetDefinition<TConfig, TData> {
+/**
+ * The widget contract. Field names are fixed by the assessment brief. The defaults describe a
+ * type-erased definition (any widget's settings and data), as stored in the registry.
+ */
+export interface WidgetDefinition<TConfig = WidgetConfig, TData = unknown> {
   id: string;
   name: string;
   description: string;

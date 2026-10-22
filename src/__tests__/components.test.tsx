@@ -10,6 +10,7 @@ import { useToast } from '@/components/Toast';
 import { InfoTooltip } from '@/components/Tooltip';
 import { WidgetSkeleton } from '@/components/WidgetSkeleton';
 import { ConfigPanel } from '@/grid/ConfigPanel';
+import { configErrorsByField, validateWidgetConfig } from '@/registry/configValidator';
 import type { SkeletonVariant } from '@/registry/defineWidget';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { ConfigValue, WidgetConfig } from '@/types';
@@ -40,6 +41,7 @@ describe('SchemaForm', () => {
       <SchemaForm
         schema={schema}
         value={value}
+        errors={configErrorsByField(validateWidgetConfig(value, schema))}
         onChange={(k, v) => {
           onChange(k, v);
           setValue((s) => ({ ...s, [k]: v }));

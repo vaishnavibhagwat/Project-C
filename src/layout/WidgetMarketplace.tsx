@@ -5,7 +5,7 @@ import { SelectField } from '@/components/FormControls';
 import { IconPlus, IconSearch } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
 import { PAGES } from '@/registry/pages';
-import { CATEGORIES, CATEGORY_LABELS, WIDGETS } from '@/registry/registry';
+import { CATEGORIES, CATEGORY_LABELS, widgetRegistry } from '@/registry/registry';
 import { addWidget, MAX_WIDGETS_PER_PAGE } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { PageIdSchema } from '@/store/schemas';
@@ -27,12 +27,13 @@ export function WidgetMarketplace({
 
   const widgets = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return WIDGETS.filter(
+    const pool =
+      category === 'ALL'
+        ? widgetRegistry.getAllWidgets()
+        : widgetRegistry.getWidgetsByCategory(category);
+    return pool.filter(
       (w) =>
-        (category === 'ALL' || w.definition.category === category) &&
-        (q === '' ||
-          w.definition.name.toLowerCase().includes(q) ||
-          w.definition.description.toLowerCase().includes(q)),
+        q === '' || w.name.toLowerCase().includes(q) || w.description.toLowerCase().includes(q),
     );
   }, [query, category]);
 
@@ -45,7 +46,7 @@ export function WidgetMarketplace({
       <div>
         <h1 className="text-lg font-semibold text-fg">Widget Marketplace</h1>
         <p className="text-xs text-muted">
-          {WIDGETS.length} widgets. Every widget loads on demand as its own code chunk.
+          {widgetRegistry.size} widgets. Every widget loads on demand as its own code chunk.
         </p>
       </div>
       <div className="flex flex-wrap items-end gap-3">
@@ -93,11 +94,10 @@ export function WidgetMarketplace({
       </div>
       <ul className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2">
         {widgets.map((w) => {
-          const d = w.definition;
-          const Icon = d.icon;
+          const Icon = w.icon;
           return (
             <li
-              key={d.id}
+              key={w.id}
               className="flex flex-col gap-2 rounded border border-line bg-panel p-3"
               onMouseEnter={w.preload}
               onFocus={w.preload}
@@ -106,17 +106,17 @@ export function WidgetMarketplace({
                 <span className="flex h-7 w-7 items-center justify-center rounded bg-raised text-accent">
                   <Icon />
                 </span>
-                <h2 className="flex-1 text-sm font-semibold text-fg">{d.name}</h2>
-                <Badge>{CATEGORY_LABELS[d.category]}</Badge>
+                <h2 className="flex-1 text-sm font-semibold text-fg">{w.name}</h2>
+                <Badge>{CATEGORY_LABELS[w.category]}</Badge>
               </div>
-              <p className="flex-1 text-xs leading-snug text-muted">{d.description}</p>
+              <p className="flex-1 text-xs leading-snug text-muted">{w.description}</p>
               <dl className="num grid grid-cols-2 gap-x-2 text-2xs text-subtle">
                 <dt>Default size</dt>
                 <dd className="text-right">
-                  {d.defaultSize.w}×{d.defaultSize.h}
+                  {w.defaultSize.w}×{w.defaultSize.h}
                 </dd>
                 <dt>Refresh</dt>
-                <dd className="text-right">{Math.round(d.dataSource.refreshInterval / 1000)}s</dd>
+                <dd className="text-right">{Math.round(w.dataSource.refreshInterval / 1000)}s</dd>
               </dl>
               <Button
                 size="sm"
@@ -124,9 +124,9 @@ export function WidgetMarketplace({
                 disabled={targetFull}
                 title={targetFull ? `${targetMeta?.short ?? target} is full` : undefined}
                 onClick={() => {
-                  if (addWidget(target, d.id)) {
+                  if (addWidget(target, w.id)) {
                     notify({
-                      message: `Added ${d.name} to ${targetMeta?.short ?? target}`,
+                      message: `Added ${w.name} to ${targetMeta?.short ?? target}`,
                       tone: 'success',
                       action: { label: 'View', onClick: () => onOpenPage(target) },
                     });

@@ -1,5 +1,4 @@
 import type { JSONSchema7, JSONSchema7Definition } from 'json-schema';
-import type { ConfigValue, WidgetConfig } from '@/types';
 
 export interface FieldOption {
   value: string;
@@ -71,38 +70,4 @@ export function schemaFields(schema: JSONSchema7): SchemaField[] {
     }
   }
   return fields;
-}
-
-/** Validate one value against its field. Returns an error message or null. */
-export function validateField(field: SchemaField, value: ConfigValue | undefined): string | null {
-  switch (field.kind) {
-    case 'enum':
-      return typeof value === 'string' && field.options.some((o) => o.value === value)
-        ? null
-        : 'Choose one of the listed options.';
-    case 'boolean':
-      return typeof value === 'boolean' ? null : 'Expected on or off.';
-    case 'number': {
-      if (typeof value !== 'number' || !Number.isFinite(value)) return 'Enter a number.';
-      if (field.integer && !Number.isInteger(value)) return 'Enter a whole number.';
-      if (field.min !== undefined && value < field.min) return `Minimum is ${field.min}.`;
-      if (field.max !== undefined && value > field.max) return `Maximum is ${field.max}.`;
-      return null;
-    }
-    case 'string':
-      if (typeof value !== 'string') return 'Enter text.';
-      if (field.maxLength !== undefined && value.length > field.maxLength) {
-        return `At most ${field.maxLength} characters.`;
-      }
-      return null;
-  }
-}
-
-export function validateConfig(schema: JSONSchema7, config: WidgetConfig): Record<string, string> {
-  const errors: Record<string, string> = {};
-  for (const field of schemaFields(schema)) {
-    const error = validateField(field, config[field.key]);
-    if (error) errors[field.key] = error;
-  }
-  return errors;
 }

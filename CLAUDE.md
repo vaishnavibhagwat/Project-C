@@ -25,7 +25,7 @@ src/
   components/   index.ts      design-system primitives (charts/ helpers are NOT in this barrel)
   widgets/      index.ts      one folder per widget:
     <name>/     index.tsx     default-exported, memoised component (lazy chunk)
-                config.ts     WidgetDefinition + registerWidget(...)
+                config.ts     WidgetDefinition + defineWidget(...)
                 types.ts      zod config schema, config and data types
                 __tests__/    index.ts (fixtures) + <name>.test.tsx
   grid/         index.ts      DashboardGrid, WidgetFrame, ConfigPanel
@@ -33,7 +33,7 @@ src/
   theme/        index.ts      tokens, applyTheme, ThemeMenu (ThemeBuilder is lazy, not in barrel)
   data/         index.ts      seeded dataset, market simulation, derive/, zod schemas, mock API
   store/        index.ts      the four Zustand stores, cross-store actions, share links
-  registry/     index.ts      widget registry, default pages
+  registry/     index.ts      WidgetRegistry + singleton, validators, default pages
   hooks/        index.ts
   utils/        index.ts
   types/        index.ts

@@ -141,7 +141,7 @@ src/
   theme/        tokens, applyTheme, theme sync, ThemeMenu, lazy ThemeBuilder, global.css
   data/         seeded dataset, intraday simulation, derivations, zod schemas, mock API
   store/        DashboardStore, WidgetStore, ThemeStore, LayoutStore, cross-store actions, share
-  registry/     registerWidget (contract → registry entry), widget registry, default pages
+  registry/     WidgetRegistry + singleton, definition and config validators, defineWidget, pages
   hooks/        useEndpoint, useElementSize, useNow, useConnection, useHashRoute, ...
   utils/        env (zod), finance maths, IST/NSE calendar, formatting, colour, sanitise
   types/        WidgetDefinition contract, data, layout and theme types
@@ -156,9 +156,11 @@ Every folder has an `index.ts` barrel (widget folders use `index.tsx`).
 - **Widget contract.** Each `config.ts` exports a `WidgetDefinition<TConfig, TData>` with the exact
   fields from the brief (`id`, `name`, `description`, `category`, `defaultSize`, `minSize`,
   `maxSize?`, `configSchema` (JSON Schema 7), `defaultConfig`, `component` (`React.lazy`), `icon`,
-  `dataSource`). `registerWidget` wraps it into a registry entry. The grid stores widgets of
-  different types in one list without `any` or casts: config is checked by the widget's zod
-  schema, and data by a type guard that only accepts objects the API validated.
+  `dataSource`). `defineWidget` wraps it into a registry entry, and the `WidgetRegistry`
+  singleton validates every contract field at registration and rejects duplicate ids. Widgets
+  of different types share one registry without `any` or casts: config is checked by the
+  widget's zod schema (and its JSON Schema in the settings drawer), and data by a type guard
+  that only accepts objects the API validated.
 - **One dataset.** `src/data/dataset.ts` builds a single seeded dataset. Every endpoint derives
   from it plus a deterministic intraday tape, so totals and weights agree across widgets. Tests
   check this, e.g. day P&L in the overview equals the sum over holdings.

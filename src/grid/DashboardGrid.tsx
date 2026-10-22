@@ -2,7 +2,7 @@ import { memo, useCallback, useMemo } from 'react';
 import { Responsive, type Layout, type Layouts } from 'react-grid-layout';
 import { useShallow } from 'zustand/react/shallow';
 import { useElementSize } from '@/hooks/useElementSize';
-import { getWidget } from '@/registry/registry';
+import { widgetRegistry } from '@/registry/registry';
 import { commitLayouts } from '@/store/actions';
 import { GRID_CONFIG, useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
@@ -46,7 +46,7 @@ function DashboardGridImpl({ page }: { page: PageId }) {
   const layouts = useMemo<Layouts>(() => {
     const limits = new Map(
       grid.itemIds.map((id, k) => {
-        const def = getWidget(types[k] ?? '')?.definition;
+        const def = widgetRegistry.getWidget(types[k] ?? '');
         return [id, def] as const;
       }),
     );

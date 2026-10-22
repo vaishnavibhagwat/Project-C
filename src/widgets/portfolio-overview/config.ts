@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { isEndpointData } from '@/data/api';
 import { IconTiles } from '@/components/Icons';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatInrCompact, formatPct, formatUsdCompact } from '@/utils/format';
 import {
@@ -57,7 +57,7 @@ export function summarizePortfolioOverview(d: PortfolioOverviewData): string {
   );
 }
 
-export const portfolioOverviewWidget = registerWidget(portfolioOverviewDefinition, {
+export const portfolioOverviewWidget = defineWidget(portfolioOverviewDefinition, {
   configParser: PortfolioOverviewConfigSchema,
   isData: isEndpointData('portfolio/summary'),
   summarize: summarizePortfolioOverview,

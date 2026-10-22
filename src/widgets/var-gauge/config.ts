@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconShield } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatInrCompact, formatPct } from '@/utils/format';
@@ -75,7 +75,7 @@ export function summarizeVar(data: VarGaugeData, config: VarGaugeConfig): string
   );
 }
 
-export const varGaugeWidget = registerWidget(varGaugeDefinition, {
+export const varGaugeWidget = defineWidget(varGaugeDefinition, {
   configParser: VarGaugeConfigSchema,
   isData: isEndpointData('risk/var'),
   isEmpty: (d) => d.lookbackDays === 0,

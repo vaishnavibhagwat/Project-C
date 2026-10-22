@@ -12,13 +12,11 @@ import { sectorAttributionWidget } from '@/widgets/sector-attribution/config';
 import { sectorHeatmapWidget } from '@/widgets/sector-heatmap/config';
 import { tradeBlotterWidget } from '@/widgets/trade-blotter/config';
 import { varGaugeWidget } from '@/widgets/var-gauge/config';
-import type { WidgetEntry } from './defineWidget';
+import type { RegisteredWidget } from './defineWidget';
+import { WidgetRegistry } from './WidgetRegistry';
 
-/**
- * The widget registry. Only definitions live here (small); every component is a lazy chunk
- * that loads the first time a widget of that type is rendered.
- */
-export const WIDGETS: readonly WidgetEntry[] = [
+/** Built-in widgets, in marketplace order. */
+const BUILT_IN_WIDGETS: readonly RegisteredWidget[] = [
   portfolioOverviewWidget,
   navPerformanceWidget,
   assetAllocationWidget,
@@ -34,10 +32,21 @@ export const WIDGETS: readonly WidgetEntry[] = [
   holdingsTreemapWidget,
 ];
 
-const BY_ID = new Map(WIDGETS.map((w) => [w.definition.id, w]));
+/**
+ * The app's widget registry. Only definitions live here (small); every component is a lazy
+ * chunk that loads the first time a widget of that type is rendered.
+ */
+export const widgetRegistry = new WidgetRegistry<RegisteredWidget>();
 
-export function getWidget(type: string): WidgetEntry | undefined {
-  return BY_ID.get(type);
+for (const widget of BUILT_IN_WIDGETS) {
+  try {
+    widgetRegistry.registerWidget(widget);
+  } catch (error) {
+    // Fail loudly in development and tests. In production, skip the broken widget so the rest
+    // of the workstation still loads; its instances show the "unknown widget" fallback.
+    if (import.meta.env.DEV) throw error;
+    console.error(error);
+  }
 }
 
 export const CATEGORY_LABELS: Record<WidgetCategory, string> = {

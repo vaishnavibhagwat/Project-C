@@ -22,7 +22,8 @@ interface WidgetActions {
     title?: string,
   ) => string;
   upsertInstances: (instances: WidgetInstance[]) => void;
-  updateConfig: (instanceId: string, patch: WidgetConfig) => void;
+  /** Merge a settings patch; keys whose value is undefined are left unchanged. */
+  updateConfig: (instanceId: string, patch: Partial<WidgetConfig>) => void;
   replaceConfig: (instanceId: string, config: WidgetConfig) => void;
   /** Set a custom title, or clear it (undefined) to show the widget's name. */
   renameInstance: (instanceId: string, title: string | undefined) => void;
@@ -72,7 +73,10 @@ export const useWidgetStore = create<WidgetState>()(
         updateConfig: (instanceId, patch) =>
           set((s) => {
             const instance = s.instances[instanceId];
-            if (instance) instance.config = { ...instance.config, ...patch };
+            if (!instance) return;
+            for (const [key, value] of Object.entries(patch)) {
+              if (value !== undefined) instance.config[key] = value;
+            }
           }),
 
         replaceConfig: (instanceId, config) =>

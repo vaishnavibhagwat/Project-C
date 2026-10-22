@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconAreaChart } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatPct } from '@/utils/format';
@@ -58,7 +58,7 @@ export function summarizeDrawdown(data: DrawdownData, config: DrawdownConfig): s
   return `Worst drawdown over ${config.range}: ${formatPct(m.maxDepth, 1, false)}${when}${m.troughDate ? recovered : ''}. Currently ${formatPct(m.current, 1, false)} below peak.`;
 }
 
-export const drawdownWidget = registerWidget(drawdownDefinition, {
+export const drawdownWidget = defineWidget(drawdownDefinition, {
   configParser: DrawdownConfigSchema,
   isData: isEndpointData('portfolio/nav-history'),
   isEmpty: (d) => d.points.length < 2,

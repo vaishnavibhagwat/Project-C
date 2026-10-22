@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { contrastRatio, hexToChannels, isHexColor, mixHex } from '@/utils/color';
 import { cx } from '@/utils/cx';
 import { parseEnv } from '@/utils/env';
-import { schemaFields, validateConfig, validateField } from '@/utils/jsonSchema';
+import { schemaFields } from '@/utils/jsonSchema';
 import { sanitizeText } from '@/utils/sanitize';
 
 describe('colour utilities', () => {
@@ -51,19 +51,6 @@ describe('JSON schema config forms', () => {
       { value: '1Y', label: '1 year' },
       { value: '5Y', label: '5Y' },
     ]);
-  });
-
-  it('validates bounds, integers and enums', () => {
-    const [range, , limit, days, note] = schemaFields(schema);
-    if (!range || !limit || !days || !note) throw new Error('fields missing');
-    expect(validateField(range, '3Y')).not.toBeNull();
-    expect(validateField(limit, 9)).toBe('Maximum is 5.');
-    expect(validateField(limit, Number.NaN)).toBe('Enter a number.');
-    expect(validateField(days, 1.5)).toBe('Enter a whole number.');
-    expect(validateField(note, 'long')).not.toBeNull();
-    expect(
-      validateConfig(schema, { range: '1Y', show: true, limit: 2, days: 3, note: 'ok' }),
-    ).toEqual({});
   });
 });
 

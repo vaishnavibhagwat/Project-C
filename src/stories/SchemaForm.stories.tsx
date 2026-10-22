@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
 import { SchemaForm } from '@/components/SchemaForm';
+import { configErrorsByField, validateWidgetConfig } from '@/registry/configValidator';
 import type { WidgetConfig } from '@/types';
 import { navPerformanceDefinition } from '@/widgets/nav-performance/config';
 import { varGaugeDefinition } from '@/widgets/var-gauge/config';
@@ -13,6 +14,7 @@ function SchemaFormHarness({ which }: { which: 'var' | 'nav' }) {
       <SchemaForm
         schema={def.configSchema}
         value={value}
+        errors={configErrorsByField(validateWidgetConfig(value, def.configSchema))}
         onChange={(k, v) => setValue((s) => ({ ...s, [k]: v }))}
       />
       <pre className="num rounded border border-line bg-panel p-2 text-2xs text-muted">

@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconNews } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { filterArticles, titleCase } from './model';
@@ -52,7 +52,7 @@ export function summarizeResearch(data: ResearchFeedData, config: ResearchFeedCo
   return `${articles.length} sample research articles. ${latest ? `Latest: ${latest.headline} (${latest.sentiment}, score ${latest.sentimentScore.toFixed(2)}).` : ''}`;
 }
 
-export const researchFeedWidget = registerWidget(researchFeedDefinition, {
+export const researchFeedWidget = defineWidget(researchFeedDefinition, {
   configParser: ResearchFeedConfigSchema,
   isData: isEndpointData('research/feed'),
   isEmpty: (d) => d.articles.length === 0,

@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconHistory } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatInrCompact } from '@/utils/format';
 import { filterTrades, flows } from './model';
@@ -61,7 +61,7 @@ export function summarizeBlotter(data: TradeBlotterData, config: TradeBlotterCon
   );
 }
 
-export const tradeBlotterWidget = registerWidget(tradeBlotterDefinition, {
+export const tradeBlotterWidget = defineWidget(tradeBlotterDefinition, {
   configParser: TradeBlotterConfigSchema,
   isData: isEndpointData('trades/blotter'),
   isEmpty: (d) => d.trades.length === 0,

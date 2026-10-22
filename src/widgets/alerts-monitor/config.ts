@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconAlert } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { ALERT_TYPE_LABEL, filterAlerts } from './model';
 import {
@@ -58,7 +58,7 @@ export function summarizeAlerts(data: AlertsMonitorData, config: AlertsMonitorCo
   return `${rows.length} active alerts: ${critical} critical, ${warning} warning.${rows[0] ? ` Top: ${rows[0].message}` : ''}`;
 }
 
-export const alertsMonitorWidget = registerWidget(alertsMonitorDefinition, {
+export const alertsMonitorWidget = defineWidget(alertsMonitorDefinition, {
   configParser: AlertsMonitorConfigSchema,
   isData: isEndpointData('alerts/active'),
   summarize: summarizeAlerts,

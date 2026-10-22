@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconPie } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { buildSlices } from './model';
 import {
@@ -61,7 +61,7 @@ export function summarizeAllocation(
   return `${config.view === 'sector' ? 'Equity sector' : 'Asset class'} allocation: ${parts}.`;
 }
 
-export const assetAllocationWidget = registerWidget(assetAllocationDefinition, {
+export const assetAllocationWidget = defineWidget(assetAllocationDefinition, {
   configParser: AssetAllocationConfigSchema,
   isData: isEndpointData('portfolio/allocation'),
   isEmpty: (d) => d.assetClasses.length === 0,

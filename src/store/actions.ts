@@ -7,7 +7,7 @@ import type {
   PageSnapshot,
   WidgetInstance,
 } from '@/types';
-import { getWidget } from '@/registry/registry';
+import { widgetRegistry } from '@/registry/registry';
 import { defaultSnapshot } from '@/registry/pages';
 import { env } from '@/utils/env';
 import { bottomOf, useDashboardStore } from './dashboardStore';
@@ -46,9 +46,9 @@ function toPosition(item: GridItemLayout): GridPosition {
 
 /** Add a widget at the bottom of a page. Returns null for unknown types or a full page. */
 export function addWidget(page: PageId, widgetId: string): string | null {
-  const entry = getWidget(widgetId);
+  const entry = widgetRegistry.getWidget(widgetId);
   if (!entry || !canAddWidget(page)) return null;
-  const { defaultSize } = entry.definition;
+  const { defaultSize } = entry;
   const position = nextPosition(page, defaultSize.w, defaultSize.h);
   const instanceId = useWidgetStore.getState().createInstance(widgetId, position, {});
   useDashboardStore.getState().addItem(page, { i: instanceId, ...position });
@@ -101,9 +101,9 @@ export function duplicateWidget(page: PageId, instanceId: string): string | null
   const sourceItem = useDashboardStore
     .getState()
     .pages[page].layouts.lg?.find((l) => l.i === instanceId);
-  const size = getWidget(source.widgetId)?.definition.defaultSize;
+  const size = widgetRegistry.getWidget(source.widgetId)?.defaultSize;
   const position = nextPosition(page, sourceItem?.w ?? size?.w ?? 4, sourceItem?.h ?? size?.h ?? 8);
-  const baseTitle = source.title ?? getWidget(source.widgetId)?.definition.name ?? 'Widget';
+  const baseTitle = source.title ?? widgetRegistry.getWidget(source.widgetId)?.name ?? 'Widget';
   const copyId = useWidgetStore
     .getState()
     .duplicateInstance(instanceId, position, `${baseTitle} (copy)`.slice(0, 80));
@@ -143,7 +143,7 @@ export interface ApplyResult {
  */
 export function applySnapshot(page: PageId, snapshot: PageSnapshot, keepIds = false): ApplyResult {
   const known = snapshot.instances
-    .filter((i) => getWidget(i.widgetId))
+    .filter((i) => widgetRegistry.hasWidget(i.widgetId))
     .slice(0, MAX_WIDGETS_PER_PAGE);
   const idMap = new Map(
     known.map((i) => [i.instanceId, keepIds ? i.instanceId : createId(i.widgetId)]),

@@ -29,8 +29,8 @@ import { useElementSize } from '@/hooks/useElementSize';
 import { useDataSource } from '@/hooks/useEndpoint';
 import { useNow } from '@/hooks/useNow';
 import { useThrottledValue } from '@/hooks/useThrottledValue';
-import type { WidgetEntry } from '@/registry/defineWidget';
-import { getWidget } from '@/registry/registry';
+import type { RegisteredWidget } from '@/registry/defineWidget';
+import { widgetRegistry } from '@/registry/registry';
 import {
   duplicateWidget,
   MAX_WIDGETS_PER_PAGE,
@@ -63,14 +63,14 @@ function errorMessage(error: Error | null): string {
 interface FrameBodyProps {
   page: PageId;
   instance: WidgetInstance;
-  entry: WidgetEntry;
+  entry: RegisteredWidget;
 }
 
 function FrameBody({ page, instance, entry }: FrameBodyProps) {
-  const { definition } = entry;
-  const refresh = definition.dataSource.refreshInterval;
-  const title = instance.title ?? definition.name;
-  const query = useDataSource(definition.dataSource);
+  const Widget = entry.component;
+  const refresh = entry.dataSource.refreshInterval;
+  const title = instance.title ?? entry.name;
+  const query = useDataSource(entry.dataSource);
   const connection = useConnection();
   const now = useNow(5000);
   const [bodyRef, size] = useElementSize<HTMLDivElement>();
@@ -95,7 +95,7 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   const { instanceId } = instance;
 
   const onConfigChange = useCallback(
-    (patch: WidgetConfig) => updateConfig(instanceId, patch),
+    (patch: Partial<WidgetConfig>) => updateConfig(instanceId, patch),
     [instanceId, updateConfig],
   );
 
@@ -160,8 +160,8 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
       >
         <Suspense fallback={<WidgetSkeleton variant={entry.skeleton} />}>
           {size.width > 0 ? (
-            <Profiler id={entry.definition.id} onRender={recordWidgetRender}>
-              <entry.Render
+            <Profiler id={entry.id} onRender={recordWidgetRender}>
+              <Widget
                 instanceId={instanceId}
                 config={config}
                 data={data}
@@ -207,10 +207,10 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
             label={`About ${title}`}
             content={
               <>
-                <span className="block font-medium">{definition.name}</span>
-                <span className="block text-muted">{definition.description}</span>
+                <span className="block font-medium">{entry.name}</span>
+                <span className="block text-muted">{entry.description}</span>
                 <span className="mt-1 block text-2xs text-subtle">
-                  Source GET {endpointUrl(definition.dataSource.endpoint)} · refresh every{' '}
+                  Source GET {endpointUrl(entry.dataSource.endpoint)} · refresh every{' '}
                   {Math.round(refresh / 1000)}s · simulated data
                 </span>
               </>
@@ -327,7 +327,7 @@ export const WidgetFrame = memo(function WidgetFrame({
   instanceId: string;
 }) {
   const instance = useWidgetStore((s) => s.instances[instanceId]);
-  const entry = instance ? getWidget(instance.widgetId) : undefined;
+  const entry = instance ? widgetRegistry.getWidget(instance.widgetId) : undefined;
   if (!instance || !entry) return <UnknownWidget page={page} instance={instance} />;
   return <FrameBody page={page} instance={instance} entry={entry} />;
 });

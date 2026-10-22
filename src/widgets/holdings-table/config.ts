@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconTable } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatInrCompact, formatPct } from '@/utils/format';
 import { selectHoldings, totals } from './model';
@@ -72,7 +72,7 @@ export function summarizeHoldings(data: HoldingsTableData, config: HoldingsTable
   );
 }
 
-export const holdingsTableWidget = registerWidget(holdingsTableDefinition, {
+export const holdingsTableWidget = defineWidget(holdingsTableDefinition, {
   configParser: HoldingsTableConfigSchema,
   isData: isEndpointData('portfolio/holdings'),
   isEmpty: (d) => d.holdings.length === 0,

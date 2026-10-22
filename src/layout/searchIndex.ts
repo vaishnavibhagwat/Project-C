@@ -1,6 +1,6 @@
 import { NIFTY50 } from '@/data/nifty50';
 import { PAGES } from '@/registry/pages';
-import { WIDGETS } from '@/registry/registry';
+import { widgetRegistry } from '@/registry/registry';
 import type { AppRoute } from '@/types';
 
 export type SearchResult =
@@ -47,12 +47,12 @@ export function search(query: string, limit = 12): SearchResult[] {
       hint: 'Go to page',
       route: 'marketplace',
     },
-    ...WIDGETS.map((w) => ({
+    ...widgetRegistry.getAllWidgets().map((w) => ({
       kind: 'widget' as const,
-      id: `widget-${w.definition.id}`,
-      label: w.definition.name,
-      hint: `Add widget · ${w.definition.category}`,
-      type: w.definition.id,
+      id: `widget-${w.id}`,
+      label: w.name,
+      hint: `Add widget · ${w.category}`,
+      type: w.id,
     })),
     ...NIFTY50.map((c) => ({
       kind: 'symbol' as const,

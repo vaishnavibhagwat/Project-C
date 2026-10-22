@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconBars } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatPct } from '@/utils/format';
@@ -69,7 +69,7 @@ export function summarizeAttribution(
   );
 }
 
-export const sectorAttributionWidget = registerWidget(sectorAttributionDefinition, {
+export const sectorAttributionWidget = defineWidget(sectorAttributionDefinition, {
   configParser: SectorAttributionConfigSchema,
   isData: isEndpointData('performance/attribution'),
   isEmpty: (d) => d.periods.length === 0,

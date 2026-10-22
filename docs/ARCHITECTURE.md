@@ -21,8 +21,8 @@
  grid/WidgetFrame.tsx       states (skeleton, error, empty, stale, disconnected), header
         │                   actions, aria-live summary, measured size, useDeferredValue
         ▼
- registry entry.Render      validates config (zod) and data (type guard), then renders the
-        │                   lazy widget component
+ registered component       validates config (zod) and data (type guard), then renders the
+        │                   widget's own lazy component
         ▼
  widgets/<name>/index.tsx   pure presentation of (config, data, width, height)
 ```
@@ -53,9 +53,10 @@ export const varGaugeDefinition: WidgetDefinition<VarGaugeConfig, VarGaugeData> 
 };
 ```
 
-`registerWidget(definition, { configParser, isData, summarize, skeleton, preload })` turns it
-into a `WidgetEntry` that the grid can store alongside other widget types. The widget's types
-are checked at runtime rather than erased with casts:
+`defineWidget(definition, { configParser, isData, summarize, skeleton, preload })` turns it
+into a `RegisteredWidget`: a type-erased `WidgetDefinition` (its `component` is still a
+`React.lazy` component) plus the helpers the grid needs. The widget's types are checked at
+runtime rather than erased with casts:
 
 - **Config**: stored settings are merged over defaults and parsed with the widget's zod schema.
   A value that fails validation falls back to its default, and valid values are kept.
@@ -71,13 +72,41 @@ large-breakpoint grid layout in DashboardStore.
 high ×2.5) so heavy analytics endpoints feel slower than quotes. `wsChannel` is optional and
 reserved: mock mode polls and nothing opens a WebSocket.
 
+### The registry
+
+`WidgetRegistry<T extends WidgetDefinition = WidgetDefinition>` (`src/registry/WidgetRegistry.ts`)
+is a class backed by a `Map<string, T>` with `registerWidget`, `getWidget`, `hasWidget`,
+`getAllWidgets` (registration order), `getWidgetsByCategory`, `unregisterWidget` and
+`validateConfig(id, config)`. The app uses one singleton, `widgetRegistry`, typed with
+`RegisteredWidget` (a `WidgetDefinition` plus grid helpers) and filled in
+`src/registry/registry.ts`. Registration throws:
+
+- `DuplicateWidgetError` when the id is already registered;
+- `InvalidWidgetDefinitionError` (with one line per problem) when `validateWidgetDefinition`
+  rejects the definition. It checks every contract field at runtime: kebab-case id, non-empty
+  name and description, a known category, positive integer sizes with
+  `minSize ≤ defaultSize ≤ maxSize`, a `configSchema` that uses only supported keywords, a
+  `defaultConfig` with exactly one valid default per schema property, a `React.lazy`
+  component, an icon component, and a data source with a known endpoint, a refresh interval of
+  at least 1 s and a latency profile.
+
+In development and tests a bad built-in widget fails start-up loudly; in production it is
+logged and skipped so the rest of the workstation still loads.
+
+`validateWidgetConfig(config, configSchema)` checks settings against a widget's JSON Schema. It
+implements the draft-7 subset widget settings need (`type`, `properties`, `required`,
+`additionalProperties`, `enum`, `const`, `oneOf`, `anyOf`, `allOf`, numeric bounds,
+`multipleOf`, string lengths and `pattern`) and fails closed on any other keyword. Ajv is not
+used because it compiles validators with `new Function`, which the CSP blocks. The settings
+drawer shows these errors next to each field and disables Save while any remain.
+
 ### Adding a widget
 
 1. Create `src/widgets/my-widget/` with `types.ts` (zod config schema + types), `index.tsx`
-   (default-exported, `memo`ised component), `config.ts` (definition + `registerWidget`), an
+   (default-exported, `memo`ised component), `config.ts` (definition + `defineWidget`), an
    optional pure `model.ts`, and `__tests__/` (an `index.ts` with fixtures and a test).
-2. Add the entry to `WIDGETS` in `src/registry/registry.ts` and re-export it from
-   `src/widgets/index.ts`.
+2. Add the result to `BUILT_IN_WIDGETS` in `src/registry/registry.ts` (it is validated and
+   registered there) and re-export it from `src/widgets/index.ts`.
 3. Add `src/stories/MyWidget.stories.tsx` with `Default` and `Configured` stories.
 
 The frame supplies everything else: states, header, settings panel, stale detection,

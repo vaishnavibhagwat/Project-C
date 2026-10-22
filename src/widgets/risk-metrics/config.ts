@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconGauge } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { buildTiles } from './model';
@@ -46,7 +46,7 @@ export function summarizeMetrics(data: RiskMetricsData, config: RiskMetricsConfi
     .concat('.');
 }
 
-export const riskMetricsWidget = registerWidget(riskMetricsDefinition, {
+export const riskMetricsWidget = defineWidget(riskMetricsDefinition, {
   configParser: RiskMetricsConfigSchema,
   isData: isEndpointData('risk/metrics'),
   summarize: summarizeMetrics,

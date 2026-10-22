@@ -1,7 +1,7 @@
 import { lazy } from 'react';
 import { IconLineChart } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
-import { registerWidget } from '@/registry/defineWidget';
+import { defineWidget } from '@/registry/defineWidget';
 import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { directionWord, formatPct } from '@/utils/format';
@@ -59,7 +59,7 @@ export function summarizeNav(data: NavPerformanceData, config: NavPerformanceCon
   );
 }
 
-export const navPerformanceWidget = registerWidget(navPerformanceDefinition, {
+export const navPerformanceWidget = defineWidget(navPerformanceDefinition, {
   configParser: NavPerformanceConfigSchema,
   isData: isEndpointData('portfolio/nav-history'),
   isEmpty: (d) => d.points.length < 2,
