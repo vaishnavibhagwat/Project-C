@@ -28,7 +28,7 @@ src/
                 config.ts     WidgetDefinition + defineWidget(...)
                 types.ts      zod config schema, config and data types
                 __tests__/    index.ts (fixtures) + <name>.test.tsx
-  grid/         index.ts      DashboardGrid, WidgetFrame, ConfigPanel
+  grid/         index.ts      GridContainer, GridItem, GridToolbar, WidgetFrame, ConfigPanel
   layout/       index.ts      AppShell, NavRail, CommandBar, pages, dialogs
   theme/        index.ts      tokens, applyTheme, ThemeMenu (ThemeBuilder is lazy, not in barrel)
   data/         index.ts      seeded dataset, market simulation, derive/, zod schemas, mock API

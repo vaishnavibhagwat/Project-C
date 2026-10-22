@@ -8,15 +8,25 @@ import type {
   GridSize,
 } from '@/types';
 
-/** Minimum container width (px) for each breakpoint. */
+/** Minimum viewport width (px) for each breakpoint, like CSS `min-width` media queries. */
 export const GRID_BREAKPOINTS: Readonly<Record<Breakpoint, number>> = {
-  lg: 1200,
-  md: 960,
-  sm: 640,
-  xs: 0,
+  desktop: 1280,
+  tablet: 768,
+  mobile: 0,
 };
 
-export const BREAKPOINT_KEYS: readonly Breakpoint[] = ['lg', 'md', 'sm', 'xs'];
+/** Widest first. */
+export const BREAKPOINT_KEYS: readonly Breakpoint[] = ['desktop', 'tablet', 'mobile'];
+
+export const BREAKPOINT_LABELS: Readonly<Record<Breakpoint, string>> = {
+  desktop: 'Desktop',
+  tablet: 'Tablet',
+  mobile: 'Mobile',
+};
+
+/** Tablet and mobile column counts are fixed; desktop follows `gridConfig.cols`. */
+export const TABLET_COLS = 6;
+export const MOBILE_COLS = 1;
 
 /** Allowed ranges for the user-adjustable grid settings. */
 export const GRID_LIMITS = {
@@ -41,21 +51,37 @@ export const LEGACY_GRID_CONFIG: Readonly<GridConfig> = {
   compaction: 'vertical',
 };
 
-/** Columns per breakpoint, derived from the desktop column count (12 gives 12/10/6/2). */
+/** Columns per breakpoint: desktop from the settings, tablet 6, mobile 1 (stacked). */
 export function columnsFor(config: GridConfig): Record<Breakpoint, number> {
-  const { cols } = config;
-  return {
-    lg: cols,
-    md: Math.round((cols * 5) / 6),
-    sm: Math.round(cols / 2),
-    xs: Math.max(1, Math.round(cols / 6)),
-  };
+  return { desktop: config.cols, tablet: TABLET_COLS, mobile: MOBILE_COLS };
+}
+
+/** The breakpoint a viewport width falls into. */
+export function breakpointForViewport(viewportWidth: number): Breakpoint {
+  return BREAKPOINT_KEYS.find((bp) => viewportWidth >= GRID_BREAKPOINTS[bp]) ?? 'mobile';
+}
+
+/**
+ * react-grid-layout picks its breakpoint from the grid's own width (width > threshold), but our
+ * breakpoints are viewport widths, and the grid is narrower than the viewport by the nav rail,
+ * padding and scrollbar. So the breakpoint is decided from the viewport (breakpointForViewport)
+ * and these thresholds make react-grid-layout select exactly that one for any grid width. They
+ * keep the desktop > tablet > mobile order it uses to derive a missing layout.
+ */
+export function gridBreakpointsFor(active: Breakpoint): Record<Breakpoint, number> {
+  const NEVER = 1e7;
+  if (active === 'desktop') return { desktop: 2, tablet: 1, mobile: 0 };
+  if (active === 'tablet') return { desktop: 2 * NEVER, tablet: 1, mobile: 0 };
+  return { desktop: 2 * NEVER, tablet: NEVER, mobile: 0 };
 }
 
 /** Props for react-grid-layout's Responsive component. */
-export function responsiveGridProps(config: GridConfig) {
+export function responsiveGridProps(
+  config: GridConfig,
+  breakpoints: Record<Breakpoint, number> = { ...GRID_BREAKPOINTS },
+) {
   return {
-    breakpoints: GRID_BREAKPOINTS,
+    breakpoints,
     cols: columnsFor(config),
     rowHeight: config.rowHeight,
     margin: [config.gap, config.gap] satisfies [number, number],
@@ -155,6 +181,44 @@ export function convertLayouts(
     out[bp] = resolveLayout(converted, to.compaction);
   }
   return out;
+}
+
+/**
+ * First place a w × h item fits without overlapping anything, scanning rows top to bottom and
+ * columns left to right; the bottom-left corner when there is no gap. `w` is clamped to `cols`.
+ */
+export function findFreePosition(
+  layout: readonly GridItemLayout[],
+  w: number,
+  h: number,
+  cols: number,
+): GridPosition {
+  const width = clamp(w, 1, cols);
+  const bottom = bottomOf(layout);
+  for (let y = 0; y < bottom; y += 1) {
+    for (let x = 0; x + width <= cols; x += 1) {
+      const candidate = { i: '', x, y, w: width, h };
+      if (!layout.some((item) => collides(item, candidate))) return { x, y, w: width, h };
+    }
+  }
+  return { x: 0, y: bottom, w: width, h };
+}
+
+/**
+ * A first layout for a narrower breakpoint, derived from a wider one the way react-grid-layout
+ * does: widths are capped at the column count, items are kept inside the grid, and overlaps
+ * are settled in reading order (with one column, that stacks every widget).
+ */
+export function deriveLayout(
+  source: readonly GridItemLayout[],
+  cols: number,
+  compaction: GridCompaction,
+): GridItemLayout[] {
+  const fitted = source.map((item) => {
+    const w = clamp(item.w, 1, cols);
+    return { i: item.i, x: clamp(item.x, 0, cols - w), y: item.y, w, h: item.h };
+  });
+  return resolveLayout(fitted, compaction);
 }
 
 /** Lowest free row in a layout, so new widgets land at the bottom. */

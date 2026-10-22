@@ -8,7 +8,7 @@ const meta = {
   component: PageToolbar,
   args: {
     page: getPageMeta('workstation'),
-    onAddWidget: fn(),
+    onOpenMarketplace: fn(),
     onOpenLayouts: fn(),
     onShare: fn(),
     onReset: fn(),

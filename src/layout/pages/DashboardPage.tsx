@@ -1,5 +1,5 @@
 import { Navigate, useParams } from 'react-router-dom';
-import { DashboardGrid } from '@/grid/DashboardGrid';
+import { GridContainer } from '@/grid/GridContainer';
 import { routePath } from '@/hooks/useAppRoute';
 import { PageIdSchema } from '@/store/schemas';
 import { PortfolioSummaryStrip } from '../PortfolioSummaryStrip';
@@ -16,7 +16,7 @@ export default function DashboardPage() {
   return (
     <>
       {page.data === 'workstation' ? <PortfolioSummaryStrip /> : null}
-      <DashboardGrid key={page.data} page={page.data} />
+      <GridContainer key={page.data} page={page.data} />
     </>
   );
 }

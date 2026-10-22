@@ -13,10 +13,10 @@ import type {
 import { defaultSnapshot } from '@/registry/pages';
 import {
   BREAKPOINT_KEYS,
-  bottomOf,
   columnsFor,
   convertLayouts,
   DEFAULT_GRID_CONFIG,
+  findFreePosition,
   LEGACY_GRID_CONFIG,
   resolveLayout,
 } from '@/utils/gridLayout';
@@ -34,6 +34,8 @@ export type DisplayCurrency = 'INR' | 'USD';
 
 interface DashboardData {
   gridConfig: GridConfig;
+  /** Breakpoint the grid is showing right now (UI state from the grid, not persisted). */
+  activeBreakpoint: Breakpoint;
   pages: Record<PageId, PageGrid>;
   locked: boolean;
   displayCurrency: DisplayCurrency;
@@ -49,12 +51,13 @@ interface DashboardActions {
    */
   setGridConfig: (patch: Partial<GridConfig>) => boolean;
   resetGridConfig: () => void;
+  setActiveBreakpoint: (breakpoint: Breakpoint) => void;
   /** Replace a page's layouts (from react-grid-layout after a drag, resize or breakpoint). */
   setLayouts: (page: PageId, layouts: BreakpointLayouts) => void;
   /**
-   * Place a widget instance on a page. On the desktop (lg) layout it goes to the item's x/y
-   * and overlapping widgets move down; on other breakpoints already laid out it goes to the
-   * bottom. Ignored when the instance is already on the page.
+   * Place a widget instance on a page. On the desktop layout it goes to the item's x/y and
+   * overlapping widgets move down; on tablet and mobile layouts that exist it goes to the first
+   * free position. Ignored when the instance is already on the page.
    */
   addWidget: (page: PageId, item: GridItemLayout) => void;
   removeWidget: (page: PageId, instanceId: string) => void;
@@ -153,6 +156,7 @@ export const useDashboardStore = create<DashboardState>()(
     persist(
       immer((set, get) => ({
         gridConfig: { ...DEFAULT_GRID_CONFIG },
+        activeBreakpoint: 'desktop',
         pages: defaultPages(),
         locked: false,
         displayCurrency: 'INR',
@@ -176,6 +180,11 @@ export const useDashboardStore = create<DashboardState>()(
           get().setGridConfig(DEFAULT_GRID_CONFIG);
         },
 
+        setActiveBreakpoint: (breakpoint) =>
+          set((s) => {
+            s.activeBreakpoint = breakpoint;
+          }),
+
         setLayouts: (page, layouts) =>
           set((s) => {
             s.pages[page].layouts = layouts;
@@ -189,12 +198,12 @@ export const useDashboardStore = create<DashboardState>()(
             const cols = columnsFor(s.gridConfig);
             for (const bp of BREAKPOINT_KEYS) {
               const layout = grid.layouts[bp];
-              if (!layout && bp !== 'lg') continue;
+              if (!layout && bp !== 'desktop') continue;
               const target = layout ?? [];
               const w = clamp(Math.round(item.w), 1, cols[bp]);
               const h = Math.max(1, Math.round(item.h));
               const placed: GridItemLayout =
-                bp === 'lg'
+                bp === 'desktop'
                   ? {
                       i: item.i,
                       x: clamp(Math.round(item.x), 0, cols[bp] - w),
@@ -202,7 +211,7 @@ export const useDashboardStore = create<DashboardState>()(
                       w,
                       h,
                     }
-                  : { i: item.i, x: 0, y: bottomOf(target), w, h };
+                  : { i: item.i, ...findFreePosition(target, w, h, cols[bp]) };
               grid.layouts[bp] = resolveLayout(
                 [...target, placed],
                 s.gridConfig.compaction,
@@ -241,7 +250,7 @@ export const useDashboardStore = create<DashboardState>()(
             }
           }),
 
-        moveWidget: (page, instanceId, to, breakpoint = 'lg') =>
+        moveWidget: (page, instanceId, to, breakpoint = 'desktop') =>
           set((s) => {
             const layout = s.pages[page].layouts[breakpoint];
             const item = layout?.find((l) => l.i === instanceId);
@@ -259,7 +268,7 @@ export const useDashboardStore = create<DashboardState>()(
             );
           }),
 
-        resizeWidget: (page, instanceId, size, breakpoint = 'lg') =>
+        resizeWidget: (page, instanceId, size, breakpoint = 'desktop') =>
           set((s) => {
             const layout = s.pages[page].layouts[breakpoint];
             const item = layout?.find((l) => l.i === instanceId);

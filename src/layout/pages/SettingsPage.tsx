@@ -111,9 +111,9 @@ function GridSettingsForm({ grid }: { grid: GridConfig }) {
         onValueChange={setCompaction}
       />
       <p className="num text-xs text-muted">
-        Columns by screen width: {cols.lg} (≥{GRID_BREAKPOINTS.lg} px) · {cols.md} (≥
-        {GRID_BREAKPOINTS.md} px) · {cols.sm} (≥{GRID_BREAKPOINTS.sm} px) · {cols.xs} (smaller).
-        Applying converts every page so widgets keep their proportions.
+        Desktop (≥{GRID_BREAKPOINTS.desktop} px) {cols.desktop} columns · tablet (≥
+        {GRID_BREAKPOINTS.tablet} px) {cols.tablet} · mobile {cols.mobile}, stacked. Each keeps its
+        own layout. Applying converts every page so widgets keep their proportions.
       </p>
       <div className="flex gap-2">
         <Button type="submit" variant="primary" size="sm" disabled={!valid || !changed}>

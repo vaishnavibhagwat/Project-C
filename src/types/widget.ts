@@ -16,7 +16,7 @@ export interface GridSize {
   h: number;
 }
 
-/** Placement of a widget on the desktop (lg) grid, in grid units. */
+/** Placement of a widget on the desktop grid, in grid units. */
 export interface GridPosition {
   x: number;
   y: number;
@@ -95,7 +95,7 @@ export interface WidgetInstance {
   /** Registry id of the widget type (WidgetDefinition.id). */
   widgetId: string;
   config: WidgetConfig;
-  /** Desktop (lg) placement; other breakpoints live in DashboardStore. */
+  /** Desktop placement; tablet and mobile layouts live in DashboardStore. */
   position: GridPosition;
   /** Optional user-chosen title; the widget's name is shown when absent. */
   title?: string;

@@ -25,8 +25,8 @@ npx lighthouse http://localhost:4173/#/workstation --preset=desktop
 
 | Chunk                         | gzip                            | Notes                                                                                       |
 | ----------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------- |
-| Main entry                    | **113.4 KB**                    | React, React Router, TanStack Query, Zustand, zod, data layer, shell. Budget 150 KB         |
-| Dashboard page                | 30.3 KB                         | Grid, react-grid-layout, frame, summary strip; loads with the first dashboard. Budget 50 KB |
+| Main entry                    | **114.5 KB**                    | React, React Router, TanStack Query, Zustand, zod, data layer, shell. Budget 150 KB         |
+| Dashboard page                | 31.0 KB                         | Grid, react-grid-layout, frame, summary strip; loads with the first dashboard. Budget 50 KB |
 | Settings / Marketplace pages  | 3.2 KB / 1.6 KB                 | Lazy routes                                                                                 |
 | Each widget chunk             | **0.7–2.1 KB**                  | One `React.lazy` chunk per widget. Budget 50 KB                                             |
 | Animation features            | 18.2 KB                         | Framer Motion `domAnimation`, loaded via `LazyMotion` after first paint                     |

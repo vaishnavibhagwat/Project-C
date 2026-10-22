@@ -8,6 +8,7 @@ import {
   type ReactNode,
   type RefObject,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { cx } from '@/utils/cx';
 import { IconCheck, type IconProps } from './Icons';
 
@@ -53,6 +54,26 @@ function isAction(item: DropdownItem): item is ActionItem {
   return item.type === undefined || item.type === 'item';
 }
 
+interface MenuPosition {
+  left?: number;
+  right?: number;
+  top?: number;
+  bottom?: number;
+  maxHeight: number;
+}
+
+/** Below the trigger, or above it when there is clearly more room there. */
+function menuPosition(rect: DOMRect, align: 'start' | 'end'): MenuPosition {
+  const below = window.innerHeight - rect.bottom - 8;
+  const above = rect.top - 8;
+  const horizontal =
+    align === 'end' ? { right: window.innerWidth - rect.right } : { left: rect.left };
+  if (below < 240 && above > below) {
+    return { ...horizontal, bottom: window.innerHeight - rect.top + 4, maxHeight: above - 4 };
+  }
+  return { ...horizontal, top: rect.bottom + 4, maxHeight: below - 4 };
+}
+
 function itemText(item: ActionItem): string {
   return (item.textValue ?? (typeof item.label === 'string' ? item.label : '')).toLowerCase();
 }
@@ -61,12 +82,17 @@ function itemText(item: ActionItem): string {
  * Menu button (WAI-ARIA menu pattern). Opens with click, Enter, Space or the arrow keys;
  * arrows, Home, End and type-ahead move between items; Enter or Space selects; Escape closes
  * and returns focus to the trigger. Disabled items are skipped.
+ *
+ * The menu renders in a portal with fixed positioning, so it is never clipped by a scrolling
+ * or transformed container (grid cells are both). It closes when the page scrolls.
  */
 export function Dropdown({ trigger, items, align = 'start', width = 'w-56' }: DropdownProps) {
   const [open, setOpen] = useState(false);
   const [focusIndex, setFocusIndex] = useState(0);
+  const [position, setPosition] = useState<MenuPosition | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const root = useRef<HTMLDivElement>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const triggerId = useId();
   const menuId = useId();
@@ -78,6 +104,8 @@ export function Dropdown({ trigger, items, align = 'start', width = 'w-56' }: Dr
   const openAt = (position: 'first' | 'last') => {
     const target = position === 'first' ? enabled[0] : enabled[enabled.length - 1];
     setFocusIndex(target?.index ?? 0);
+    const rect = triggerRef.current?.getBoundingClientRect();
+    setPosition(rect ? menuPosition(rect, align) : null);
     setOpen(true);
   };
 
@@ -93,11 +121,26 @@ export function Dropdown({ trigger, items, align = 'start', width = 'w-56' }: Dr
 
   useEffect(() => {
     if (!open) return undefined;
+    const inside = (target: EventTarget | null) =>
+      target instanceof Node &&
+      (root.current?.contains(target) === true || menuRef.current?.contains(target) === true);
     const onPointer = (event: PointerEvent) => {
-      if (event.target instanceof Node && !root.current?.contains(event.target)) setOpen(false);
+      if (!inside(event.target)) setOpen(false);
     };
+    // A fixed menu would drift away from its trigger, so close it when anything scrolls
+    // (except the menu's own list).
+    const onScroll = (event: Event) => {
+      if (!inside(event.target)) setOpen(false);
+    };
+    const onResize = () => setOpen(false);
     document.addEventListener('pointerdown', onPointer);
-    return () => document.removeEventListener('pointerdown', onPointer);
+    window.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      window.removeEventListener('scroll', onScroll, true);
+      window.removeEventListener('resize', onResize);
+    };
   }, [open]);
 
   const move = (delta: number) => {
@@ -129,7 +172,8 @@ export function Dropdown({ trigger, items, align = 'start', width = 'w-56' }: Dr
         close(true);
         return;
       case 'Tab':
-        close(false);
+        // Focus the trigger without preventing the default, so Tab continues from it.
+        close(true);
         return;
       default:
         if (event.key.length === 1 && /\S/.test(event.key)) {
@@ -164,76 +208,84 @@ export function Dropdown({ trigger, items, align = 'start', width = 'w-56' }: Dr
           }
         },
       })}
-      {open ? (
-        <div
-          id={menuId}
-          role="menu"
-          aria-labelledby={triggerId}
-          onKeyDown={onMenuKeyDown}
-          className={cx(
-            'absolute top-full z-40 mt-1 max-h-[70vh] overflow-y-auto rounded-md border border-line-strong bg-panel py-1 shadow-xl scroll-thin',
-            align === 'end' ? 'right-0' : 'left-0',
-            width,
-          )}
-        >
-          {items.map((item) => {
-            if (item.type === 'separator') {
-              return <div key={item.id} role="separator" className="my-1 border-t border-line" />;
-            }
-            if (item.type === 'label') {
-              return (
-                <div
-                  key={item.id}
-                  role="presentation"
-                  className="px-2.5 pb-0.5 pt-1.5 text-2xs font-semibold uppercase tracking-wide text-subtle"
-                >
-                  {item.label}
-                </div>
-              );
-            }
-            const index = actionIndex.get(item.id) ?? -1;
-            const Icon = item.icon;
-            const isChoice = item.checked !== undefined;
-            return (
-              <button
-                key={item.id}
-                ref={(node) => {
-                  itemRefs.current[index] = node;
-                }}
-                type="button"
-                role={isChoice ? 'menuitemradio' : 'menuitem'}
-                aria-checked={isChoice ? item.checked : undefined}
-                aria-disabled={item.disabled || undefined}
-                tabIndex={index === focusIndex ? 0 : -1}
-                onClick={() => select(item)}
-                onPointerMove={() => {
-                  if (!item.disabled && index !== focusIndex) setFocusIndex(index);
-                }}
-                className={cx(
-                  'flex w-full items-start gap-2 px-2.5 py-1.5 text-left text-sm outline-none',
-                  item.disabled
-                    ? 'cursor-not-allowed text-subtle'
-                    : 'text-fg hover:bg-raised focus:bg-raised',
-                )}
-              >
-                <span className="mt-0.5 flex w-3.5 shrink-0 justify-center text-accent">
-                  {item.checked ? (
-                    <IconCheck size={14} />
-                  ) : Icon ? (
-                    <Icon size={14} className="text-muted" />
-                  ) : null}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate">{item.label}</span>
-                  {item.description ? (
-                    <span className="block truncate text-2xs text-subtle">{item.description}</span>
-                  ) : null}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
+      {open
+        ? createPortal(
+            <div
+              ref={menuRef}
+              id={menuId}
+              role="menu"
+              aria-labelledby={triggerId}
+              onKeyDown={onMenuKeyDown}
+              style={{ position: 'fixed', ...position, maxHeight: position?.maxHeight }}
+              className={cx(
+                'z-[60] overflow-y-auto rounded-md border border-line-strong bg-panel py-1 shadow-xl scroll-thin',
+                width,
+              )}
+            >
+              {items.map((item) => {
+                if (item.type === 'separator') {
+                  return (
+                    <div key={item.id} role="separator" className="my-1 border-t border-line" />
+                  );
+                }
+                if (item.type === 'label') {
+                  return (
+                    <div
+                      key={item.id}
+                      role="presentation"
+                      className="px-2.5 pb-0.5 pt-1.5 text-2xs font-semibold uppercase tracking-wide text-subtle"
+                    >
+                      {item.label}
+                    </div>
+                  );
+                }
+                const index = actionIndex.get(item.id) ?? -1;
+                const Icon = item.icon;
+                const isChoice = item.checked !== undefined;
+                return (
+                  <button
+                    key={item.id}
+                    ref={(node) => {
+                      itemRefs.current[index] = node;
+                    }}
+                    type="button"
+                    role={isChoice ? 'menuitemradio' : 'menuitem'}
+                    aria-checked={isChoice ? item.checked : undefined}
+                    aria-disabled={item.disabled || undefined}
+                    tabIndex={index === focusIndex ? 0 : -1}
+                    onClick={() => select(item)}
+                    onPointerMove={() => {
+                      if (!item.disabled && index !== focusIndex) setFocusIndex(index);
+                    }}
+                    className={cx(
+                      'flex w-full items-start gap-2 px-2.5 py-1.5 text-left text-sm outline-none',
+                      item.disabled
+                        ? 'cursor-not-allowed text-subtle'
+                        : 'text-fg hover:bg-raised focus:bg-raised',
+                    )}
+                  >
+                    <span className="mt-0.5 flex w-3.5 shrink-0 justify-center text-accent">
+                      {item.checked ? (
+                        <IconCheck size={14} />
+                      ) : Icon ? (
+                        <Icon size={14} className="text-muted" />
+                      ) : null}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{item.label}</span>
+                      {item.description ? (
+                        <span className="block truncate text-2xs text-subtle">
+                          {item.description}
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

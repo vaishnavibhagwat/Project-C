@@ -164,7 +164,7 @@ describe('AppShell', () => {
     fireEvent.change(cols, { target: { value: '24' } });
     fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
     expect(useDashboardStore.getState().gridConfig.cols).toBe(24);
-    const lg = useDashboardStore.getState().pages.workstation.layouts.lg ?? [];
+    const lg = useDashboardStore.getState().pages.workstation.layouts.desktop ?? [];
     expect(Math.max(...lg.map((l) => l.x + l.w))).toBe(24);
   });
 

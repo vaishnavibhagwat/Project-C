@@ -1,3 +1,6 @@
 export * from './ConfigPanel';
-export * from './DashboardGrid';
+export * from './GridContainer';
+export * from './GridItem';
+export * from './GridToolbar';
+export * from './PlaceholderCard';
 export * from './WidgetFrame';

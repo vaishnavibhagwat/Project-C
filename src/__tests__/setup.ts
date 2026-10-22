@@ -23,6 +23,11 @@ class FixedSizeResizeObserver implements ResizeObserver {
 
 globalThis.ResizeObserver = FixedSizeResizeObserver;
 
+// jsdom does not implement scrolling; every browser has scrollIntoView.
+if (typeof Element.prototype.scrollIntoView !== 'function') {
+  Element.prototype.scrollIntoView = () => undefined;
+}
+
 if (!window.matchMedia) {
   window.matchMedia = (query: string) =>
     ({

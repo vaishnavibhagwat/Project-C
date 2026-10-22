@@ -39,7 +39,7 @@ describe('built-in widget registry', () => {
     for (const page of PAGES) {
       const snap = defaultSnapshot(page.id);
       for (const i of snap.instances) expect(widgetRegistry.hasWidget(i.widgetId)).toBe(true);
-      expect(snap.layouts.lg).toHaveLength(snap.instances.length);
+      expect(snap.layouts.desktop).toHaveLength(snap.instances.length);
     }
   });
 });

@@ -189,7 +189,7 @@ export function AppShell() {
             {onDashboard ? (
               <PageToolbar
                 page={meta}
-                onAddWidget={() => navigate('marketplace', { target: page })}
+                onOpenMarketplace={() => navigate('marketplace', { target: page })}
                 onOpenLayouts={() => setLayoutsOpen(true)}
                 onShare={() => setShareOpen(true)}
                 onReset={() => setResetOpen(true)}

@@ -46,13 +46,13 @@ describe('cross-store actions', () => {
   it('adds a widget at the bottom with its default size', () => {
     const id = addWidgetToPage('risk', 'trade-blotter');
     expect(id).not.toBeNull();
-    const lg = useDashboardStore.getState().pages.risk.layouts.lg ?? [];
-    const item = lg.find((l) => l.i === id);
+    const desktop = useDashboardStore.getState().pages.risk.layouts.desktop ?? [];
+    const item = desktop.find((l) => l.i === id);
     expect(item).toMatchObject({ x: 0, w: 12, h: 5 });
     expect(useWidgetStore.getState().instances[id ?? '']?.position).toEqual(
       item && { x: item.x, y: item.y, w: item.w, h: item.h },
     );
-    const others = lg.filter((l) => l.i !== id);
+    const others = desktop.filter((l) => l.i !== id);
     expect(item?.y).toBe(Math.max(...others.map((l) => l.y + l.h)));
   });
 
@@ -64,7 +64,7 @@ describe('cross-store actions', () => {
     const id = 'workstation-var-gauge';
     const before = useDashboardStore
       .getState()
-      .pages.workstation.layouts.lg?.find((l) => l.i === id);
+      .pages.workstation.layouts.desktop?.find((l) => l.i === id);
     const removed = removeWidgetFromPage('workstation', id);
     expect(useWidgetStore.getState().instances[id]).toBeUndefined();
     expect(useDashboardStore.getState().pages.workstation.itemIds).not.toContain(id);
@@ -72,7 +72,7 @@ describe('cross-store actions', () => {
     restoreRemovedWidget(removed);
     const after = useDashboardStore
       .getState()
-      .pages.workstation.layouts.lg?.find((l) => l.i === id);
+      .pages.workstation.layouts.desktop?.find((l) => l.i === id);
     expect(after).toEqual(before);
     expect(useWidgetStore.getState().instances[id]?.widgetId).toBe('var-gauge');
   });
@@ -100,7 +100,7 @@ describe('cross-store actions', () => {
     expect(grid.itemIds).toHaveLength(snap.instances.length);
     const originalIds = new Set(snap.instances.map((i) => i.instanceId));
     expect(grid.itemIds.some((id) => originalIds.has(id))).toBe(false);
-    expect(grid.layouts.lg).toHaveLength(snap.instances.length);
+    expect(grid.layouts.desktop).toHaveLength(snap.instances.length);
   });
 
   it('resets a page to its defaults', () => {
@@ -110,8 +110,9 @@ describe('cross-store actions', () => {
   });
 
   it('converts snapshots saved on the old 28 px grid when applying them', () => {
-    const legacy = {
-      page: 'risk' as const,
+    // Saved before grid settings and the desktop/tablet/mobile breakpoints: 28 px rows, "lg".
+    const legacy = PageSnapshotSchema.parse({
+      page: 'risk',
       layouts: {
         lg: [
           { i: 'risk-risk-metrics', x: 0, y: 0, w: 12, h: 4 },
@@ -119,9 +120,9 @@ describe('cross-store actions', () => {
         ],
       },
       instances: defaultSnapshot('risk').instances.slice(0, 2),
-    };
+    });
     applySnapshot('risk', legacy, true);
-    expect(useDashboardStore.getState().pages.risk.layouts.lg).toEqual([
+    expect(useDashboardStore.getState().pages.risk.layouts.desktop).toEqual([
       { i: 'risk-risk-metrics', x: 0, y: 0, w: 12, h: 2 },
       { i: 'risk-var-gauge', x: 0, y: 2, w: 4, h: 6 },
     ]);
@@ -132,15 +133,15 @@ describe('cross-store actions', () => {
     expect(snap.grid).toEqual(DEFAULT_GRID_CONFIG);
     expect(applyGridConfig({ cols: 24 })).toBe(true);
     applySnapshot('holdings', snap);
-    const lg = useDashboardStore.getState().pages.holdings.layouts.lg ?? [];
-    expect(Math.max(...lg.map((l) => l.x + l.w))).toBe(24);
-    expect(hasOverlap(lg)).toBe(false);
+    const desktop = useDashboardStore.getState().pages.holdings.layouts.desktop ?? [];
+    expect(Math.max(...desktop.map((l) => l.x + l.w))).toBe(24);
+    expect(hasOverlap(desktop)).toBe(false);
   });
 
   it('applyGridConfig keeps instance positions in step with the grid', () => {
     expect(applyGridConfig({ cols: 24, rowHeight: 40 })).toBe(true);
-    const lg = useDashboardStore.getState().pages.workstation.layouts.lg ?? [];
-    for (const item of lg) {
+    const desktop = useDashboardStore.getState().pages.workstation.layouts.desktop ?? [];
+    for (const item of desktop) {
       expect(useWidgetStore.getState().instances[item.i]?.position).toEqual({
         x: item.x,
         y: item.y,

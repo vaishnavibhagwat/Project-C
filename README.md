@@ -99,6 +99,12 @@ they load.
 NSE session pill (IST), last refresh time, a `SIMULATED DATA` label, theme menu, notifications
 and profile menu.
 
+**Grid**: react-grid-layout with three breakpoints, each with its own stored layout: desktop
+≥ 1280 px (12 columns by default, configurable 6–24), tablet 768–1279 px (6 columns) and mobile
+< 768 px (1 column, stacked). Widgets push each other and never overlap; vertical compaction
+can be switched off from the grid toolbar. **Add widget** drops an empty slot at the next free
+position, which becomes any widget from its **Choose widget** menu.
+
 **Workstation features**: drag and resize (react-grid-layout, responsive breakpoints), lock
 layout (`L`), global search for pages, widgets, Nifty 50 symbols and commands (`Ctrl/⌘+K` or `/`),
 symbol detail, saved layouts with version history and restore, JSON export/import, compressed
@@ -150,7 +156,7 @@ src/
   components/   primitives: Button, IconButton, Tooltip, Badge, Tabs, Toggle, Dropdown, overlays, forms
     charts/     chart helpers used only inside lazy widget chunks (not in the main barrel)
   widgets/      one folder per widget: index.tsx, config.ts, types.ts, model.ts, __tests__/
-  grid/         DashboardGrid (react-grid-layout), WidgetFrame (states + header), ConfigPanel
+  grid/         GridContainer, GridItem, GridToolbar, PlaceholderCard, WidgetFrame, ConfigPanel
   layout/       AppRoutes, AppShell, NavRail, CommandBar, dialogs; pages/ (lazy routed pages)
   theme/        tokens (spacing, radii, type), themes, applyTheme, ThemeMenu, lazy ThemeBuilder
   data/         seeded dataset, intraday simulation, derivations, zod schemas, mock API
@@ -205,8 +211,8 @@ have not been re-measured since.
 
 | Target (brief)                  | Result                                                                                                                                                                                                     |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Main bundle < 150 KB gzip       | **113.4 KB** gzip (`npm run analyze`, 22 Oct)                                                                                                                                                              |
-| Widget chunk < 50 KB gzip       | Widget chunks **0.7–2.1 KB**; largest lazy chunk 30.3 KB (dashboard page: grid, react-grid-layout, summary strip). Shared Recharts vendor chunk is **137.3 KB** gzip, loaded on first chart                |
+| Main bundle < 150 KB gzip       | **114.5 KB** gzip (`npm run analyze`, 22 Oct)                                                                                                                                                              |
+| Widget chunk < 50 KB gzip       | Widget chunks **0.7–2.1 KB**; largest lazy chunk 31.0 KB (dashboard page: grid, react-grid-layout, summary strip). Shared Recharts vendor chunk is **137.3 KB** gzip, loaded on first chart                |
 | Initial load < 2 s              | **1.07–1.22 s** until all 10 widgets showed data (median 1.12 s over 5 runs, local preview server; 21 Oct, previous Workstation layout)                                                                    |
 | Drag > 55 FPS                   | **~60 FPS** during a widget drag (p95 frame 16.8 ms)                                                                                                                                                       |
 | Theme change < 100 ms, no flash | **37–96 ms** click to next paint (first switch on 5 fresh loads); transitions are suspended for the switch                                                                                                 |

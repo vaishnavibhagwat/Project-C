@@ -6,7 +6,7 @@ import { GRID_LIMITS } from '@/utils/gridLayout';
 
 export const PAGE_IDS = ['workstation', 'risk', 'holdings', 'performance', 'research'] as const;
 export const PageIdSchema = z.enum(PAGE_IDS);
-export const BreakpointSchema = z.enum(['lg', 'md', 'sm', 'xs']);
+export const BreakpointSchema = z.enum(['desktop', 'tablet', 'mobile']);
 
 const gridInt = z.number().int().min(0).max(500);
 
@@ -22,12 +22,24 @@ export const GridItemSchema = z.object({
   maxH: z.number().int().min(1).max(100).optional(),
 });
 
-export const BreakpointLayoutsSchema = z.object({
-  lg: z.array(GridItemSchema).max(60).optional(),
-  md: z.array(GridItemSchema).max(60).optional(),
-  sm: z.array(GridItemSchema).max(60).optional(),
-  xs: z.array(GridItemSchema).max(60).optional(),
-});
+const layoutList = z.array(GridItemSchema).max(60).optional();
+
+/**
+ * Layouts per breakpoint. Data saved before the desktop/tablet/mobile breakpoints used
+ * lg/md/sm/xs: lg becomes desktop and sm (6 columns, like tablet) becomes tablet. md (10
+ * columns) and xs (2 columns) are dropped; the grid regenerates missing layouts from desktop.
+ */
+export const BreakpointLayoutsSchema = z.preprocess(
+  (raw) => {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return raw;
+    if ('desktop' in raw || 'tablet' in raw || 'mobile' in raw) return raw;
+    const legacy: Record<string, unknown> = {};
+    if ('lg' in raw) legacy.desktop = raw.lg;
+    if ('sm' in raw) legacy.tablet = raw.sm;
+    return legacy;
+  },
+  z.object({ desktop: layoutList, tablet: layoutList, mobile: layoutList }),
+);
 
 export const ConfigValueSchema = z.union([z.string().max(200), z.number().finite(), z.boolean()]);
 

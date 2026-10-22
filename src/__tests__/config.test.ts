@@ -156,8 +156,14 @@ describe('per-page widget limit', () => {
       ...template,
       instanceId: `bulk-${i}`,
     }));
-    const lg = instances.map((inst, i) => ({ i: inst.instanceId, x: 0, y: i * 4, w: 4, h: 4 }));
-    const result = applySnapshot('research', { page: 'research', layouts: { lg }, instances });
+    const desktop = instances.map((inst, i) => ({
+      i: inst.instanceId,
+      x: 0,
+      y: i * 4,
+      w: 4,
+      h: 4,
+    }));
+    const result = applySnapshot('research', { page: 'research', layouts: { desktop }, instances });
     expect(result).toEqual({ applied: MAX_WIDGETS_PER_PAGE, dropped: 5 });
     expect(widgetCount('research')).toBe(MAX_WIDGETS_PER_PAGE);
   });

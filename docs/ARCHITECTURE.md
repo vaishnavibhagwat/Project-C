@@ -24,7 +24,7 @@ flowchart TB
   end
   subgraph W["Widget Framework"]
     registry["widgetRegistry<br/>contract + runtime validation"]
-    grid["DashboardGrid<br/>react-grid-layout"]
+    grid["GridContainer + GridItem<br/>react-grid-layout"]
     frame["WidgetFrame<br/>states, header, error boundary"]
     widgets["13 widgets<br/>one lazy chunk each"]
   end
@@ -253,18 +253,60 @@ Actions per store (each has a unit test in `src/__tests__/<store>-store.test.ts`
 ### Grid settings
 
 `gridConfig` holds `cols` (6 to 24, default 12), `rowHeight` (30 to 100 px, default 60), `gap`
-(4 to 20 px, default 8) and `compaction` (`vertical` or `none`). Narrower breakpoints derive
-their columns from `cols` (12 gives 12/10/6/2). `setGridConfig` validates the merged settings
+(4 to 20 px, default 8) and `compaction` (`vertical` or `none`). `setGridConfig` validates the merged settings
 with zod and converts every page's layouts so widgets keep their width share and roughly their
 pixel height. `moveWidget`, `resizeWidget` and `addWidget` keep layouts valid on their own
 (inside the columns, no overlaps, compacted when `vertical`) using the pure helpers in
 `src/utils/gridLayout.ts`. Per-widget minimum and maximum sizes are enforced by
 react-grid-layout in the UI.
 
+### The grid: GridContainer, GridItem, GridToolbar
+
+`GridContainer` (`src/grid/GridContainer.tsx`) is react-grid-layout's `Responsive` grid wrapped
+in `WidthProvider`. It reads columns, row height, gap and compaction from DashboardStore and has
+three breakpoints, each with its own layout stored in DashboardStore:
+
+| Breakpoint | Viewport    | Columns                        |
+| ---------- | ----------- | ------------------------------ |
+| `desktop`  | ≥ 1280 px   | `gridConfig.cols` (default 12) |
+| `tablet`   | 768–1279 px | 6                              |
+| `mobile`   | < 768 px    | 1 (stacked)                    |
+
+- **Breakpoints follow the viewport.** react-grid-layout chooses a breakpoint from the grid's
+  own width, which is about 100 px narrower than the window here (nav rail, padding,
+  scrollbar). `breakpointForViewport` decides from `window.innerWidth`, and
+  `gridBreakpointsFor` passes thresholds that make react-grid-layout select that breakpoint at
+  any grid width. Checked in Chrome at 3840, 2560, 1920, 1440, 1280, 1279, 1000, 768, 767 and
+  500 px: the switch happens at exactly 1280 and 768, with no overlaps and no horizontal scroll.
+- **Independent layouts.** The first time a breakpoint is shown without a stored layout, one is
+  derived from the desktop layout (`deriveLayout`: widths capped at the columns, overlaps
+  settled; one column stacks everything) and stored. After that each breakpoint changes on
+  its own.
+- **No overlaps.** `preventCollision` and `allowOverlap` are off, so a dragged or resized
+  widget pushes the others away. Compaction is vertical by default; the toolbar switches it
+  to none (free placement).
+- **`measureBeforeMount` is not used.** In react-grid-layout 1.5 it measures a temporary
+  element that is then replaced, and its ResizeObserver reports the removed node as 0 px wide,
+  collapsing every widget. jsdom's fake ResizeObserver hides this, so it was found in the
+  browser.
+
+`GridItem` is the cell wrapper: react-grid-layout clones it to add position styles, handlers
+and the resize handle, so it forwards its ref and props. Each cell renders a `WidgetFrame`, or a
+`PlaceholderCard` for an empty slot.
+
+`GridToolbar` (in the page header) has **Add widget**, which puts an empty slot (a
+`__placeholder` instance, 4 × 3 on the default grid) at the first free position
+(`findFreePosition`: rows top to bottom, columns left to right, else the bottom). The slot can
+be moved and resized; **Choose widget** turns it into any registered widget in place, growing
+it to at least that widget's default size. Saved layouts and share links keep empty slots. The
+toolbar also links to the marketplace, toggles compaction and shows the active breakpoint.
+
 Snapshots (saved versions and share links) record the grid they were captured on and are
 converted when applied. Data saved before grid settings existed used 12 columns and 28 px rows;
 the version 2 persist migrations convert it, and snapshots without a grid are read as that old
-grid.
+grid. Layouts saved with the earlier `lg`/`md`/`sm`/`xs` breakpoints are read through
+`BreakpointLayoutsSchema`: `lg` becomes `desktop`, `sm` (6 columns) becomes `tablet`, and `md`
+and `xs` are dropped and derived again.
 
 ## 4. Data flow: feed → React Query cache → widget
 

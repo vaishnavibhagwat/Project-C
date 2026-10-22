@@ -3,7 +3,8 @@ import type { WidgetInstance } from './widget';
 export type PageId = 'workstation' | 'risk' | 'holdings' | 'performance' | 'research';
 export type AppRoute = PageId | 'marketplace' | 'settings';
 
-export type Breakpoint = 'lg' | 'md' | 'sm' | 'xs';
+/** Viewport classes: desktop ≥ 1280 px, tablet 768–1279 px, mobile < 768 px. */
+export type Breakpoint = 'desktop' | 'tablet' | 'mobile';
 
 export interface GridItemLayout {
   i: string;
@@ -63,12 +64,9 @@ export interface ShareRecord {
 
 export type GridCompaction = 'vertical' | 'none';
 
-/**
- * User-adjustable grid settings (DashboardStore.gridConfig). Narrower breakpoints derive
- * their column counts from `cols`.
- */
+/** User-adjustable grid settings (DashboardStore.gridConfig). */
 export interface GridConfig {
-  /** Desktop (lg) columns, 6 to 24. Default 12. */
+  /** Desktop columns, 6 to 24. Default 12. Tablet uses 6 and mobile 1. */
   cols: number;
   /** Height of one grid row in px, 30 to 100. Default 60. */
   rowHeight: number;

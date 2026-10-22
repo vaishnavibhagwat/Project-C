@@ -107,9 +107,9 @@ export function defaultSnapshot(page: PageId): PageSnapshot {
     position: { x, y, w, h },
     title,
   }));
-  const lg: GridItemLayout[] = instances.map(({ instanceId, position }) => ({
+  const desktop: GridItemLayout[] = instances.map(({ instanceId, position }) => ({
     i: instanceId,
     ...position,
   }));
-  return { page, layouts: { lg }, instances, grid: { ...DEFAULT_GRID_CONFIG } };
+  return { page, layouts: { desktop }, instances, grid: { ...DEFAULT_GRID_CONFIG } };
 }
