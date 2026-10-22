@@ -30,6 +30,56 @@
   color-scheme: dark;
 }
 
+/* First-paint defaults when VITE_DEFAULT_THEME selects another built-in theme (set by
+   public/theme-init.js). Generated from src/theme/themes.ts; a test keeps them in sync. */
+:root[data-boot-theme='porcelain'] {
+  --color-bg: 243 245 248;
+  --color-panel: 255 255 255;
+  --color-raised: 238 242 246;
+  --color-border: 225 230 237;
+  --color-border-strong: 199 208 220;
+  --color-text: 15 23 42;
+  --color-text-muted: 71 85 105;
+  --color-text-subtle: 95 107 125;
+  --color-accent: 14 116 144;
+  --color-accent-contrast: 255 255 255;
+  --color-positive: 4 120 87;
+  --color-negative: 192 38 45;
+  --color-warning: 168 90 6;
+  --color-focus: 8 145 178;
+  --color-chart-1: 14 116 144;
+  --color-chart-2: 124 58 237;
+  --color-chart-3: 180 83 9;
+  --color-chart-4: 4 120 87;
+  --color-chart-5: 37 99 235;
+  --color-chart-6: 219 39 119;
+  color-scheme: light;
+}
+
+:root[data-boot-theme='high-contrast'] {
+  --color-bg: 0 0 0;
+  --color-panel: 10 10 10;
+  --color-raised: 23 23 23;
+  --color-border: 92 92 92;
+  --color-border-strong: 140 140 140;
+  --color-text: 255 255 255;
+  --color-text-muted: 224 224 224;
+  --color-text-subtle: 194 194 194;
+  --color-accent: 0 229 255;
+  --color-accent-contrast: 0 0 0;
+  --color-positive: 61 255 154;
+  --color-negative: 255 122 122;
+  --color-warning: 255 210 63;
+  --color-focus: 255 255 0;
+  --color-chart-1: 0 229 255;
+  --color-chart-2: 199 146 234;
+  --color-chart-3: 255 210 63;
+  --color-chart-4: 61 255 154;
+  --color-chart-5: 130 170 255;
+  --color-chart-6: 255 121 198;
+  color-scheme: dark;
+}
+
 @layer base {
   html,
   body,

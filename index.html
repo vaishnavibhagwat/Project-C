@@ -2,38 +2,23 @@
 <html lang="en-IN">
   <head>
     <meta charset="UTF-8" />
+    <!--
+      Content Security Policy: scripts may only load from this origin. No inline scripts, no
+      eval. (The Vite dev server relaxes this for React Fast Refresh only: see vite.config.ts.)
+    -->
+    <meta http-equiv="Content-Security-Policy" content="script-src 'self'" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
       content="Meridian Capital Portfolio Intelligence: an institutional portfolio analytics workstation demo running on simulated data."
     />
     <meta name="theme-color" content="#0b0e13" />
+    <!-- Read by /theme-init.js; Vite fills in the value from .env at build time. -->
+    <meta name="meridian-default-theme" content="%VITE_DEFAULT_THEME%" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>Meridian Capital · Portfolio Intelligence</title>
-    <script>
-      // Pre-paint: apply the cached theme variables before CSS renders to avoid a theme flash.
-      (function () {
-        try {
-          var cached = JSON.parse(localStorage.getItem('meridian:theme-vars') || 'null');
-          if (!cached || typeof cached.vars !== 'object') return;
-          var root = document.documentElement;
-          for (var name in cached.vars) {
-            if (
-              /^--color-[a-z0-9-]+$/.test(name) &&
-              /^\d{1,3} \d{1,3} \d{1,3}$/.test(cached.vars[name])
-            ) {
-              root.style.setProperty(name, cached.vars[name]);
-            }
-          }
-          if (cached.mode === 'light' || cached.mode === 'dark') {
-            root.dataset.themeMode = cached.mode;
-            root.style.colorScheme = cached.mode;
-          }
-        } catch (e) {
-          /* ignore: defaults from CSS apply */
-        }
-      })();
-    </script>
+    <!-- Applies the saved (or default) theme before first paint to avoid a theme flash. -->
+    <script src="/theme-init.js"></script>
   </head>
   <body>
     <div id="root"></div>
