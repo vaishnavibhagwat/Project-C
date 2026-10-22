@@ -58,17 +58,17 @@ export function getPageMeta(id: PageId): PageMeta {
 type Placement = [widgetId: string, x: number, y: number, w: number, h: number, title: string];
 
 const PLACEMENTS: Record<PageId, Placement[]> = {
+  // The Portfolio Summary Strip sits above this grid, so the overview widget is not repeated.
   workstation: [
-    ['portfolio-overview', 0, 0, 12, 2, 'Portfolio Overview'],
-    ['nav-performance', 0, 2, 6, 5, 'NAV vs Nifty 50'],
-    ['asset-allocation', 6, 2, 3, 5, 'Asset Allocation'],
-    ['var-gauge', 9, 2, 3, 5, 'Value at Risk'],
-    ['holdings-table', 0, 7, 8, 6, 'Holdings'],
-    ['alerts-monitor', 8, 7, 4, 6, 'Alerts'],
-    ['sector-heatmap', 0, 13, 6, 5, 'Sector Returns Heat Map'],
-    ['holdings-treemap', 6, 13, 6, 5, 'Holdings Treemap'],
-    ['drawdown', 0, 18, 6, 4, 'Drawdown'],
-    ['research-feed', 6, 18, 6, 4, 'Research Feed'],
+    ['nav-performance', 0, 0, 6, 5, 'NAV vs Nifty 50'],
+    ['asset-allocation', 6, 0, 3, 5, 'Asset Allocation'],
+    ['var-gauge', 9, 0, 3, 5, 'Value at Risk'],
+    ['holdings-table', 0, 5, 8, 6, 'Holdings'],
+    ['alerts-monitor', 8, 5, 4, 6, 'Alerts'],
+    ['sector-heatmap', 0, 11, 6, 5, 'Sector Returns Heat Map'],
+    ['holdings-treemap', 6, 11, 6, 5, 'Holdings Treemap'],
+    ['drawdown', 0, 16, 6, 4, 'Drawdown'],
+    ['research-feed', 6, 16, 6, 4, 'Research Feed'],
   ],
   risk: [
     ['risk-metrics', 0, 0, 12, 2, 'Risk-Adjusted Metrics'],

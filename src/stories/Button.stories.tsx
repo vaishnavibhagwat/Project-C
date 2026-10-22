@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { Button } from '@/components/Button';
+import { Button, Spinner } from '@/components/Button';
 import { IconPlus, IconSave } from '@/components/Icons';
 
 const meta = {
@@ -31,6 +31,16 @@ export const AllVariants: Story = {
       <Button size="lg">Large</Button>
       <Button disabled>Disabled</Button>
     </div>
+  ),
+};
+
+/** The spinner used by loading buttons (static when reduced motion is requested). */
+export const SpinnerOnly: Story = {
+  render: () => (
+    <span className="inline-flex gap-3 text-accent">
+      <Spinner />
+      <Spinner size={20} />
+    </span>
   ),
 };
 

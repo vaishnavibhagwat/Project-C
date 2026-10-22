@@ -16,9 +16,14 @@ from playwright.sync_api import sync_playwright
 PROD = 'http://localhost:4173/#/workstation'
 DEV = 'http://localhost:5173/#/workstation'
 
+# Ready = the Portfolio Summary Strip has data (its label gains "as of") and every default
+# Workstation widget (9) has rendered content with no skeleton left.
+WORKSTATION_WIDGETS = 9
+
 READY = """() => {
-  const regions = document.querySelectorAll('section[role=region]');
-  if (regions.length !== 10) return false;
+  if (!document.querySelector('section[aria-label^="Portfolio summary, as of"]')) return false;
+  const regions = document.querySelectorAll('section[role=region][data-testid^="widget-"]');
+  if (regions.length !== %d) return false;
   if (document.querySelector('[data-testid^=skeleton]')) return false;
   return [...regions].every((r) => {
     const body = r.querySelector('[data-widget-body]');
@@ -29,7 +34,7 @@ READY = """() => {
       (body.textContent.trim().length > 0 || body.querySelector('svg') !== null)
     );
   });
-}"""
+}""" % WORKSTATION_WIDGETS
 
 
 def initial_load(browser, runs=5):

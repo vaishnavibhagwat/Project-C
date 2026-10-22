@@ -36,9 +36,10 @@ beforeEach(() => {
 });
 
 describe('cross-store actions', () => {
-  it('starts with 10 widgets on the workstation page', () => {
+  it('starts with 9 widgets on the workstation page (the summary strip replaces the overview)', () => {
     const grid = useDashboardStore.getState().pages.workstation;
-    expect(grid.itemIds).toHaveLength(10);
+    expect(grid.itemIds).toHaveLength(9);
+    expect(grid.itemIds).not.toContain('workstation-portfolio-overview');
     for (const id of grid.itemIds) expect(useWidgetStore.getState().instances[id]).toBeDefined();
   });
 

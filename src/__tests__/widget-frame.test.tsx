@@ -17,7 +17,7 @@ vi.mock('@/data/api', async (importOriginal) => {
 });
 
 const fetchMock = vi.mocked(fetchEndpoint);
-const OVERVIEW = 'workstation-portfolio-overview';
+const OVERVIEW = 'performance-portfolio-overview';
 const HOLDINGS = 'workstation-holdings-table';
 const initialWidgets = useWidgetStore.getState();
 const initialDashboard = useDashboardStore.getState();
@@ -40,14 +40,14 @@ describe('isStale', () => {
 describe('WidgetFrame states', () => {
   it('shows a widget-shaped skeleton while loading', () => {
     fetchMock.mockImplementation(never);
-    renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />);
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
     expect(screen.getByRole('region', { name: 'Portfolio Overview' })).toBeInTheDocument();
     expect(screen.getByTestId('skeleton-tiles')).toBeInTheDocument();
   });
 
   it('renders data with an accessible region, header actions and a live summary', async () => {
     fetchMock.mockResolvedValue(fixture('portfolio/summary'));
-    renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />);
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
     expect(await screen.findByText('$45.0B')).toBeInTheDocument();
     const region = screen.getByRole('region', { name: 'Portfolio Overview' });
     expect(region.querySelector('[aria-live="polite"]')?.textContent).toMatch(/AUM \$45\.0B/);
@@ -60,7 +60,7 @@ describe('WidgetFrame states', () => {
     fetchMock.mockResolvedValue(fixture('portfolio/summary'));
     renderWithProviders(
       <StrictMode>
-        <WidgetFrame page="workstation" instanceId={OVERVIEW} />
+        <WidgetFrame page="performance" instanceId={OVERVIEW} />
       </StrictMode>,
     );
     expect(await screen.findByText('$45.0B')).toBeInTheDocument();
@@ -71,7 +71,7 @@ describe('WidgetFrame states', () => {
       new ApiError('GET /api/portfolio/summary returned 503 (simulated upstream failure)'),
     );
     fetchMock.mockResolvedValue(fixture('portfolio/summary'));
-    renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />);
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
     expect(
       await screen.findByText(/GET \/api\/portfolio\/summary returned 503/),
     ).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe('WidgetFrame states', () => {
     client.setQueryData(endpointKey('portfolio/summary'), fixture('portfolio/summary'), {
       updatedAt: Date.now() - 60_000,
     });
-    renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />, { client });
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />, { client });
     const region = screen.getByRole('region', { name: 'Portfolio Overview' });
     await waitFor(() => expect(region).toHaveAttribute('data-stale', 'true'));
     expect(region.className).toContain('border-warn');
@@ -102,7 +102,7 @@ describe('WidgetFrame states', () => {
   it('shows the disconnected state and reconnects', async () => {
     fetchMock.mockImplementation(never);
     act(() => setSimulatedOutage(true));
-    renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />);
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
     expect(await screen.findByText('Data feed disconnected')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: 'Reconnect' }));
     expect(getConnectionState().connected).toBe(true);
@@ -113,18 +113,18 @@ describe('WidgetFrame states', () => {
     const client = createTestQueryClient();
     client.setQueryData(endpointKey('portfolio/summary'), fixture('portfolio/summary'));
     act(() => setSimulatedOutage(true));
-    renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />, { client });
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />, { client });
     expect(await screen.findByText(/Disconnected · showing data from/)).toBeInTheDocument();
     expect(await screen.findByText('$45.0B')).toBeInTheDocument();
   });
 
   it('removes the widget and offers Undo', async () => {
     fetchMock.mockResolvedValue(fixture('portfolio/summary'));
-    renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />);
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
     fireEvent.click(screen.getByRole('button', { name: /Remove/ }));
-    expect(useDashboardStore.getState().pages.workstation.itemIds).not.toContain(OVERVIEW);
+    expect(useDashboardStore.getState().pages.performance.itemIds).not.toContain(OVERVIEW);
     fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
-    expect(useDashboardStore.getState().pages.workstation.itemIds).toContain(OVERVIEW);
+    expect(useDashboardStore.getState().pages.performance.itemIds).toContain(OVERVIEW);
   });
 
   it('passes the contract props and persists onConfigChange to the store', async () => {
@@ -141,7 +141,7 @@ describe('WidgetFrame states', () => {
 
   it('opens settings from the gear icon', () => {
     fetchMock.mockImplementation(never);
-    renderWithProviders(<WidgetFrame page="workstation" instanceId={OVERVIEW} />);
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
     fireEvent.click(screen.getByRole('button', { name: /Configure/ }));
     expect(useWidgetStore.getState().settingsFor).toBe(OVERVIEW);
   });

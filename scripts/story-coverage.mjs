@@ -9,7 +9,9 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const SRC = join(ROOT, 'src');
 const SCAN = ['components', 'grid', 'layout', 'theme', 'widgets'];
 // Context providers and internal wrappers are infrastructure, not visual components.
-const IGNORE = new Set(['MotionProvider', 'ToastProvider', 'FieldShell']);
+// Context providers and the HashRouter wrapper render no UI of their own (stories use a
+// MemoryRouter instead; AppRoutes is covered by the AppShell story).
+const IGNORE = new Set(['MotionProvider', 'ToastProvider', 'FieldShell', 'AppRouter']);
 
 function walk(dir) {
   return readdirSync(dir).flatMap((name) => {

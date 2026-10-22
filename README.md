@@ -49,15 +49,15 @@ Python Playwright; see [docs/PERFORMANCE.md](docs/PERFORMANCE.md)).
 **Seven app areas** (slim icon rail with tooltips; React Router with hash URLs, so every page is
 deep-linkable on static hosting; each page is a lazy chunk):
 
-| Area                              | Default widgets                                                                                       |
-| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| Portfolio Workstation (`G 1`)     | 10 widgets: overview, NAV, allocation, VaR, holdings, alerts, heat map, treemap, drawdown, research   |
-| Risk Analytics (`G 2`)            | Risk-adjusted metrics, VaR gauge, drawdown, sector heat map, limit alerts                             |
-| Holdings Explorer (`G 3`)         | Holdings table, treemap, allocation, trade blotter                                                    |
-| Performance & Attribution (`G 4`) | Overview, NAV vs Nifty 50, metrics, sector attribution, drawdown                                      |
-| Research & Alerts (`G 5`)         | Sample research feed, alerts, trade blotter                                                           |
-| Widget Marketplace (`G 6`)        | Browse all 13 widgets by category and add them to any page                                            |
-| Settings (`G 7`)                  | Grid (columns, row height, gap, compaction), theme, display currency, data feed, workspace, shortcuts |
+| Area                              | Default widgets                                                                                                    |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Portfolio Workstation (`G 1`)     | Portfolio Summary Strip + 9 widgets: NAV, allocation, VaR, holdings, alerts, heat map, treemap, drawdown, research |
+| Risk Analytics (`G 2`)            | Risk-adjusted metrics, VaR gauge, drawdown, sector heat map, limit alerts                                          |
+| Holdings Explorer (`G 3`)         | Holdings table, treemap, allocation, trade blotter                                                                 |
+| Performance & Attribution (`G 4`) | Overview, NAV vs Nifty 50, metrics, sector attribution, drawdown                                                   |
+| Research & Alerts (`G 5`)         | Sample research feed, alerts, trade blotter                                                                        |
+| Widget Marketplace (`G 6`)        | Browse all 13 widgets by category and add them to any page                                                         |
+| Settings (`G 7`)                  | Grid (columns, row height, gap, compaction), theme, display currency, data feed, workspace, shortcuts              |
 
 **13 widgets**, each lazy-loaded as its own chunk:
 
@@ -87,6 +87,13 @@ error state with message and Retry; a "No data available" empty state; an amber 
 (and a banner that keeps the last data visible); reflow on resize; `role="region"` with an
 `aria-label` and a throttled `aria-live="polite"` text summary; its own data subscription;
 two Storybook stories (Default and Configured) and unit tests.
+
+**Portfolio Summary Strip** (top of the Workstation): AUM ($45.0B), daily P&L, MTD and YTD
+return, Sharpe ratio, volatility, 1-day 99% VaR and max drawdown. Each tile shows the value in
+tabular figures, its comparison period, a signed change with ▲/▼, emerald or coral by whether
+the change is good news (lower is better for volatility and VaR), and a tooltip explaining the
+metric. It reads the same cached endpoints as the widgets and shows a shaped skeleton until
+they load.
 
 **Command bar**: Meridian Capital wordmark, dashboard and saved-layout selector, global search,
 NSE session pill (IST), last refresh time, a `SIMULATED DATA` label, theme menu, notifications
@@ -189,22 +196,25 @@ More detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Measured results
 
-Measured on 21 Oct 2026 on the development machine (Windows 11, Chrome via Playwright, headless).
-These are measurements on one machine, not guarantees. Method and raw output:
-[docs/PERFORMANCE.md](docs/PERFORMANCE.md).
+Measured on the development machine (Windows 11, Chrome via Playwright, headless). These are
+measurements on one machine, not guarantees. Method and raw output:
+[docs/PERFORMANCE.md](docs/PERFORMANCE.md). Bundle sizes, coverage and story coverage were
+re-measured on 22 Oct 2026. The load, drag, theme, re-render and Lighthouse figures are from
+21 Oct 2026, before the 60 px row grid, React Router with lazy pages and the summary strip, and
+have not been re-measured since.
 
 | Target (brief)                  | Result                                                                                                                                                                                                     |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Main bundle < 150 KB gzip       | **124.6 KB** gzip (`npm run analyze`)                                                                                                                                                                      |
-| Widget chunk < 50 KB gzip       | Widget chunks **0.7–2.1 KB**; largest lazy chunk 18.2 KB (animation features). Shared Recharts vendor chunk is **137.1 KB** gzip, loaded on first chart                                                    |
-| Initial load, 10 widgets < 2 s  | **1.07–1.22 s** until all 10 widgets show data (median 1.12 s over 5 runs, local preview server)                                                                                                           |
+| Main bundle < 150 KB gzip       | **113.4 KB** gzip (`npm run analyze`, 22 Oct)                                                                                                                                                              |
+| Widget chunk < 50 KB gzip       | Widget chunks **0.7–2.1 KB**; largest lazy chunk 30.3 KB (dashboard page: grid, react-grid-layout, summary strip). Shared Recharts vendor chunk is **137.3 KB** gzip, loaded on first chart                |
+| Initial load < 2 s              | **1.07–1.22 s** until all 10 widgets showed data (median 1.12 s over 5 runs, local preview server; 21 Oct, previous Workstation layout)                                                                    |
 | Drag > 55 FPS                   | **~60 FPS** during a widget drag (p95 frame 16.8 ms)                                                                                                                                                       |
 | Theme change < 100 ms, no flash | **37–96 ms** click to next paint (first switch on 5 fresh loads); transitions are suspended for the switch                                                                                                 |
 | Re-render < 100 ms on new data  | **≤ 12.5 ms** per widget render (React Profiler, development build)                                                                                                                                        |
 | Lighthouse > 85                 | Desktop preset: **Performance 98–99, Accessibility 100, Best Practices 100, SEO 100** (3 runs). Mobile preset (4× CPU throttling): Performance **60–62**: the chart-heavy workstation is built for desktop |
 | Layout JSON < 50 KB             | Default pages **< 5 KB** each; enforced at share time                                                                                                                                                      |
-| Coverage > 70%                  | **94.4% lines, 80.6% branches, 80.1% functions** (v8, 247 tests)                                                                                                                                           |
-| Storybook ≥ 90% of components   | **54 / 54** production components referenced by a story (`npm run story-coverage`)                                                                                                                         |
+| Coverage > 70%                  | **93.9% lines, 82.5% branches, 84.9% functions** (v8, 393 tests, 22 Oct)                                                                                                                                   |
+| Storybook ≥ 90% of components   | **68 / 68** production components referenced by a story (`npm run story-coverage`, 22 Oct)                                                                                                                 |
 
 A WCAG contrast check runs for every built-in theme in the test suite. No formal WCAG
 conformance audit has been done, and the app does not claim conformance.

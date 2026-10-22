@@ -44,11 +44,15 @@ function goTo(hash: string) {
   });
 }
 
-// Compile every lazy widget chunk once, up front, so the first test that renders the grid does
-// not pay the one-off transform cost of Recharts, D3 and react-virtuoso inside its own timeout.
-const widgetChunks = import.meta.glob('/src/widgets/*/index.tsx');
+// Compile every lazy widget and page chunk once, up front, so the first test that renders one
+// does not pay the one-off transform cost (Recharts, D3, react-virtuoso, react-grid-layout)
+// inside its own timeout. This matters most under coverage instrumentation.
+const lazyChunks = {
+  ...import.meta.glob('/src/widgets/*/index.tsx'),
+  ...import.meta.glob('/src/layout/pages/*.tsx'),
+};
 beforeAll(async () => {
-  await Promise.all(Object.values(widgetChunks).map((load) => load()));
+  await Promise.all(Object.values(lazyChunks).map((load) => load()));
 }, 120_000);
 
 beforeEach(() => {
@@ -79,7 +83,7 @@ describe('global search index', () => {
 });
 
 describe('AppShell', () => {
-  it('renders the workstation: nav rail, command bar, simulated-data label and 10 widgets', async () => {
+  it('renders the workstation: nav rail, command bar, simulated-data label, summary strip and 9 widgets', async () => {
     renderShell();
     const nav = screen.getByRole('navigation', { name: 'Primary' });
     // Home mark plus seven destinations.
@@ -103,10 +107,17 @@ describe('AppShell', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: 'Portfolio Workstation' }),
     ).toBeInTheDocument();
-    await waitFor(() => expect(screen.getAllByRole('region')).toHaveLength(10), {
-      timeout: 5000,
-    });
-    expect(await screen.findByText('$45.0B', {}, { timeout: 10_000 })).toBeInTheDocument();
+    await waitFor(
+      () => expect(document.querySelectorAll('[data-testid^="widget-"]')).toHaveLength(9),
+      { timeout: 5000 },
+    );
+    const strip = await screen.findByRole(
+      'region',
+      { name: /^Portfolio summary, as of/ },
+      { timeout: 10_000 },
+    );
+    expect(within(strip).getByText('$45.0B')).toBeInTheDocument();
+    expect(within(strip).getAllByRole('term')).toHaveLength(8);
   }, 15_000);
 
   it('switches between app areas', async () => {

@@ -13,7 +13,7 @@ import { WidgetCategory, type WidgetComponentType, type WidgetConfig } from '@/t
 import { fixture } from './fixtures';
 import { renderWithProviders } from './render';
 
-const OVERVIEW = 'workstation-portfolio-overview';
+const OVERVIEW = 'performance-portfolio-overview';
 const CRASHING = 'crash-instance';
 const initialWidgets = useWidgetStore.getState();
 
@@ -91,7 +91,7 @@ describe('error boundary hierarchy', () => {
       <EndpointFetcherContext.Provider value={fixtureFetcher}>
         <AppErrorBoundary>
           <WidgetFrame page="workstation" instanceId={CRASHING} />
-          <WidgetFrame page="workstation" instanceId={OVERVIEW} />
+          <WidgetFrame page="performance" instanceId={OVERVIEW} />
         </AppErrorBoundary>
       </EndpointFetcherContext.Provider>,
     );
@@ -108,7 +108,7 @@ describe('error boundary hierarchy', () => {
     renderWithProviders(
       <EndpointFetcherContext.Provider value={failing}>
         <AppErrorBoundary>
-          <WidgetFrame page="workstation" instanceId={OVERVIEW} />
+          <WidgetFrame page="performance" instanceId={OVERVIEW} />
         </AppErrorBoundary>
       </EndpointFetcherContext.Provider>,
     );

@@ -1,6 +1,11 @@
 # Performance: method and measurements
 
-All numbers below were **measured** on 21 Oct 2026 on the development machine: Windows 11,
+> **Dates.** The bundle table was re-measured on 22 Oct 2026. The runtime and Lighthouse
+> figures are from 21 Oct 2026, before three later changes: 60 px grid rows, React Router with
+> lazy pages, and the Portfolio Summary Strip replacing the overview widget on the Workstation.
+> They have not been re-measured since; rerun `scripts/measure-perf.py` before quoting them.
+
+All numbers below were **measured** on the development machine: Windows 11,
 Google Chrome launched headless through Playwright (Python), production build served by
 `vite preview` on localhost. They are one machine's measurements, not guarantees. Network
 latency is the mock API's simulated latency (`VITE_API_LATENCY_MS=180` ± jitter).
@@ -16,23 +21,25 @@ npm run analyze                       # bundle sizes and budgets
 npx lighthouse http://localhost:4173/#/workstation --preset=desktop
 ```
 
-## Bundle sizes (`npm run analyze`, gzip level 9)
+## Bundle sizes (`npm run analyze`, gzip level 9, 22 Oct 2026)
 
-| Chunk                         | gzip                            | Notes                                                                                    |
-| ----------------------------- | ------------------------------- | ---------------------------------------------------------------------------------------- |
-| Main entry                    | **124.6 KB**                    | React, react-grid-layout, TanStack Query, Zustand, zod, data layer, shell. Budget 150 KB |
-| Each widget chunk             | **0.7–2.1 KB**                  | One `React.lazy` chunk per widget. Budget 50 KB                                          |
-| Animation features            | 18.2 KB                         | Framer Motion `domAnimation`, loaded via `LazyMotion` after first paint                  |
-| Theme builder                 | 1.6 KB (+3.8 KB react-colorful) | Loaded only when opened                                                                  |
-| Shared vendor: Recharts       | 137.1 KB                        | Loaded on the first chart widget; shared by all Recharts widgets                         |
-| Shared vendor: D3             | 31.5 KB                         | Scales, arcs, hierarchy (also used by Recharts)                                          |
-| Shared vendor: react-virtuoso | 20.7 KB                         | Tables and feeds                                                                         |
-| CSS                           | 6.9 KB                          | Tailwind, purged                                                                         |
+| Chunk                         | gzip                            | Notes                                                                                       |
+| ----------------------------- | ------------------------------- | ------------------------------------------------------------------------------------------- |
+| Main entry                    | **113.4 KB**                    | React, React Router, TanStack Query, Zustand, zod, data layer, shell. Budget 150 KB         |
+| Dashboard page                | 30.3 KB                         | Grid, react-grid-layout, frame, summary strip; loads with the first dashboard. Budget 50 KB |
+| Settings / Marketplace pages  | 3.2 KB / 1.6 KB                 | Lazy routes                                                                                 |
+| Each widget chunk             | **0.7–2.1 KB**                  | One `React.lazy` chunk per widget. Budget 50 KB                                             |
+| Animation features            | 18.2 KB                         | Framer Motion `domAnimation`, loaded via `LazyMotion` after first paint                     |
+| Theme builder                 | 1.6 KB (+3.8 KB react-colorful) | Loaded only when opened                                                                     |
+| Shared vendor: Recharts       | 137.3 KB                        | Loaded on the first chart widget; shared by all Recharts widgets                            |
+| Shared vendor: D3             | 31.5 KB                         | Scales, arcs, hierarchy (also used by Recharts)                                             |
+| Shared vendor: react-virtuoso | 20.7 KB                         | Tables and feeds                                                                            |
+| CSS                           | 7.7 KB                          | Tailwind, purged                                                                            |
 
 The per-widget budget is met by the widget code itself. Recharts cannot be split per widget,
 so it is a shared lazy vendor chunk that is cached after the first chart loads.
 
-## Runtime (`scripts/measure-perf.py`)
+## Runtime (`scripts/measure-perf.py`, 21 Oct 2026, earlier layout)
 
 | Measurement                        | Result                                                                                   | Method                                                                                                                     |
 | ---------------------------------- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |

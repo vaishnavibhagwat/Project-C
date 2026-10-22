@@ -49,7 +49,7 @@ export function CommandBar({ page, onOpenSearch, onOpenLayouts }: CommandBarProp
       >
         <IconSearch size={13} />
         <span className="hidden truncate sm:inline">Search symbols, widgets, pages…</span>
-        <kbd className="ml-auto hidden rounded border border-line-strong px-1 text-2xs sm:inline">
+        <kbd className="ml-auto hidden shrink-0 whitespace-nowrap rounded border border-line-strong px-1 text-2xs sm:inline">
           Ctrl K
         </kbd>
       </button>
