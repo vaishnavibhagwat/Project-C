@@ -23,7 +23,7 @@ describe('PortfolioOverview', () => {
 
   it('pairs day P&L colour with a sign', () => {
     render(<PortfolioOverview {...widgetProps(portfolioOverviewDefinition.defaultConfig, data)} />);
-    const sign = data.dayPnlInr >= 0 ? '+' : '−';
+    const sign = data.dailyPnL >= 0 ? '+' : '−';
     expect(screen.getAllByText(new RegExp(`^\\${sign}₹`))[0]).toBeInTheDocument();
   });
 

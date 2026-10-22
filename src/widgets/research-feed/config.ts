@@ -4,8 +4,14 @@ import { isEndpointData } from '@/data/api';
 import { registerWidget } from '@/registry/defineWidget';
 import { env } from '@/utils/env';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
-import { filterResearch } from './model';
-import { ResearchFeedConfigSchema, type ResearchFeedConfig, type ResearchFeedData } from './types';
+import { filterArticles, titleCase } from './model';
+import {
+  CATEGORY_FILTERS,
+  ResearchFeedConfigSchema,
+  SENTIMENT_FILTERS,
+  type ResearchFeedConfig,
+  type ResearchFeedData,
+} from './types';
 
 export const researchFeedDefinition: WidgetDefinition<ResearchFeedConfig, ResearchFeedData> = {
   id: 'research-feed',
@@ -20,22 +26,16 @@ export const researchFeedDefinition: WidgetDefinition<ResearchFeedConfig, Resear
     properties: {
       sentiment: {
         title: 'Sentiment',
-        oneOf: ['ALL', 'Positive', 'Neutral', 'Negative'].map((v) => ({
-          const: v,
-          title: v === 'ALL' ? 'All' : v,
-        })),
+        oneOf: SENTIMENT_FILTERS.map((v) => ({ const: v, title: titleCase(v) })),
       },
       category: {
         title: 'Category',
-        oneOf: ['ALL', 'Earnings', 'Macro', 'Sector', 'Rating', 'Flows'].map((v) => ({
-          const: v,
-          title: v === 'ALL' ? 'All' : v,
-        })),
+        oneOf: CATEGORY_FILTERS.map((v) => ({ const: v, title: titleCase(v) })),
       },
       showSummary: { type: 'boolean', title: 'Show summaries' },
     },
   },
-  defaultConfig: { sentiment: 'ALL', category: 'ALL', showSummary: true },
+  defaultConfig: { sentiment: 'all', category: 'all', showSummary: true },
   component: lazy(() => import('./index')),
   icon: IconNews,
   dataSource: {
@@ -47,15 +47,15 @@ export const researchFeedDefinition: WidgetDefinition<ResearchFeedConfig, Resear
 };
 
 export function summarizeResearch(data: ResearchFeedData, config: ResearchFeedConfig): string {
-  const items = filterResearch(data.items, config);
-  const latest = items[0];
-  return `${items.length} sample research items. ${latest ? `Latest: ${latest.headline} (${latest.sentiment}).` : ''}`;
+  const articles = filterArticles(data.articles, config);
+  const latest = articles[0];
+  return `${articles.length} sample research articles. ${latest ? `Latest: ${latest.headline} (${latest.sentiment}, score ${latest.sentimentScore.toFixed(2)}).` : ''}`;
 }
 
 export const researchFeedWidget = registerWidget(researchFeedDefinition, {
   configParser: ResearchFeedConfigSchema,
   isData: isEndpointData('research/feed'),
-  isEmpty: (d) => d.items.length === 0,
+  isEmpty: (d) => d.articles.length === 0,
   summarize: summarizeResearch,
   skeleton: 'feed',
   preload: () => import('./index'),

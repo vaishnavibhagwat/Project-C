@@ -12,6 +12,7 @@ import {
 import { getMarketSnapshot, primeMarket, resetMarketSimulation } from '@/data/market';
 import { buildDataset } from '@/data/dataset';
 import { createTradeSchedule } from '@/data/derive/trades';
+import type { Holding } from '@/types';
 import { istTimeMs } from '@/utils/time';
 import { fixture, FIXTURE_TIME } from './fixtures';
 
@@ -32,15 +33,17 @@ describe('mock API', () => {
     const good = fixture('portfolio/holdings');
     const first = good.holdings[0];
     if (!first) throw new Error('fixture has no holdings');
-    const bad = (patch: Record<string, unknown>) => ({
+    const bad = (patch: Partial<Holding>) => ({
       ...good,
       holdings: [{ ...first, ...patch }, ...good.holdings.slice(1)],
     });
-    expect(() => parseEndpoint('portfolio/holdings', bad({ ltp: -1 }))).toThrow(ValidationError);
-    expect(() => parseEndpoint('portfolio/holdings', bad({ ltp: Number.NaN }))).toThrow(
+    expect(() => parseEndpoint('portfolio/holdings', bad({ currentPrice: -1 }))).toThrow(
       ValidationError,
     );
-    expect(() => parseEndpoint('portfolio/holdings', bad({ marketValueInr: Infinity }))).toThrow(
+    expect(() => parseEndpoint('portfolio/holdings', bad({ currentPrice: Number.NaN }))).toThrow(
+      ValidationError,
+    );
+    expect(() => parseEndpoint('portfolio/holdings', bad({ marketValue: Infinity }))).toThrow(
       ValidationError,
     );
   });
@@ -91,24 +94,24 @@ describe('one dataset, consistent everywhere', () => {
 
   it('equity value agrees between holdings and allocation', () => {
     const equity = allocation.assetClasses.find((a) => a.id === 'equity');
-    expect(equity?.valueInr).toBeCloseTo(holdings.totalMarketValueInr, 0);
+    expect(equity?.valueInr).toBeCloseTo(holdings.totalMarketValue, 0);
     expect(allocation.totalInr).toBeCloseTo(summary.marketValueInr, 0);
   });
 
   it('day P&L in the summary equals the sum over holdings', () => {
-    const sum = holdings.holdings.reduce((s, h) => s + h.dayPnlInr, 0);
-    expect(summary.dayPnlInr).toBeCloseTo(sum, -2);
+    const sum = holdings.holdings.reduce((s, h) => s + h.dailyPnL, 0);
+    expect(summary.dailyPnL).toBeCloseTo(sum, -2);
   });
 
   it('holding weights and sector weights each sum to 100%', () => {
-    expect(holdings.holdings.reduce((s, h) => s + h.weightPct, 0)).toBeCloseTo(100, 6);
+    expect(holdings.holdings.reduce((s, h) => s + h.weight, 0)).toBeCloseTo(100, 6);
     expect(allocation.sectors.reduce((s, x) => s + x.weightPct, 0)).toBeCloseTo(100, 6);
   });
 
   it('the VaR alert quotes the same number as the VaR endpoint', () => {
-    const varAlert = alerts.alerts.find((a) => a.id === 'risk-var99');
+    const varAlert = alerts.alerts.find((a) => a.alertId === 'risk-var99');
     if (risk.historical.var99 >= 0.015) {
-      expect(varAlert?.title).toContain(`${(risk.historical.var99 * 100).toFixed(2)}%`);
+      expect(varAlert?.message).toContain(`${(risk.historical.var99 * 100).toFixed(2)}%`);
     } else {
       expect(varAlert).toBeUndefined();
     }

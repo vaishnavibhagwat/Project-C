@@ -2,16 +2,16 @@ import { z } from 'zod';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { PageId, PageSnapshot, SavedLayout } from '@/types';
+import type { PageId, PageSnapshot, Layout } from '@/types';
 import { sanitizeText } from '@/utils/sanitize';
-import { PageIdSchema, SavedLayoutSchema } from './schemas';
+import { PageIdSchema, LayoutSchema } from './schemas';
 import { createId, createValidatedStorage, devtoolsEnabled } from './storage';
 
 export const MAX_VERSIONS = 20;
 export const MAX_SAVED_LAYOUTS = 30;
 
 interface LayoutData {
-  saved: SavedLayout[];
+  saved: Layout[];
   /** Saved layout currently loaded on each page, if any. */
   activeByPage: Partial<Record<PageId, string>>;
   /** Last share link generated (for the share dialog). */
@@ -30,7 +30,7 @@ interface LayoutActions {
 export type LayoutState = LayoutData & LayoutActions;
 
 const PersistedSchema = z.object({
-  saved: z.array(SavedLayoutSchema).max(MAX_SAVED_LAYOUTS),
+  saved: z.array(LayoutSchema).max(MAX_SAVED_LAYOUTS),
   activeByPage: z.record(PageIdSchema, z.string()),
 });
 type Persisted = z.infer<typeof PersistedSchema>;

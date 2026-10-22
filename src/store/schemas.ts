@@ -84,7 +84,7 @@ export const LayoutVersionSchema = z.object({
   snapshot: PageSnapshotSchema,
 });
 
-export const SavedLayoutSchema = z.object({
+export const LayoutSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(60),
   page: PageIdSchema,
@@ -118,7 +118,7 @@ export const ThemeTokensSchema: z.ZodType<ThemeTokens> = z.object({
   chart6: hex,
 });
 
-export const ThemeDefinitionSchema = z.object({
+export const ThemeSchema = z.object({
   id: z.string().min(1).max(64),
   name: z.string().min(1).max(40),
   mode: z.enum(['dark', 'light']),

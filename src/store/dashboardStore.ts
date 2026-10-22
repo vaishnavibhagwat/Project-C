@@ -2,14 +2,21 @@ import { z } from 'zod';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { Breakpoint, BreakpointLayouts, GridItemLayout, PageId } from '@/types';
+import type { Breakpoint, BreakpointLayouts, GridConfig, GridItemLayout, PageId } from '@/types';
 import { defaultSnapshot } from '@/registry/pages';
 import { BreakpointLayoutsSchema, PAGE_IDS, PageIdSchema } from './schemas';
 import { createValidatedStorage, devtoolsEnabled } from './storage';
 
 /** Column counts per breakpoint. Shared with the grid component. */
-export const GRID_COLS: Record<Breakpoint, number> = { lg: 12, md: 10, sm: 6, xs: 2 };
-export const GRID_BREAKPOINTS: Record<Breakpoint, number> = { lg: 1200, md: 960, sm: 640, xs: 0 };
+/** Responsive grid settings shared by the store (column limits) and DashboardGrid. */
+export const GRID_CONFIG: GridConfig = {
+  breakpoints: { lg: 1200, md: 960, sm: 640, xs: 0 },
+  cols: { lg: 12, md: 10, sm: 6, xs: 2 },
+  rowHeight: 28,
+  margin: [8, 8],
+  containerPadding: [0, 0],
+  compactType: 'vertical',
+};
 
 export interface PageGrid {
   /** Widget instance ids placed on this page, in insertion order. */
@@ -24,7 +31,7 @@ interface DashboardData {
   locked: boolean;
   displayCurrency: DisplayCurrency;
   /** Alert ids the user has marked as read (alert ids are stable per rule). */
-  readAlertIds: string[];
+  acknowledgedAlertIds: string[];
 }
 
 interface DashboardActions {
@@ -40,7 +47,8 @@ interface DashboardActions {
   replacePage: (page: PageId, grid: PageGrid) => void;
   setLocked: (locked: boolean) => void;
   setDisplayCurrency: (currency: DisplayCurrency) => void;
-  markNotificationsRead: (ids: string[]) => void;
+  /** Mark alerts as acknowledged (alert ids are stable per rule and entity). */
+  acknowledgeAlerts: (ids: string[]) => void;
 }
 
 export type DashboardState = DashboardData & DashboardActions;
@@ -69,20 +77,27 @@ export function bottomOf(layout: readonly GridItemLayout[]): number {
 
 const PageGridSchema = z.object({ itemIds: z.array(z.string()), layouts: BreakpointLayoutsSchema });
 
-const PersistedSchema = z.object({
-  pages: z.record(PageIdSchema, PageGridSchema).transform((pages) => {
-    // Missing pages fall back to defaults so new app areas appear after upgrades.
-    const out = defaultPages();
-    for (const id of PAGE_IDS) {
-      const grid = pages[id];
-      if (grid) out[id] = grid;
-    }
-    return out;
+const PersistedSchema = z.preprocess(
+  (raw) => {
+    // Earlier versions stored read alerts as readAlertIds.
+    if (typeof raw !== 'object' || raw === null || 'acknowledgedAlertIds' in raw) return raw;
+    return 'readAlertIds' in raw ? { ...raw, acknowledgedAlertIds: raw.readAlertIds } : raw;
+  },
+  z.object({
+    pages: z.record(PageIdSchema, PageGridSchema).transform((pages) => {
+      // Missing pages fall back to defaults so new app areas appear after upgrades.
+      const out = defaultPages();
+      for (const id of PAGE_IDS) {
+        const grid = pages[id];
+        if (grid) out[id] = grid;
+      }
+      return out;
+    }),
+    locked: z.boolean(),
+    displayCurrency: z.enum(['INR', 'USD']),
+    acknowledgedAlertIds: z.array(z.string().max(80)).max(500).default([]),
   }),
-  locked: z.boolean(),
-  displayCurrency: z.enum(['INR', 'USD']),
-  readAlertIds: z.array(z.string().max(80)).max(500),
-});
+);
 
 type Persisted = z.infer<typeof PersistedSchema>;
 
@@ -93,7 +108,7 @@ export const useDashboardStore = create<DashboardState>()(
         pages: defaultPages(),
         locked: false,
         displayCurrency: 'INR',
-        readAlertIds: [],
+        acknowledgedAlertIds: [],
 
         setLayouts: (page, layouts) =>
           set((s) => {
@@ -109,7 +124,7 @@ export const useDashboardStore = create<DashboardState>()(
               const layout = grid.layouts[bp];
               if (!layout && bp !== 'lg') continue;
               const target = layout ?? [];
-              const cols = GRID_COLS[bp];
+              const cols = GRID_CONFIG.cols[bp];
               target.push({ ...item, x: 0, y: bottomOf(target), w: Math.min(item.w, cols) });
               grid.layouts[bp] = target;
             }
@@ -152,9 +167,11 @@ export const useDashboardStore = create<DashboardState>()(
             s.displayCurrency = currency;
           }),
 
-        markNotificationsRead: (ids) =>
+        acknowledgeAlerts: (ids) =>
           set((s) => {
-            s.readAlertIds = Array.from(new Set([...s.readAlertIds, ...ids])).slice(-500);
+            s.acknowledgedAlertIds = Array.from(new Set([...s.acknowledgedAlertIds, ...ids])).slice(
+              -500,
+            );
           }),
       })),
       {
@@ -165,7 +182,7 @@ export const useDashboardStore = create<DashboardState>()(
           pages: s.pages,
           locked: s.locked,
           displayCurrency: s.displayCurrency,
-          readAlertIds: s.readAlertIds,
+          acknowledgedAlertIds: s.acknowledgedAlertIds,
         }),
       },
     ),

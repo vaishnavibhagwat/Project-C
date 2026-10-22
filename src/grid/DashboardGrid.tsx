@@ -4,14 +4,12 @@ import { useShallow } from 'zustand/react/shallow';
 import { useElementSize } from '@/hooks/useElementSize';
 import { getWidget } from '@/registry/registry';
 import { commitLayouts } from '@/store/actions';
-import { GRID_BREAKPOINTS, GRID_COLS, useDashboardStore } from '@/store/dashboardStore';
+import { GRID_CONFIG, useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { Breakpoint, BreakpointLayouts, GridItemLayout, PageId } from '@/types';
 import { cx } from '@/utils/cx';
 import { DRAG_HANDLE_CLASS, NO_DRAG_CLASS, WidgetFrame } from './WidgetFrame';
 
-export const ROW_HEIGHT = 28;
-export const GRID_MARGIN: [number, number] = [8, 8];
 const BREAKPOINT_KEYS: Breakpoint[] = ['lg', 'md', 'sm', 'xs'];
 
 function toStored(layout: readonly Layout[]): GridItemLayout[] {
@@ -56,7 +54,7 @@ function DashboardGridImpl({ page }: { page: PageId }) {
     for (const bp of BREAKPOINT_KEYS) {
       const layout = grid.layouts[bp];
       if (!layout) continue;
-      const cols = GRID_COLS[bp];
+      const cols = GRID_CONFIG.cols[bp];
       out[bp] = layout
         .filter((l) => grid.itemIds.includes(l.i))
         .map((l) => {
@@ -106,16 +104,16 @@ function DashboardGridImpl({ page }: { page: PageId }) {
           width={width}
           className={cx('layout', locked && 'is-locked')}
           layouts={layouts}
-          breakpoints={GRID_BREAKPOINTS}
-          cols={GRID_COLS}
-          rowHeight={ROW_HEIGHT}
-          margin={GRID_MARGIN}
-          containerPadding={[0, 0]}
+          breakpoints={GRID_CONFIG.breakpoints}
+          cols={GRID_CONFIG.cols}
+          rowHeight={GRID_CONFIG.rowHeight}
+          margin={GRID_CONFIG.margin}
+          containerPadding={GRID_CONFIG.containerPadding}
           isDraggable={!locked}
           isResizable={!locked}
           draggableHandle={`.${DRAG_HANDLE_CLASS}`}
           draggableCancel={`.${NO_DRAG_CLASS}`}
-          compactType="vertical"
+          compactType={GRID_CONFIG.compactType}
           useCSSTransforms
           onLayoutChange={onLayoutChange}
           resizeHandles={['se']}

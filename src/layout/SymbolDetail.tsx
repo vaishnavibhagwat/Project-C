@@ -6,6 +6,7 @@ import { findConstituent, NIFTY50 } from '@/data/nifty50';
 import { useEndpoint } from '@/hooks/useEndpoint';
 import { cssColor } from '@/theme/themes';
 import { formatInr, formatInrCompact, formatNumber, formatPct } from '@/utils/format';
+import { unrealisedPnL, unrealisedPnLPercent } from '@/utils/holdings';
 import { formatDateKey } from '@/utils/time';
 
 const W = 520;
@@ -52,7 +53,7 @@ export function SymbolDetail({ symbol, onClose }: { symbol: string | null; onClo
     const dates = ds.dates.slice(-253);
     return { closes, from: dates[0] ?? '', to: dates[dates.length - 1] ?? '' };
   }, [constituent]);
-  const holding = holdings.data?.holdings.find((h) => h.symbol === symbol);
+  const holding = holdings.data?.holdings.find((h) => h.ticker === symbol);
   const first = series?.closes[0] ?? 0;
   const last = series?.closes[series.closes.length - 1] ?? 0;
 
@@ -67,9 +68,9 @@ export function SymbolDetail({ symbol, onClose }: { symbol: string | null; onClo
         <div className="flex flex-col gap-3">
           <div className="flex items-baseline gap-3">
             <span className="num text-xl font-semibold text-fg">
-              {formatInr(holding?.ltp ?? last)}
+              {formatInr(holding?.currentPrice ?? last)}
             </span>
-            {holding ? <Delta value={holding.dayChangePct / 100} /> : null}
+            {holding ? <Delta value={holding.dailyPnLPercent / 100} /> : null}
             <span className="text-xs text-muted">1Y</span>
             <Delta value={first === 0 ? 0 : last / first - 1} />
           </div>
@@ -84,13 +85,13 @@ export function SymbolDetail({ symbol, onClose }: { symbol: string | null; onClo
             <dl className="num grid grid-cols-2 gap-x-6 gap-y-1 rounded border border-line p-3 text-xs sm:grid-cols-3">
               {[
                 ['Quantity', formatNumber(holding.quantity)],
-                ['Avg cost', formatInr(holding.avgCost)],
-                ['Market value', formatInrCompact(holding.marketValueInr)],
-                ['Weight (equity)', `${holding.weightPct.toFixed(2)}%`],
-                ['Day P&L', formatInrCompact(holding.dayPnlInr, true)],
+                ['Avg cost', formatInr(holding.averageCost)],
+                ['Market value', formatInrCompact(holding.marketValue)],
+                ['Weight (equity)', `${holding.weight.toFixed(2)}%`],
+                ['Day P&L', formatInrCompact(holding.dailyPnL, true)],
                 [
                   'Unrealised',
-                  `${formatInrCompact(holding.unrealisedPnlInr, true)} (${formatPct(holding.unrealisedPnlPct / 100)})`,
+                  `${formatInrCompact(unrealisedPnL(holding), true)} (${formatPct(unrealisedPnLPercent(holding) / 100)})`,
                 ],
               ].map(([k, v]) => (
                 <div key={k} className="flex flex-col">

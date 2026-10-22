@@ -1,4 +1,5 @@
 import { lazy } from 'react';
+import { unrealisedPnLPercent } from '@/utils/holdings';
 import { IconTreemap } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
 import { registerWidget } from '@/registry/defineWidget';
@@ -59,11 +60,11 @@ export const holdingsTreemapDefinition: WidgetDefinition<
 };
 
 export function summarizeTreemap(data: HoldingsTreemapData, config: HoldingsTreemapConfig): string {
-  const top = [...data.holdings].sort((a, b) => b.weightPct - a.weightPct).slice(0, 3);
+  const top = [...data.holdings].sort((a, b) => b.weight - a.weight).slice(0, 3);
   const metric = config.colorBy === 'dayChange' ? 'day change' : 'unrealised P&L';
   const parts = top.map(
     (h) =>
-      `${h.symbol} ${h.weightPct.toFixed(1)}% (${metric} ${formatPct((config.colorBy === 'dayChange' ? h.dayChangePct : h.unrealisedPnlPct) / 100)})`,
+      `${h.ticker} ${h.weight.toFixed(1)}% (${metric} ${formatPct((config.colorBy === 'dayChange' ? h.dailyPnLPercent : unrealisedPnLPercent(h)) / 100)})`,
   );
   return `${data.holdings.length} holdings. Largest: ${parts.join(', ')}.`;
 }

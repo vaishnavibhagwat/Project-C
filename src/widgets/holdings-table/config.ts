@@ -26,12 +26,12 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
       sortBy: {
         title: 'Sort by',
         oneOf: [
-          { const: 'weightPct', title: 'Weight' },
-          { const: 'marketValueInr', title: 'Market value' },
-          { const: 'dayChangePct', title: 'Day change %' },
-          { const: 'dayPnlInr', title: 'Day P&L' },
-          { const: 'unrealisedPnlPct', title: 'Unrealised P&L %' },
-          { const: 'symbol', title: 'Symbol' },
+          { const: 'weight', title: 'Weight' },
+          { const: 'marketValue', title: 'Market value' },
+          { const: 'dailyPnLPercent', title: 'Day change %' },
+          { const: 'dailyPnL', title: 'Day P&L' },
+          { const: 'unrealisedPnLPercent', title: 'Unrealised P&L %' },
+          { const: 'ticker', title: 'Symbol' },
         ],
       },
       sortDir: {
@@ -48,7 +48,7 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
       showPnl: { type: 'boolean', title: 'Show P&L columns' },
     },
   },
-  defaultConfig: { sortBy: 'weightPct', sortDir: 'desc', sector: 'All', showPnl: true },
+  defaultConfig: { sortBy: 'weight', sortDir: 'desc', sector: 'All', showPnl: true },
   component: lazy(() => import('./index')),
   icon: IconTable,
   dataSource: {
@@ -64,10 +64,10 @@ export function summarizeHoldings(data: HoldingsTableData, config: HoldingsTable
   const t = totals(rows);
   const top = rows[0];
   return (
-    `${rows.length} holdings${config.sector === 'All' ? '' : ` in ${config.sector}`}, value ${formatInrCompact(t.marketValueInr)}, ` +
-    `day P&L ${formatInrCompact(t.dayPnlInr, true)}.` +
+    `${rows.length} holdings${config.sector === 'All' ? '' : ` in ${config.sector}`}, value ${formatInrCompact(t.marketValue)}, ` +
+    `day P&L ${formatInrCompact(t.dailyPnL, true)}.` +
     (top
-      ? ` First row ${top.symbol}, weight ${top.weightPct.toFixed(2)}%, day ${formatPct(top.dayChangePct / 100)}.`
+      ? ` First row ${top.ticker}, weight ${top.weight.toFixed(2)}%, day ${formatPct(top.dailyPnLPercent / 100)}.`
       : '')
   );
 }

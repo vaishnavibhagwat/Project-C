@@ -33,11 +33,29 @@ export interface LayoutVersion {
   snapshot: PageSnapshot;
 }
 
-export interface SavedLayout {
+/** A saved, versioned page layout (LayoutStore). */
+export interface Layout {
   id: string;
   name: string;
   page: PageId;
+  /** IST ISO timestamps. */
   createdAt: string;
   updatedAt: string;
+  /** Oldest first; the last entry is the current version. */
   versions: LayoutVersion[];
+}
+
+/** react-grid-layout settings for the responsive dashboard grid. */
+export interface GridConfig {
+  /** Minimum container width (px) for each breakpoint. */
+  breakpoints: Record<Breakpoint, number>;
+  /** Number of columns at each breakpoint. */
+  cols: Record<Breakpoint, number>;
+  /** Height of one grid row, px. */
+  rowHeight: number;
+  /** Gap between widgets [x, y], px. */
+  margin: [number, number];
+  /** Padding inside the grid container [x, y], px. */
+  containerPadding: [number, number];
+  compactType: 'vertical' | 'horizontal' | null;
 }

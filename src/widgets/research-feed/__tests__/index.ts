@@ -6,7 +6,7 @@ export const fixtureData = () => fixture('research/feed');
 
 /** A non-default configuration used by the "configured" story and tests. */
 export const configuredConfig: ResearchFeedConfig = {
-  sentiment: 'Positive',
-  category: 'ALL',
+  sentiment: 'positive',
+  category: 'all',
   showSummary: false,
 };

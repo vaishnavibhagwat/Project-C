@@ -10,7 +10,7 @@ import { useLayoutStore } from '@/store/layoutStore';
 import { PageSnapshotSchema } from '@/store/schemas';
 import { MAX_LAYOUT_BYTES, snapshotBytes } from '@/store/share';
 import { downloadJson } from '@/utils/download';
-import type { SavedLayout } from '@/types';
+import type { Layout } from '@/types';
 import { cx } from '@/utils/cx';
 import { formatIstDateTime, toIstIso } from '@/utils/time';
 
@@ -19,7 +19,7 @@ function SavedRow({
   active,
   pageId,
 }: {
-  layout: SavedLayout;
+  layout: Layout;
   active: boolean;
   pageId: PageMeta['id'];
 }) {

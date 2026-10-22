@@ -51,9 +51,9 @@ export const portfolioOverviewDefinition: WidgetDefinition<
 
 export function summarizePortfolioOverview(d: PortfolioOverviewData): string {
   return (
-    `AUM ${formatUsdCompact(d.aumUsd)} (${formatInrCompact(d.aumInr)}) at last close. ` +
-    `Intraday market value ${formatInrCompact(d.marketValueInr)}, day P&L ${formatInrCompact(d.dayPnlInr, true)} ` +
-    `(${formatPct(d.dayChangePct / 100)}). NAV per unit ${d.navPerUnit.toFixed(2)}.`
+    `AUM ${formatUsdCompact(d.aumUsd)} (${formatInrCompact(d.aum)}) at last close. ` +
+    `Intraday market value ${formatInrCompact(d.marketValueInr)}, day P&L ${formatInrCompact(d.dailyPnL, true)} ` +
+    `(${formatPct(d.dailyPnLPercent / 100)}). NAV per unit ${d.navPerUnit.toFixed(2)}.`
   );
 }
 

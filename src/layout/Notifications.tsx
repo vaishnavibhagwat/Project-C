@@ -2,19 +2,24 @@ import { IconButton } from '@/components/Button';
 import { Badge } from '@/components/Delta';
 import { IconBell } from '@/components/Icons';
 import { Popover } from '@/components/Popover';
+import { useAcknowledgeAlerts, useAcknowledgedAlerts } from '@/hooks/useAlertAcknowledgements';
 import { useEndpoint } from '@/hooks/useEndpoint';
-import { useDashboardStore } from '@/store/dashboardStore';
+import type { Alert } from '@/types';
+import { cx } from '@/utils/cx';
+import { ALERT_TYPE_LABEL } from '@/widgets/alerts-monitor/model';
 import { formatIstTime } from '@/utils/time';
+
+const NO_ALERTS: Alert[] = [];
 
 const TONE = { critical: 'negative', warning: 'warning', info: 'accent' } as const;
 
 /** Bell menu fed by the alerts endpoint. Unread = warning/critical alerts not yet marked read. */
 export function Notifications() {
   const { data } = useEndpoint('alerts/active', 15_000);
-  const readIds = useDashboardStore((s) => s.readAlertIds);
-  const markRead = useDashboardStore((s) => s.markNotificationsRead);
-  const alerts = data?.alerts ?? [];
-  const unread = alerts.filter((a) => a.severity !== 'info' && !readIds.includes(a.id)).length;
+  const alerts = useAcknowledgedAlerts(data?.alerts ?? NO_ALERTS);
+  const acknowledge = useAcknowledgeAlerts();
+  // Badge counts warning and critical alerts that have not been acknowledged.
+  const unread = alerts.filter((a) => a.severity !== 'info' && !a.acknowledged).length;
 
   return (
     <Popover
@@ -47,9 +52,9 @@ export function Notifications() {
               type="button"
               className="text-2xs font-medium text-accent hover:underline disabled:opacity-40"
               disabled={unread === 0}
-              onClick={() => markRead(alerts.map((a) => a.id))}
+              onClick={() => acknowledge(alerts.map((a) => a.alertId))}
             >
-              Mark all read
+              Acknowledge all
             </button>
           </div>
           <ul className="scroll-thin max-h-80 overflow-y-auto">
@@ -57,14 +62,21 @@ export function Notifications() {
               <li className="px-3 py-4 text-center text-xs text-muted">No active alerts.</li>
             ) : null}
             {alerts.map((a) => (
-              <li key={a.id} className="flex gap-2 border-b border-line px-3 py-2 last:border-0">
+              <li
+                key={a.alertId}
+                className={cx(
+                  'flex gap-2 border-b border-line px-3 py-2 last:border-0',
+                  a.acknowledged && 'opacity-60',
+                )}
+              >
                 <Badge tone={TONE[a.severity]} className="mt-0.5 shrink-0">
                   {a.severity}
                 </Badge>
                 <div className="min-w-0">
-                  <p className="text-xs text-fg">{a.title}</p>
+                  <p className="text-xs text-fg">{a.message}</p>
                   <p className="num text-2xs text-subtle">
-                    {a.source} · {formatIstTime(Date.parse(a.triggeredAt), false)}
+                    {ALERT_TYPE_LABEL[a.type]} · {formatIstTime(Date.parse(a.triggeredAt), false)}
+                    {a.acknowledged ? ' · acknowledged' : ''}
                   </p>
                 </div>
               </li>

@@ -8,3 +8,4 @@ export * from './cx';
 export * from './download';
 export * from './jsonSchema';
 export * from './perf';
+export * from './holdings';

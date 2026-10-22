@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { Alert, Holding, NewsArticle, Portfolio } from '@/types';
 
 /**
  * Runtime validation for every mock API response. z.number() already rejects NaN; `.finite()`
@@ -40,20 +41,34 @@ const meta = {
 
 const sumsTo100 = (values: number[]) => Math.abs(values.reduce((s, v) => s + v, 0) - 100) < 0.01;
 
-export const SummarySchema = z.object({
+const CurrencySchema = z.enum(['INR', 'USD']);
+
+const AssetClassSchema = z.enum(['Equity', 'Fixed Income', 'Gold', 'REITs & InvITs', 'Cash']);
+
+export const PortfolioSchema = z.object({
+  portfolioId: z.string().min(1),
+  name: z.string().min(1),
+  aum: price,
+  dailyPnL: finite,
+  dailyPnLPercent: pct,
+  mtdReturn: finite,
+  ytdReturn: finite,
+  sharpeRatio: finite,
+  benchmark: z.string().min(1),
+  lastUpdated: istIso,
+}) satisfies z.ZodType<Portfolio>;
+
+/** portfolio/summary: the Portfolio plus intraday and NAV detail used by the overview. */
+export const SummarySchema = PortfolioSchema.extend({
   ...meta,
   sessionMode: SessionModeSchema,
   aumUsd: price,
-  aumInr: price,
   fxUsdInr: price,
   navPerUnit: price,
   navDayChangePct: pct,
+  /** Intraday market value (holdings at live prices + other assets), INR. */
   marketValueInr: price,
-  dayPnlInr: finite,
-  dayChangePct: pct,
   benchmarkDayChangePct: pct,
-  mtdReturnPct: finite,
-  ytdReturnPct: finite,
   oneYearReturnPct: finite,
   holdingsCount: z.number().int().positive(),
   equityWeightPct: pct,
@@ -92,28 +107,28 @@ export const AllocationSchema = z.object({
 });
 
 export const HoldingSchema = z.object({
-  symbol: z.string().min(1),
+  holdingId: z.string().min(1),
+  ticker: z.string().min(1),
   name: z.string().min(1),
   sector: SectorSchema,
+  assetClass: AssetClassSchema,
   quantity: z.number().int().positive(),
-  avgCost: price,
-  ltp: price,
-  prevClose: price,
-  marketValueInr: price,
-  weightPct: pct,
-  dayChangePct: pct,
-  dayPnlInr: finite,
-  unrealisedPnlInr: finite,
-  unrealisedPnlPct: finite,
-});
+  averageCost: price,
+  currentPrice: price,
+  marketValue: price,
+  dailyPnL: finite,
+  dailyPnLPercent: pct,
+  weight: pct,
+  currency: CurrencySchema,
+}) satisfies z.ZodType<Holding>;
 
 export const HoldingsSchema = z.object({
   ...meta,
-  totalMarketValueInr: price,
+  totalMarketValue: price,
   holdings: z
     .array(HoldingSchema)
     .refine(
-      (rows) => rows.length === 0 || sumsTo100(rows.map((r) => r.weightPct)),
+      (rows) => rows.length === 0 || sumsTo100(rows.map((r) => r.weight)),
       'Holding weights must sum to 100%',
     ),
 });
@@ -216,33 +231,34 @@ export const TradesSchema = z.object({
   trades: z.array(TradeSchema),
 });
 
-export const ResearchItemSchema = z.object({
-  id: z.string(),
-  publishedAt: istIso,
+export const NewsArticleSchema = z.object({
+  articleId: z.string().min(1),
   headline: z.string().min(1),
   summary: z.string(),
-  symbol: z.string().nullable(),
-  sector: SectorSchema.nullable(),
-  sentiment: z.enum(['Positive', 'Neutral', 'Negative']),
-  category: z.enum(['Earnings', 'Macro', 'Sector', 'Rating', 'Flows']),
-  analyst: z.string(),
-});
+  source: z.string().min(1),
+  publishedAt: istIso,
+  sentiment: z.enum(['positive', 'neutral', 'negative']),
+  sentimentScore: z.number().finite().min(-1).max(1),
+  relevantTickers: z.array(z.string().min(1)),
+  category: z.enum(['earnings', 'macro', 'sector', 'rating', 'flows']),
+}) satisfies z.ZodType<NewsArticle>;
 
 export const ResearchSchema = z.object({
   ...meta,
   disclaimer: z.string(),
-  items: z.array(ResearchItemSchema),
+  articles: z.array(NewsArticleSchema),
 });
 
 export const AlertSchema = z.object({
-  id: z.string(),
-  severity: z.enum(['critical', 'warning', 'info']),
-  source: z.enum(['Risk', 'Concentration', 'Price', 'Settlement', 'Drawdown']),
-  title: z.string(),
-  detail: z.string(),
+  alertId: z.string().min(1),
+  type: z.enum(['price_breach', 'risk_limit', 'news_event', 'rebalance_signal']),
+  severity: z.enum(['info', 'warning', 'critical']),
+  message: z.string().min(1),
   triggeredAt: istIso,
-  symbol: z.string().nullable(),
-});
+  relatedWidget: z.string().min(1),
+  relatedEntity: z.string().min(1),
+  acknowledged: z.boolean(),
+}) satisfies z.ZodType<Alert>;
 
 export const AlertsSchema = z.object({
   ...meta,
@@ -252,7 +268,6 @@ export const AlertsSchema = z.object({
 export type SummaryData = z.infer<typeof SummarySchema>;
 export type NavHistoryData = z.infer<typeof NavHistorySchema>;
 export type AllocationData = z.infer<typeof AllocationSchema>;
-export type Holding = z.infer<typeof HoldingSchema>;
 export type HoldingsData = z.infer<typeof HoldingsSchema>;
 export type SectorReturnsData = z.infer<typeof SectorReturnsSchema>;
 export type VarData = z.infer<typeof VarSchema>;
@@ -262,7 +277,5 @@ export type AttributionRow = z.infer<typeof AttributionRowSchema>;
 export type AttributionData = z.infer<typeof AttributionSchema>;
 export type Trade = z.infer<typeof TradeSchema>;
 export type TradesData = z.infer<typeof TradesSchema>;
-export type ResearchItem = z.infer<typeof ResearchItemSchema>;
 export type ResearchData = z.infer<typeof ResearchSchema>;
-export type Alert = z.infer<typeof AlertSchema>;
 export type AlertsData = z.infer<typeof AlertsSchema>;

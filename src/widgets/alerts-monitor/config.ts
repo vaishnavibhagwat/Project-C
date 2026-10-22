@@ -3,8 +3,9 @@ import { IconAlert } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
 import { registerWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
-import { filterAlerts } from './model';
+import { ALERT_TYPE_LABEL, filterAlerts } from './model';
 import {
+  ALERT_TYPE_FILTERS,
   AlertsMonitorConfigSchema,
   type AlertsMonitorConfig,
   type AlertsMonitorData,
@@ -29,17 +30,17 @@ export const alertsMonitorDefinition: WidgetDefinition<AlertsMonitorConfig, Aler
           { const: 'critical', title: 'Critical only' },
         ],
       },
-      source: {
-        title: 'Source',
-        oneOf: ['ALL', 'Risk', 'Concentration', 'Price', 'Settlement', 'Drawdown'].map((v) => ({
+      type: {
+        title: 'Alert type',
+        oneOf: ALERT_TYPE_FILTERS.map((v) => ({
           const: v,
-          title: v === 'ALL' ? 'All sources' : v,
+          title: v === 'all' ? 'All types' : ALERT_TYPE_LABEL[v],
         })),
       },
-      showDetail: { type: 'boolean', title: 'Show rule detail' },
+      showAcknowledged: { type: 'boolean', title: 'Show acknowledged alerts' },
     },
   },
-  defaultConfig: { minSeverity: 'info', source: 'ALL', showDetail: true },
+  defaultConfig: { minSeverity: 'info', type: 'all', showAcknowledged: true },
   component: lazy(() => import('./index')),
   icon: IconAlert,
   dataSource: {
@@ -54,7 +55,7 @@ export function summarizeAlerts(data: AlertsMonitorData, config: AlertsMonitorCo
   const rows = filterAlerts(data.alerts, config);
   const critical = rows.filter((a) => a.severity === 'critical').length;
   const warning = rows.filter((a) => a.severity === 'warning').length;
-  return `${rows.length} active alerts: ${critical} critical, ${warning} warning.${rows[0] ? ` Top: ${rows[0].title}.` : ''}`;
+  return `${rows.length} active alerts: ${critical} critical, ${warning} warning.${rows[0] ? ` Top: ${rows[0].message}` : ''}`;
 }
 
 export const alertsMonitorWidget = registerWidget(alertsMonitorDefinition, {

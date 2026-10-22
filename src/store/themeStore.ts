@@ -2,21 +2,21 @@ import { z } from 'zod';
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
-import type { ThemeDefinition, ThemeTokenKey } from '@/types';
+import type { Theme, ThemeTokenKey } from '@/types';
 import { BUILT_IN_THEMES, DEFAULT_THEME_ID, defaultTheme } from '@/theme/themes';
 import { sanitizeText } from '@/utils/sanitize';
-import { ThemeDefinitionSchema } from './schemas';
+import { ThemeSchema } from './schemas';
 import { createId, createValidatedStorage, devtoolsEnabled } from './storage';
 
 export interface ThemeBuilderState {
   open: boolean;
   /** Working copy being edited; previewed live while the builder is open. */
-  draft: ThemeDefinition | null;
+  draft: Theme | null;
 }
 
 interface ThemeData {
   activeThemeId: string;
-  customThemes: ThemeDefinition[];
+  customThemes: Theme[];
   builder: ThemeBuilderState;
 }
 
@@ -28,7 +28,7 @@ interface ThemeActions {
   closeBuilder: () => void;
   setDraftToken: (key: ThemeTokenKey, hex: string) => void;
   setDraftName: (name: string) => void;
-  setDraftMode: (mode: ThemeDefinition['mode']) => void;
+  setDraftMode: (mode: Theme['mode']) => void;
   saveDraft: () => string | null;
   deleteCustomTheme: (id: string) => void;
   importTheme: (json: unknown) => ImportResult;
@@ -36,17 +36,17 @@ interface ThemeActions {
 
 export type ThemeState = ThemeData & ThemeActions;
 
-export function allThemes(custom: readonly ThemeDefinition[]): ThemeDefinition[] {
+export function allThemes(custom: readonly Theme[]): Theme[] {
   return [...BUILT_IN_THEMES, ...custom];
 }
 
-export function resolveTheme(id: string, custom: readonly ThemeDefinition[]): ThemeDefinition {
+export function resolveTheme(id: string, custom: readonly Theme[]): Theme {
   return allThemes(custom).find((t) => t.id === id) ?? defaultTheme();
 }
 
 const PersistedSchema = z.object({
   activeThemeId: z.string(),
-  customThemes: z.array(ThemeDefinitionSchema).max(20),
+  customThemes: z.array(ThemeSchema).max(20),
 });
 type Persisted = z.infer<typeof PersistedSchema>;
 
@@ -105,7 +105,7 @@ export const useThemeStore = create<ThemeState>()(
         saveDraft: () => {
           const draft = get().builder.draft;
           if (!draft) return null;
-          const theme: ThemeDefinition = {
+          const theme: Theme = {
             ...draft,
             name: sanitizeText(draft.name, 40) || 'Custom theme',
             builtIn: false,
@@ -127,7 +127,7 @@ export const useThemeStore = create<ThemeState>()(
           }),
 
         importTheme: (json) => {
-          const parsed = ThemeDefinitionSchema.safeParse(json);
+          const parsed = ThemeSchema.safeParse(json);
           if (!parsed.success) {
             const issue = parsed.error.issues[0];
             return {
@@ -137,7 +137,7 @@ export const useThemeStore = create<ThemeState>()(
                 : 'Invalid theme',
             };
           }
-          const theme: ThemeDefinition = {
+          const theme: Theme = {
             ...parsed.data,
             id: createId('theme'),
             name: sanitizeText(parsed.data.name, 40) || 'Imported theme',
@@ -166,7 +166,7 @@ export const useThemeStore = create<ThemeState>()(
 );
 
 /** The theme that should be painted right now (the builder draft wins while previewing). */
-export function selectPaintedTheme(s: ThemeState): ThemeDefinition {
+export function selectPaintedTheme(s: ThemeState): Theme {
   return s.builder.open && s.builder.draft
     ? s.builder.draft
     : resolveTheme(s.activeThemeId, s.customThemes);

@@ -1,13 +1,14 @@
 import { z } from 'zod';
-import type { Holding, HoldingsData } from '@/data/schemas';
+import type { HoldingsData } from '@/data/schemas';
+import type { Holding } from '@/types';
 
 export const HOLDING_SORT_KEYS = [
-  'symbol',
-  'weightPct',
-  'dayChangePct',
-  'marketValueInr',
-  'dayPnlInr',
-  'unrealisedPnlPct',
+  'ticker',
+  'weight',
+  'dailyPnLPercent',
+  'marketValue',
+  'dailyPnL',
+  'unrealisedPnLPercent',
 ] as const;
 export type HoldingSortKey = (typeof HOLDING_SORT_KEYS)[number];
 

@@ -98,7 +98,7 @@ export const ENDPOINTS: EndpointRegistry = {
   'research/feed': {
     schema: ResearchSchema,
     derive: deriveResearch,
-    isEmpty: (d) => d.items.length === 0,
+    isEmpty: (d) => d.articles.length === 0,
   },
   'alerts/active': {
     schema: AlertsSchema,

@@ -7,6 +7,6 @@ export const fixtureData = () => fixture('alerts/active');
 /** A non-default configuration used by the "configured" story and tests. */
 export const configuredConfig: AlertsMonitorConfig = {
   minSeverity: 'warning',
-  source: 'ALL',
-  showDetail: false,
+  type: 'all',
+  showAcknowledged: false,
 };

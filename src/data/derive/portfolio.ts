@@ -1,3 +1,4 @@
+import { sharpeRatio } from '@/utils/finance';
 import type { Sector } from '@/types';
 import { SECTORS } from '../nifty50';
 import type {
@@ -9,27 +10,32 @@ import type {
 } from '../schemas';
 import { asOfIso, liveHoldings, nonEquityValueInr, round, type DeriveContext } from './context';
 
+/** Identity of the simulated fund (fictional). */
+export const PORTFOLIO_ID = 'MER-IMAF-01';
+export const PORTFOLIO_NAME = 'Meridian India Multi-Asset Fund';
+export const BENCHMARK_NAME = 'Nifty 50 TRI';
+
 export function deriveHoldings(ctx: DeriveContext): HoldingsData {
   const live = liveHoldings(ctx);
   const total = live.reduce((s, h) => s + h.marketValueInr, 0);
   return {
     asOf: asOfIso(ctx),
     simulated: true,
-    totalMarketValueInr: round(total, 2),
+    totalMarketValue: round(total, 2),
     holdings: live.map(({ holding, ltp, prevClose, marketValueInr }) => ({
-      symbol: holding.symbol,
+      holdingId: `HLD-${holding.symbol}`,
+      ticker: holding.symbol,
       name: holding.name,
       sector: holding.sector,
+      assetClass: 'Equity',
       quantity: holding.quantity,
-      avgCost: holding.avgCost,
-      ltp,
-      prevClose: round(prevClose, 2),
-      marketValueInr: round(marketValueInr, 2),
-      weightPct: (marketValueInr / total) * 100,
-      dayChangePct: round((ltp / prevClose - 1) * 100, 4),
-      dayPnlInr: round(holding.quantity * (ltp - prevClose), 2),
-      unrealisedPnlInr: round(holding.quantity * (ltp - holding.avgCost), 2),
-      unrealisedPnlPct: round((ltp / holding.avgCost - 1) * 100, 4),
+      averageCost: holding.avgCost,
+      currentPrice: ltp,
+      marketValue: round(marketValueInr, 2),
+      dailyPnL: round(holding.quantity * (ltp - prevClose), 2),
+      dailyPnLPercent: round((ltp / prevClose - 1) * 100, 4),
+      weight: (marketValueInr / total) * 100,
+      currency: 'INR',
     })),
   };
 }
@@ -107,26 +113,32 @@ export function deriveSummary(ctx: DeriveContext): SummaryData {
   const navs = dataset.fundNav;
   const lastReturn = dataset.fundReturns[dataset.fundReturns.length - 1] ?? 0;
 
+  const asOf = asOfIso(ctx);
   return {
-    asOf: asOfIso(ctx),
+    portfolioId: PORTFOLIO_ID,
+    name: PORTFOLIO_NAME,
+    aum: dataset.aumInr,
+    dailyPnL: round(dayPnl, 2),
+    dailyPnLPercent: round((dayPnl / (equityPrev + others)) * 100, 4),
+    mtdReturn: round(returnSinceDate(dataset.dates, navs, asOfDate.slice(0, 7)), 4),
+    ytdReturn: round(returnSinceDate(dataset.dates, navs, asOfDate.slice(0, 4)), 4),
+    sharpeRatio: round(sharpeRatio(dataset.fundReturns, dataset.riskFreeRate), 4),
+    benchmark: BENCHMARK_NAME,
+    lastUpdated: asOf,
+    asOf,
     simulated: true,
     sessionMode: market.mode,
     aumUsd: dataset.aumUsd,
-    aumInr: dataset.aumInr,
     fxUsdInr: dataset.fxUsdInr,
     navPerUnit: round(navs[navs.length - 1] ?? 0, 4),
     navDayChangePct: round(lastReturn * 100, 4),
     marketValueInr: round(marketValue, 2),
-    dayPnlInr: round(dayPnl, 2),
-    dayChangePct: round((dayPnl / (equityPrev + others)) * 100, 4),
     benchmarkDayChangePct: round(
       (market.mode === 'frozen'
         ? (dataset.benchmarkReturns[dataset.benchmarkReturns.length - 1] ?? 0)
         : market.benchmarkChange) * 100,
       4,
     ),
-    mtdReturnPct: round(returnSinceDate(dataset.dates, navs, asOfDate.slice(0, 7)), 4),
-    ytdReturnPct: round(returnSinceDate(dataset.dates, navs, asOfDate.slice(0, 4)), 4),
     oneYearReturnPct: round(returnSince(navs, 252), 4),
     holdingsCount: dataset.holdings.length,
     equityWeightPct: (equity / marketValue) * 100,

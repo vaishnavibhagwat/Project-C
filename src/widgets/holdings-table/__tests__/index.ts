@@ -6,7 +6,7 @@ export const fixtureData = () => fixture('portfolio/holdings');
 
 /** A non-default configuration used by the "configured" story and tests. */
 export const configuredConfig: HoldingsTableConfig = {
-  sortBy: 'dayChangePct',
+  sortBy: 'dailyPnLPercent',
   sortDir: 'asc',
   sector: 'Financial Services',
   showPnl: false,

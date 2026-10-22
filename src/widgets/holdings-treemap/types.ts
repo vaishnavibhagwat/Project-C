@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import type { Holding, HoldingsData } from '@/data/schemas';
+import type { HoldingsData } from '@/data/schemas';
+import type { Holding } from '@/types';
 
 export const HoldingsTreemapConfigSchema = z.object({
   groupBy: z.enum(['sector', 'none']),

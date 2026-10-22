@@ -1,9 +1,10 @@
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3';
-import type { Holding } from '@/data/schemas';
+import { unrealisedPnLPercent } from '@/utils/holdings';
+import type { Holding } from '@/types';
 import type { HoldingsTreemapConfig, HoldingsTreemapData, TreeDatum } from './types';
 
 export function buildTree(data: HoldingsTreemapData, config: HoldingsTreemapConfig): TreeDatum {
-  const leaf = (h: Holding): TreeDatum => ({ name: h.symbol, holding: h });
+  const leaf = (h: Holding): TreeDatum => ({ name: h.ticker, holding: h });
   if (config.groupBy === 'none') return { name: 'Portfolio', children: data.holdings.map(leaf) };
   const bySector = new Map<string, Holding[]>();
   for (const h of data.holdings) bySector.set(h.sector, [...(bySector.get(h.sector) ?? []), h]);
@@ -17,7 +18,7 @@ export function buildTree(data: HoldingsTreemapData, config: HoldingsTreemapConf
 }
 
 export function colorMetric(h: Holding, config: HoldingsTreemapConfig): number {
-  return config.colorBy === 'dayChange' ? h.dayChangePct : h.unrealisedPnlPct;
+  return config.colorBy === 'dayChange' ? h.dailyPnLPercent : unrealisedPnLPercent(h);
 }
 
 /** Squarified treemap sized by market value (D3 hierarchy + treemap layout). */
@@ -28,7 +29,7 @@ export function layoutTreemap(
   grouped: boolean,
 ): HierarchyRectangularNode<TreeDatum> {
   const root = hierarchy(tree)
-    .sum((d) => d.holding?.marketValueInr ?? 0)
+    .sum((d) => d.holding?.marketValue ?? 0)
     .sort((a, b) => (b.value ?? 0) - (a.value ?? 0));
   return treemap<TreeDatum>()
     .tile(treemapSquarify.ratio(1.3))

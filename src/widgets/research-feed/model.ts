@@ -1,12 +1,17 @@
-import type { ResearchFeedConfig, ResearchItem } from './types';
+import type { NewsArticle, ResearchFeedConfig } from './types';
 
-export function filterResearch(
-  items: readonly ResearchItem[],
+export function filterArticles(
+  articles: readonly NewsArticle[],
   config: ResearchFeedConfig,
-): ResearchItem[] {
-  return items.filter(
-    (i) =>
-      (config.sentiment === 'ALL' || i.sentiment === config.sentiment) &&
-      (config.category === 'ALL' || i.category === config.category),
+): NewsArticle[] {
+  return articles.filter(
+    (a) =>
+      (config.sentiment === 'all' || a.sentiment === config.sentiment) &&
+      (config.category === 'all' || a.category === config.category),
   );
+}
+
+/** "earnings" -> "Earnings" for display. */
+export function titleCase(value: string): string {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }

@@ -1,7 +1,8 @@
 import { scaleLinear } from 'd3';
+import { unrealisedPnLPercent } from '@/utils/holdings';
 import { memo, useMemo, useState } from 'react';
 import { HoverCard } from '@/components/charts';
-import type { Holding } from '@/data/schemas';
+import type { Holding } from '@/types';
 import { cssColor } from '@/theme/themes';
 import type { WidgetComponentProps } from '@/types';
 import { formatInrCompact, formatPct } from '@/utils/format';
@@ -81,12 +82,12 @@ function HoldingsTreemap({
           const textFill = a > 0.55 ? cssColor('bg') : cssColor('text');
           return (
             <g
-              key={h.symbol}
+              key={h.ticker}
               onMouseEnter={() => setHover({ holding: h, x: leaf.x0 + w / 2, y: leaf.y0 + ht / 2 })}
             >
               <rect x={leaf.x0} y={leaf.y0} width={w} height={ht} fill={cssColor('panel')} />
               <rect x={leaf.x0} y={leaf.y0} width={w} height={ht} fill={fill} fillOpacity={a} />
-              {w > h.symbol.length * 6.4 + 8 && ht > 26 ? (
+              {w > h.ticker.length * 6.4 + 8 && ht > 26 ? (
                 <>
                   <text
                     x={leaf.x0 + 4}
@@ -95,7 +96,7 @@ function HoldingsTreemap({
                     fontWeight={600}
                     fill={textFill}
                   >
-                    {h.symbol}
+                    {h.ticker}
                   </text>
                   <text
                     x={leaf.x0 + 4}
@@ -115,28 +116,30 @@ function HoldingsTreemap({
       {hover ? (
         <HoverCard x={hover.x} y={hover.y} containerWidth={width} containerHeight={height}>
           <div className="font-medium text-fg">
-            {hover.holding.symbol} <span className="text-muted">· {hover.holding.sector}</span>
+            {hover.holding.ticker} <span className="text-muted">· {hover.holding.sector}</span>
           </div>
           <div className="num mt-1 grid grid-cols-2 gap-x-2 text-2xs">
             <span className="text-muted">Weight</span>
-            <span className="text-right">{hover.holding.weightPct.toFixed(2)}%</span>
+            <span className="text-right">{hover.holding.weight.toFixed(2)}%</span>
             <span className="text-muted">Value</span>
-            <span className="text-right">{formatInrCompact(hover.holding.marketValueInr)}</span>
+            <span className="text-right">{formatInrCompact(hover.holding.marketValue)}</span>
             <span className="text-muted">Day</span>
             <span
               className={
-                hover.holding.dayChangePct >= 0 ? 'text-right text-pos' : 'text-right text-neg'
+                hover.holding.dailyPnLPercent >= 0 ? 'text-right text-pos' : 'text-right text-neg'
               }
             >
-              {formatPct(hover.holding.dayChangePct / 100)}
+              {formatPct(hover.holding.dailyPnLPercent / 100)}
             </span>
             <span className="text-muted">Unrealised</span>
             <span
               className={
-                hover.holding.unrealisedPnlPct >= 0 ? 'text-right text-pos' : 'text-right text-neg'
+                unrealisedPnLPercent(hover.holding) >= 0
+                  ? 'text-right text-pos'
+                  : 'text-right text-neg'
               }
             >
-              {formatPct(hover.holding.unrealisedPnlPct / 100)}
+              {formatPct(unrealisedPnLPercent(hover.holding) / 100)}
             </span>
           </div>
         </HoverCard>

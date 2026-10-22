@@ -52,6 +52,11 @@ Source files: `src/data/dataset.ts`, `src/data/market.ts`, `src/data/derive/*.ts
   dropped at random by seed). Weights are index weights tilted by `exp(0.35 × Z)` and capped at
   **9.5% per name** (excess redistributed pro rata). Quantities are whole shares; cost basis is
   `close × exp(−0.10 + 0.18 × Z)`.
+- `Holding.weight` is the share of the equity sleeve (holdings sum to 100%). `averageCost` is the
+  cost basis above; unrealised P&L is `quantity × (currentPrice − averageCost)`, derived on read.
+- `Portfolio.aum` is the last-close AUM; `dailyPnL` is the intraday change in market value.
+  `mtdReturn` and `ytdReturn` use NAV per unit against the last close before the month or year
+  began. `sharpeRatio` is the full-period annualised Sharpe from §6 (an approximation).
 - Intraday market value = holdings at live prices + non-equity classes at their close values.
   All displayed weights are recomputed from these values and sum to 100% (schema-enforced).
 
@@ -111,16 +116,27 @@ GIPS-compliant or multi-period linked calculation.
 
 ## 9. Alerts (rule-based)
 
-| Rule                      | Threshold (illustrative policy)        |
-| ------------------------- | -------------------------------------- |
-| 1-day 99% historical VaR  | warning ≥ 1.5% of AUM, critical ≥ 2.0% |
-| Single-name weight        | ≥ 9% of the equity sleeve              |
-| Intraday price move       | ≥ 2.5% (warning ≥ 4%)                  |
-| NAV below high-water mark | ≥ 5%                                   |
-| Settlement                | trades settling today (T+1)            |
+| Type               | Rule                             | Threshold (illustrative policy)         | Related widget   |
+| ------------------ | -------------------------------- | --------------------------------------- | ---------------- |
+| `risk_limit`       | 1-day 99% historical VaR         | warning ≥ 1.5% of AUM, critical ≥ 2.0%  | var-gauge        |
+| `risk_limit`       | NAV below high-water mark        | ≥ 5%                                    | drawdown         |
+| `rebalance_signal` | Single-name weight               | ≥ 9% of the equity sleeve               | holdings-table   |
+| `price_breach`     | Intraday price move              | ≥ 2.5% (warning ≥ 4%)                   | holdings-treemap |
+| `news_event`       | Sample research on a held ticker | \|sentimentScore\| ≥ 0.8, newest 3 kept | research-feed    |
+
+Alert ids are stable per rule and entity (for example `conc-RELIANCE`), so an alert keeps its id
+across refreshes. The API always returns `acknowledged: false`; acknowledging is a per-user
+overlay stored in DashboardStore (persisted, zod-validated) and applied on read. The earlier
+T+1 settlement reminder is no longer an alert because it fits none of the four spec types;
+settlement status stays visible in the trade blotter.
 
 ## 10. Research feed
 
-One templated item per 17-minute slot (40 shown), chosen by seed. Every item is labelled as a
-**sample note** and the widget carries a "Sample content" banner. Items are not real news and
-not investment advice. Text is sanitised (DOMPurify) and rendered as plain text.
+One templated `NewsArticle` per 17-minute slot (40 shown), chosen by seed. Every item is
+labelled as a **sample note** and the widget carries a "Sample content" banner. Items are not
+real news and not investment advice. Text is sanitised (DOMPurify) and rendered as plain text.
+
+`sentimentScore` is drawn from a band that matches the template's `sentiment` (positive
+0.35..0.95, neutral −0.2..0.2, negative −0.95..−0.35). It is a seeded label for the demo, not
+the output of any sentiment model. `relevantTickers` are the three largest Nifty 50 names (by
+index weight) in the article's sector; a news alert is raised only when one of them is held.

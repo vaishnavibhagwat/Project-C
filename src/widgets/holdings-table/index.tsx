@@ -7,12 +7,13 @@ import { EmptyState } from '@/components/StateViews';
 import { useSymbolDetail } from '@/hooks/useSymbolDetail';
 import type { WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
+import { unrealisedPnLPercent } from '@/utils/holdings';
 import { formatInr, formatInrCompact, formatNumber } from '@/utils/format';
 import { selectHoldings, totals } from './model';
 import type { Holding, HoldingSortKey, HoldingsTableConfig, HoldingsTableData } from './types';
 
 interface Column {
-  key: HoldingSortKey | 'name' | 'ltp' | 'quantity';
+  key: HoldingSortKey | 'name' | 'currentPrice' | 'quantity';
   label: string;
   numeric: boolean;
   /** Present for sortable columns. */
@@ -22,31 +23,31 @@ interface Column {
 }
 
 const COLUMNS: Column[] = [
-  { key: 'symbol', label: 'Symbol', numeric: false, sortKey: 'symbol' },
+  { key: 'ticker', label: 'Symbol', numeric: false, sortKey: 'ticker' },
   { key: 'quantity', label: 'Qty', numeric: true, minWidth: 720 },
-  { key: 'ltp', label: 'LTP ₹', numeric: true },
-  { key: 'dayChangePct', label: 'Day %', numeric: true, sortKey: 'dayChangePct' },
+  { key: 'currentPrice', label: 'LTP ₹', numeric: true },
+  { key: 'dailyPnLPercent', label: 'Day %', numeric: true, sortKey: 'dailyPnLPercent' },
   {
-    key: 'marketValueInr',
+    key: 'marketValue',
     label: 'Value',
     numeric: true,
-    sortKey: 'marketValueInr',
+    sortKey: 'marketValue',
     minWidth: 520,
   },
-  { key: 'weightPct', label: 'Weight', numeric: true, sortKey: 'weightPct' },
+  { key: 'weight', label: 'Weight', numeric: true, sortKey: 'weight' },
   {
-    key: 'dayPnlInr',
+    key: 'dailyPnL',
     label: 'Day P&L',
     numeric: true,
-    sortKey: 'dayPnlInr',
+    sortKey: 'dailyPnL',
     pnl: true,
     minWidth: 620,
   },
   {
-    key: 'unrealisedPnlPct',
+    key: 'unrealisedPnLPercent',
     label: 'Unreal. %',
     numeric: true,
-    sortKey: 'unrealisedPnlPct',
+    sortKey: 'unrealisedPnLPercent',
     pnl: true,
     minWidth: 820,
   },
@@ -56,27 +57,27 @@ const TABLE_PARTS = virtuosoTableComponents<Holding>();
 
 function Cell({ col, h }: { col: Column; h: Holding }) {
   switch (col.key) {
-    case 'symbol':
+    case 'ticker':
       return (
         <span className="flex min-w-0 flex-col">
-          <span className="font-medium text-fg">{h.symbol}</span>
+          <span className="font-medium text-fg">{h.ticker}</span>
           <span className="truncate text-2xs text-subtle">{h.sector}</span>
         </span>
       );
     case 'quantity':
       return <>{formatNumber(h.quantity)}</>;
-    case 'ltp':
-      return <>{formatInr(h.ltp, 2).slice(1)}</>;
-    case 'dayChangePct':
-      return <Delta value={h.dayChangePct / 100} />;
-    case 'marketValueInr':
-      return <>{formatInrCompact(h.marketValueInr)}</>;
-    case 'weightPct':
-      return <>{h.weightPct.toFixed(2)}%</>;
-    case 'dayPnlInr':
-      return <Delta value={h.dayPnlInr} text={formatInrCompact(h.dayPnlInr, true)} arrow={false} />;
-    case 'unrealisedPnlPct':
-      return <Delta value={h.unrealisedPnlPct / 100} arrow={false} />;
+    case 'currentPrice':
+      return <>{formatInr(h.currentPrice, 2).slice(1)}</>;
+    case 'dailyPnLPercent':
+      return <Delta value={h.dailyPnLPercent / 100} />;
+    case 'marketValue':
+      return <>{formatInrCompact(h.marketValue)}</>;
+    case 'weight':
+      return <>{h.weight.toFixed(2)}%</>;
+    case 'dailyPnL':
+      return <Delta value={h.dailyPnL} text={formatInrCompact(h.dailyPnL, true)} arrow={false} />;
+    case 'unrealisedPnLPercent':
+      return <Delta value={unrealisedPnLPercent(h) / 100} arrow={false} />;
     default:
       return null;
   }
@@ -107,7 +108,7 @@ function HoldingsTable({
     (key: HoldingSortKey) => {
       if (config.sortBy === key)
         onConfigChange({ sortDir: config.sortDir === 'asc' ? 'desc' : 'asc' });
-      else onConfigChange({ sortBy: key, sortDir: key === 'symbol' ? 'asc' : 'desc' });
+      else onConfigChange({ sortBy: key, sortDir: key === 'ticker' ? 'asc' : 'desc' });
     },
     [config.sortBy, config.sortDir, onConfigChange],
   );
@@ -144,7 +145,7 @@ function HoldingsTable({
           className="scroll-thin min-h-0 flex-1"
           components={TABLE_PARTS}
           data={rows}
-          computeItemKey={(_, h) => h.symbol}
+          computeItemKey={(_, h) => h.ticker}
           increaseViewportBy={120}
           fixedHeaderContent={() => (
             <tr className="bg-panel">
@@ -197,11 +198,11 @@ function HoldingsTable({
                   c.numeric ? 'num text-right' : 'text-left',
                 )}
               >
-                {c.key === 'symbol' && detail ? (
+                {c.key === 'ticker' && detail ? (
                   <button
                     type="button"
                     className="text-left hover:underline"
-                    onClick={() => detail.openSymbol(h.symbol)}
+                    onClick={() => detail.openSymbol(h.ticker)}
                   >
                     <Cell col={c} h={h} />
                   </button>
@@ -221,13 +222,13 @@ function HoldingsTable({
                     c.numeric ? 'num text-right' : 'text-left',
                   )}
                 >
-                  {c.key === 'symbol' ? 'Total' : null}
-                  {c.key === 'marketValueInr' ? formatInrCompact(sum.marketValueInr) : null}
-                  {c.key === 'weightPct' ? `${sum.weightPct.toFixed(1)}%` : null}
-                  {c.key === 'dayPnlInr' ? (
+                  {c.key === 'ticker' ? 'Total' : null}
+                  {c.key === 'marketValue' ? formatInrCompact(sum.marketValue) : null}
+                  {c.key === 'weight' ? `${sum.weight.toFixed(1)}%` : null}
+                  {c.key === 'dailyPnL' ? (
                     <Delta
-                      value={sum.dayPnlInr}
-                      text={formatInrCompact(sum.dayPnlInr, true)}
+                      value={sum.dailyPnL}
+                      text={formatInrCompact(sum.dailyPnL, true)}
                       arrow={false}
                     />
                   ) : null}

@@ -5,11 +5,11 @@ import { IconCheck, IconDownload, IconPalette, IconTrash, IconUpload } from '@/c
 import { Popover } from '@/components/Popover';
 import { useToast } from '@/components/Toast';
 import { allThemes, resolveTheme, useThemeStore } from '@/store/themeStore';
-import type { ThemeDefinition } from '@/types';
+import type { Theme } from '@/types';
 import { cx } from '@/utils/cx';
 import { downloadJson } from '@/utils/download';
 
-function Swatch({ theme }: { theme: ThemeDefinition }) {
+function Swatch({ theme }: { theme: Theme }) {
   const t = theme.tokens;
   return (
     <span

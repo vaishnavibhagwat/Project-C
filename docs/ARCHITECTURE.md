@@ -45,7 +45,11 @@ export const varGaugeDefinition: WidgetDefinition<VarGaugeConfig, VarGaugeData> 
   defaultConfig: { confidence: '99', method: 'historical', … },
   component: lazy(() => import('./index')),               // own chunk
   icon: IconShield,
-  dataSource: { endpoint: 'risk/var', refreshIntervalMs: 60_000 },
+  dataSource: {
+    endpoint: 'risk/var',
+    refreshInterval: env.VITE_DATA_REFRESH_INTERVAL,   // ms
+    latencyProfile: 'high',                             // low | normal | high
+  },
 };
 ```
 
@@ -57,6 +61,15 @@ are checked at runtime rather than erased with casts:
   A value that fails validation falls back to its default, and valid values are kept.
 - **Data**: `isEndpointData(endpoint)` is a type guard that accepts only objects returned by
   `parseEndpoint` for that endpoint (a `WeakMap` records validated objects).
+
+Widgets receive `WidgetComponentProps`: `instanceId`, `config`, `data`, `isLoading`, `error`,
+`isStale`, `lastUpdated` (IST ISO), `onConfigChange(patch)`, `width` and `height`. A widget
+instance is `{ instanceId, widgetId, config, position: { x, y, w, h } }`; `position` mirrors the
+large-breakpoint grid layout in DashboardStore.
+
+`DataSourceConfig.latencyProfile` scales the mock API's simulated latency (low ×0.4, normal ×1,
+high ×2.5) so heavy analytics endpoints feel slower than quotes. `wsChannel` is optional and
+reserved: mock mode polls and nothing opens a WebSocket.
 
 ### Adding a widget
 
@@ -70,14 +83,32 @@ are checked at runtime rather than erased with casts:
 The frame supplies everything else: states, header, settings panel, stale detection,
 accessibility summary, resize and drag.
 
+## Domain types
+
+`src/types/domain.ts` holds the spec's entities, each mirrored by a zod schema in
+`src/data/schemas.ts` (`satisfies z.ZodType<T>`, so the two cannot drift):
+
+| Type          | Fields                                                                                                                                                                       |
+| ------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Portfolio`   | portfolioId, name, aum, dailyPnL, dailyPnLPercent, mtdReturn, ytdReturn, sharpeRatio, benchmark, lastUpdated                                                                 |
+| `Holding`     | holdingId, ticker, name, sector, assetClass, quantity, averageCost, currentPrice, marketValue, dailyPnL, dailyPnLPercent, weight, currency                                   |
+| `NewsArticle` | articleId, headline, summary, source, publishedAt, sentiment, sentimentScore (−1..1), relevantTickers[], category                                                            |
+| `Alert`       | alertId, type (price_breach, risk_limit, news_event, rebalance_signal), severity (info, warning, critical), message, triggeredAt, relatedWidget, relatedEntity, acknowledged |
+
+Money is INR, percentages are in percent units (1.25 means 1.25%) and timestamps are IST ISO
+strings. Unrealised P&L and previous close are derived from a `Holding` in
+`src/utils/holdings.ts` rather than stored. `Layout` (a saved layout with versions), `Theme` and
+`GridConfig` live in `src/types/layout.ts` and `src/types/theme.ts`; the grid's breakpoints,
+columns, row height and margins are the single `GRID_CONFIG` constant in DashboardStore.
+
 ## State: four stores
 
-| Store            | Owns                                                                                         | Persisted (localStorage, zod-validated on load) |
-| ---------------- | -------------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| `DashboardStore` | grid layouts per page and breakpoint, item order, lock, AUM currency preference, read alerts | yes                                             |
-| `WidgetStore`    | widget instances (type, title, settings); which settings panel is open                       | instances only                                  |
-| `ThemeStore`     | active theme id, custom themes, builder draft (live preview)                                 | active id + custom themes                       |
-| `LayoutStore`    | saved layouts with up to 20 versions each, active layout per page, last share URL            | saved layouts + active ids                      |
+| Store            | Owns                                                                                                    | Persisted (localStorage, zod-validated on load) |
+| ---------------- | ------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| `DashboardStore` | grid layouts per page and breakpoint, item order, lock, AUM currency preference, acknowledged alert ids | yes                                             |
+| `WidgetStore`    | widget instances (type, title, settings); which settings panel is open                                  | instances only                                  |
+| `ThemeStore`     | active theme id, custom themes, builder draft (live preview)                                            | active id + custom themes                       |
+| `LayoutStore`    | saved layouts with up to 20 versions each, active layout per page, last share URL                       | saved layouts + active ids                      |
 
 All four use `devtools(persist(immer(…)))`. The devtools bridge is enabled only in development
 when `VITE_ENABLE_DEVTOOLS=true`. Components subscribe with narrow selectors

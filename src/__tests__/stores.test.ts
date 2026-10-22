@@ -109,10 +109,10 @@ describe('DashboardStore + WidgetStore', () => {
     }
   });
 
-  it('tracks read alerts by id', () => {
-    useDashboardStore.getState().markNotificationsRead(['a', 'b']);
-    useDashboardStore.getState().markNotificationsRead(['b', 'c']);
-    expect(useDashboardStore.getState().readAlertIds).toEqual(['a', 'b', 'c']);
+  it('tracks acknowledged alerts by id', () => {
+    useDashboardStore.getState().acknowledgeAlerts(['a', 'b']);
+    useDashboardStore.getState().acknowledgeAlerts(['b', 'c']);
+    expect(useDashboardStore.getState().acknowledgedAlertIds).toEqual(['a', 'b', 'c']);
   });
 });
 

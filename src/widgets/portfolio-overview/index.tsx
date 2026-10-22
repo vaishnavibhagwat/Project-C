@@ -52,11 +52,9 @@ function PortfolioOverview({
       <Tile
         label="AUM · last close"
         value={
-          config.currency === 'USD' ? formatUsdCompact(data.aumUsd) : formatInrCompact(data.aumInr)
+          config.currency === 'USD' ? formatUsdCompact(data.aumUsd) : formatInrCompact(data.aum)
         }
-        sub={
-          config.currency === 'USD' ? formatInrCompact(data.aumInr) : formatUsdCompact(data.aumUsd)
-        }
+        sub={config.currency === 'USD' ? formatInrCompact(data.aum) : formatUsdCompact(data.aumUsd)}
         title="Official AUM at the last NSE close. Intraday value moves with simulated prices."
       />
       <Tile
@@ -66,8 +64,8 @@ function PortfolioOverview({
       />
       <Tile
         label="Day P&L"
-        value={<Delta value={data.dayPnlInr} text={money(data.dayPnlInr, true)} />}
-        sub={<Delta value={data.dayChangePct / 100} arrow={false} />}
+        value={<Delta value={data.dailyPnL} text={money(data.dailyPnL, true)} />}
+        sub={<Delta value={data.dailyPnLPercent / 100} arrow={false} />}
       />
       <Tile
         label="NAV / unit"
@@ -80,9 +78,15 @@ function PortfolioOverview({
       />
       {config.showReturns ? (
         <>
-          <Tile label="MTD" value={<Delta value={data.mtdReturnPct / 100} />} />
-          <Tile label="YTD" value={<Delta value={data.ytdReturnPct / 100} />} />
+          <Tile label="MTD" value={<Delta value={data.mtdReturn / 100} />} />
+          <Tile label="YTD" value={<Delta value={data.ytdReturn / 100} />} />
           <Tile label="1 year" value={<Delta value={data.oneYearReturnPct / 100} />} />
+          <Tile
+            label="Sharpe"
+            value={data.sharpeRatio.toFixed(2)}
+            sub={`vs ${data.benchmark}`}
+            title="Full-period Sharpe ratio of NAV returns (see docs/ASSUMPTIONS.md)"
+          />
         </>
       ) : null}
       {config.showBenchmark ? (

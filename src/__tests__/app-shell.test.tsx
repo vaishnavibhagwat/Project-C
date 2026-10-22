@@ -215,9 +215,9 @@ describe('AppShell', () => {
       expect(screen.getByRole('button', { name: /Notifications, \d+ unread/ })).toBeInTheDocument(),
     );
     fireEvent.click(screen.getByRole('button', { name: /Notifications/ }));
-    fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Acknowledge all' }));
     expect(screen.getByRole('button', { name: 'Notifications' })).toBeInTheDocument();
-    expect(useDashboardStore.getState().readAlertIds.length).toBeGreaterThan(0);
+    expect(useDashboardStore.getState().acknowledgedAlertIds.length).toBeGreaterThan(0);
   });
 
   it('offers about, shortcuts and a display-currency preference in the user menu', () => {

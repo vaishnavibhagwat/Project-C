@@ -16,8 +16,8 @@ describe('HoldingsTreemap', () => {
     expect(leaves).toHaveLength(data.holdings.length);
     const area = (n: (typeof leaves)[number]) => (n.x1 - n.x0) * (n.y1 - n.y0);
     const biggest = [...leaves].sort((a, b) => area(b) - area(a))[0];
-    const largest = [...data.holdings].sort((a, b) => b.marketValueInr - a.marketValueInr)[0];
-    expect(biggest?.data.holding?.symbol).toBe(largest?.symbol);
+    const largest = [...data.holdings].sort((a, b) => b.marketValue - a.marketValue)[0];
+    expect(biggest?.data.holding?.ticker).toBe(largest?.ticker);
   });
 
   it('groups by sector unless configured flat', () => {

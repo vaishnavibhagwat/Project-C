@@ -26,7 +26,7 @@ export type ThemeTokenKey = (typeof THEME_TOKEN_KEYS)[number];
 /** Hex colour values (#RRGGBB) for every design token. */
 export type ThemeTokens = Record<ThemeTokenKey, string>;
 
-export interface ThemeDefinition {
+export interface Theme {
   id: string;
   name: string;
   mode: 'dark' | 'light';
