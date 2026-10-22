@@ -47,6 +47,13 @@ export function search(query: string, limit = 12): SearchResult[] {
       hint: 'Go to page',
       route: 'marketplace',
     },
+    {
+      kind: 'page',
+      id: 'page-settings',
+      label: 'Settings',
+      hint: 'Grid, theme, data feed, shortcuts',
+      route: 'settings',
+    },
     ...widgetRegistry.getAllWidgets().map((w) => ({
       kind: 'widget' as const,
       id: `widget-${w.id}`,

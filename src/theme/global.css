@@ -5,7 +5,20 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Default tokens (Midnight Graphite) so the first paint is correct even before JS runs. */
+/* Structural tokens (see src/theme/tokens.ts). Tailwind's spacing, radius, border-width and
+   font utilities resolve to these, so the scale can be tuned in one place. */
+:root {
+  --space-unit: 0.25rem; /* 4 px at the default root size; spacing key n = n units */
+  --radius-sm: 2px;
+  --radius: 4px;
+  --radius-md: 6px;
+  --radius-full: 9999px;
+  --divider: 1px;
+  --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* Colour tokens: Midnight Graphite defaults so the first paint is correct before JS runs. */
 :root {
   --color-bg: 11 14 19;
   --color-panel: 17 23 32;

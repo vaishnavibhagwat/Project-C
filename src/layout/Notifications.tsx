@@ -1,5 +1,5 @@
 import { IconButton } from '@/components/Button';
-import { Badge } from '@/components/Delta';
+import { Badge } from '@/components/Badge';
 import { IconBell } from '@/components/Icons';
 import { Popover } from '@/components/Popover';
 import { useAcknowledgeAlerts, useAcknowledgedAlerts } from '@/hooks/useAlertAcknowledgements';

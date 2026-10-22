@@ -2,7 +2,7 @@ export * from './useConnection';
 export * from './useElementSize';
 export * from './useEndpoint';
 export * from './useFocusTrap';
-export * from './useHashRoute';
+export * from './useAppRoute';
 export * from './useNow';
 export * from './useThrottledValue';
 export * from './useLastUpdated';

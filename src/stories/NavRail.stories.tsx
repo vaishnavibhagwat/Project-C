@@ -4,10 +4,9 @@ import { NavRail } from '@/layout/NavRail';
 const meta = {
   title: 'Layout/NavRail',
   component: NavRail,
-  args: { active: 'workstation' },
-  render: (args) => (
-    <div className="flex h-[420px]">
-      <NavRail {...args} />
+  render: () => (
+    <div className="flex h-[480px]">
+      <NavRail />
     </div>
   ),
 } satisfies Meta<typeof NavRail>;
@@ -15,5 +14,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
+/** Seven destinations; hover or focus an icon for its tooltip. */
 export const Workstation: Story = {};
-export const RiskActive: Story = { args: { active: 'risk' } };
+export const RiskActive: Story = { parameters: { route: '/risk' } };
+export const SettingsActive: Story = { parameters: { route: '/settings' } };

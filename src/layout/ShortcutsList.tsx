@@ -1,7 +1,7 @@
 export const SHORTCUTS: readonly [string, string][] = [
   ['Ctrl / ⌘ + K', 'Open global search'],
   ['/', 'Open global search'],
-  ['G then 1-6', 'Go to app area (Workstation … Marketplace)'],
+  ['G then 1-7', 'Go to app area (Workstation … Settings)'],
   ['L', 'Lock / unlock layout'],
   ['Esc', 'Close dialogs and panels'],
   ['↑ ↓ Enter', 'Navigate search results'],

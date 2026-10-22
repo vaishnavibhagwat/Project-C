@@ -3,7 +3,7 @@ import { MotionProvider } from '@/components/MotionProvider';
 import { ToastProvider } from '@/components/Toast';
 import { getConnectionState, subscribeConnection } from '@/data/connection';
 import { AppErrorBoundary } from '@/layout/AppErrorBoundary';
-import { AppShell } from '@/layout/AppShell';
+import { AppRouter } from '@/layout/AppRoutes';
 
 /** Queries pause while the simulated feed is down and resume (refetch) when it returns. */
 onlineManager.setEventListener((setOnline) => {
@@ -33,7 +33,7 @@ export function App() {
       <QueryClientProvider client={queryClient}>
         <MotionProvider>
           <ToastProvider>
-            <AppShell />
+            <AppRouter />
           </ToastProvider>
         </MotionProvider>
       </QueryClientProvider>

@@ -1,7 +1,7 @@
 import { memo, useCallback, useMemo } from 'react';
 import { TableVirtuoso } from 'react-virtuoso';
 import { virtuosoTableComponents } from '@/components/charts';
-import { Badge } from '@/components/Delta';
+import { Badge } from '@/components/Badge';
 import { Segmented } from '@/components/FormControls';
 import { EmptyState } from '@/components/StateViews';
 import type { WidgetComponentProps } from '@/types';

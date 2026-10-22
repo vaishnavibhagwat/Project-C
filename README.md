@@ -46,16 +46,18 @@ Python Playwright; see [docs/PERFORMANCE.md](docs/PERFORMANCE.md)).
 
 ## What's in it
 
-**Six app areas** (slim icon rail, hash-routed so every page is deep-linkable):
+**Seven app areas** (slim icon rail with tooltips; React Router with hash URLs, so every page is
+deep-linkable on static hosting; each page is a lazy chunk):
 
-| Area                              | Default widgets                                                                                     |
-| --------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Portfolio Workstation (`G 1`)     | 10 widgets: overview, NAV, allocation, VaR, holdings, alerts, heat map, treemap, drawdown, research |
-| Risk Analytics (`G 2`)            | Risk-adjusted metrics, VaR gauge, drawdown, sector heat map, limit alerts                           |
-| Holdings Explorer (`G 3`)         | Holdings table, treemap, allocation, trade blotter                                                  |
-| Performance & Attribution (`G 4`) | Overview, NAV vs Nifty 50, metrics, sector attribution, drawdown                                    |
-| Research & Alerts (`G 5`)         | Sample research feed, alerts, trade blotter                                                         |
-| Widget Marketplace (`G 6`)        | Browse all 13 widgets by category and add them to any page                                          |
+| Area                              | Default widgets                                                                                       |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| Portfolio Workstation (`G 1`)     | 10 widgets: overview, NAV, allocation, VaR, holdings, alerts, heat map, treemap, drawdown, research   |
+| Risk Analytics (`G 2`)            | Risk-adjusted metrics, VaR gauge, drawdown, sector heat map, limit alerts                             |
+| Holdings Explorer (`G 3`)         | Holdings table, treemap, allocation, trade blotter                                                    |
+| Performance & Attribution (`G 4`) | Overview, NAV vs Nifty 50, metrics, sector attribution, drawdown                                      |
+| Research & Alerts (`G 5`)         | Sample research feed, alerts, trade blotter                                                           |
+| Widget Marketplace (`G 6`)        | Browse all 13 widgets by category and add them to any page                                            |
+| Settings (`G 7`)                  | Grid (columns, row height, gap, compaction), theme, display currency, data feed, workspace, shortcuts |
 
 **13 widgets**, each lazy-loaded as its own chunk:
 
@@ -85,6 +87,10 @@ error state with message and Retry; a "No data available" empty state; an amber 
 (and a banner that keeps the last data visible); reflow on resize; `role="region"` with an
 `aria-label` and a throttled `aria-live="polite"` text summary; its own data subscription;
 two Storybook stories (Default and Configured) and unit tests.
+
+**Command bar**: Meridian Capital wordmark, dashboard and saved-layout selector, global search,
+NSE session pill (IST), last refresh time, a `SIMULATED DATA` label, theme menu, notifications
+and profile menu.
 
 **Workstation features**: drag and resize (react-grid-layout, responsive breakpoints), lock
 layout (`L`), global search for pages, widgets, Nifty 50 symbols and commands (`Ctrl/⌘+K` or `/`),
@@ -127,25 +133,26 @@ Refresh can inject its preamble; production builds and `vite preview` keep the s
 Vite 6 · React 18 · TypeScript 5 (`strict`) · react-grid-layout · Recharts · D3 · TanStack
 Query 5 · Zustand 4 (persist, devtools, immer) · Tailwind CSS 3 with CSS custom-property tokens ·
 Framer Motion 11 (lazy features) · Storybook 8 · Vitest + RTL · zod · react-virtuoso ·
-react-colorful · lz-string · DOMPurify. No Redux, no CSS-in-JS, no Next.js.
+react-colorful · lz-string · DOMPurify · react-router-dom 6 (HashRouter). No Redux, no CSS-in-JS,
+no Next.js.
 
 ## Project structure
 
 ```
 src/
-  components/   design-system primitives (buttons, overlays, form controls, state views, skeletons)
+  components/   primitives: Button, IconButton, Tooltip, Badge, Tabs, Toggle, Dropdown, overlays, forms
     charts/     chart helpers used only inside lazy widget chunks (not in the main barrel)
   widgets/      one folder per widget: index.tsx, config.ts, types.ts, model.ts, __tests__/
   grid/         DashboardGrid (react-grid-layout), WidgetFrame (states + header), ConfigPanel
-  layout/       AppShell, NavRail, CommandBar, CommandPalette, LayoutManager, Marketplace, ...
-  theme/        tokens, applyTheme, theme sync, ThemeMenu, lazy ThemeBuilder, global.css
+  layout/       AppRoutes, AppShell, NavRail, CommandBar, dialogs; pages/ (lazy routed pages)
+  theme/        tokens (spacing, radii, type), themes, applyTheme, ThemeMenu, lazy ThemeBuilder
   data/         seeded dataset, intraday simulation, derivations, zod schemas, mock API
   store/        DashboardStore, WidgetStore, ThemeStore, LayoutStore, cross-store actions, share
   registry/     WidgetRegistry + singleton, definition and config validators, defineWidget, pages
-  hooks/        useEndpoint, useElementSize, useNow, useConnection, useHashRoute, ...
+  hooks/        useEndpoint, useAppRoute, useElementSize, useNow, useConnection, ...
   utils/        env (zod), finance maths, IST/NSE calendar, formatting, colour, sanitise
   types/        WidgetDefinition contract, data, layout and theme types
-  stories/      Storybook stories (41 files, 88 stories) and story helpers
+  stories/      Storybook stories (45 files, 96 stories) and story helpers
   __tests__/    test setup, fixtures, integration tests
 ```
 

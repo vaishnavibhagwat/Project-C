@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Badge } from '@/components/Delta';
+import { Badge } from '@/components/Badge';
 import { InfoTooltip } from '@/components/Tooltip';
 import { cssColor } from '@/theme/themes';
 import type { WidgetComponentProps } from '@/types';

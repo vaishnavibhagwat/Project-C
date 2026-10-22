@@ -66,12 +66,16 @@ describe('environment variables', () => {
 
 describe('first-paint theme CSS', () => {
   const css = read('src/theme/global.css');
+  /** Colour variables declared in every block with exactly this selector. */
   const block = (selector: string) => {
-    const start = css.indexOf(`${selector} {`);
-    const body = css.slice(start, css.indexOf('}', start));
     const vars: Record<string, string> = {};
-    for (const m of body.matchAll(/(--color-[a-z0-9-]+):\s*([\d ]+);/g)) {
-      if (m[1] && m[2]) vars[m[1]] = m[2].trim();
+    let start = css.indexOf(`${selector} {`);
+    while (start !== -1) {
+      const body = css.slice(start, css.indexOf('}', start));
+      for (const m of body.matchAll(/(--color-[a-z0-9-]+):\s*([\d ]+);/g)) {
+        if (m[1] && m[2]) vars[m[1]] = m[2].trim();
+      }
+      start = css.indexOf(`${selector} {`, start + 1);
     }
     return vars;
   };

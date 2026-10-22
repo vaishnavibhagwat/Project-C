@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@/components/Button';
-import { Badge } from '@/components/Delta';
+import { Badge } from '@/components/Badge';
 import { SelectField } from '@/components/FormControls';
 import { IconPlus, IconSearch } from '@/components/Icons';
 import { useToast } from '@/components/Toast';

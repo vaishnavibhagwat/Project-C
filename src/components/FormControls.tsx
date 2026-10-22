@@ -1,6 +1,7 @@
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
 import { cx } from '@/utils/cx';
 import { IconChevronDown } from './Icons';
+import { Toggle } from './Toggle';
 
 interface FieldShellProps {
   label: string;
@@ -139,26 +140,12 @@ export function Switch({ label, description, checked, onCheckedChange }: SwitchP
   return (
     <FieldShell label={label} description={description} inline>
       {({ inputId, describedBy }) => (
-        <button
+        <Toggle
           id={inputId}
-          type="button"
-          role="switch"
-          aria-checked={checked}
           aria-describedby={describedBy}
-          onClick={() => onCheckedChange(!checked)}
-          className={cx(
-            'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors',
-            checked ? 'border-accent bg-accent' : 'border-line-strong bg-raised',
-          )}
-        >
-          <span
-            aria-hidden="true"
-            className={cx(
-              'inline-block h-3.5 w-3.5 rounded-full transition-transform',
-              checked ? 'translate-x-4 bg-accent-fg' : 'translate-x-0.5 bg-muted',
-            )}
-          />
-        </button>
+          checked={checked}
+          onCheckedChange={onCheckedChange}
+        />
       )}
     </FieldShell>
   );

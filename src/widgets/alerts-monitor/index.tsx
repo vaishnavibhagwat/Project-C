@@ -1,5 +1,5 @@
 import { memo, useMemo } from 'react';
-import { Badge } from '@/components/Delta';
+import { Badge } from '@/components/Badge';
 import { IconCheck } from '@/components/Icons';
 import { useAcknowledgeAlerts, useAcknowledgedAlerts } from '@/hooks/useAlertAcknowledgements';
 import { useSymbolDetail } from '@/hooks/useSymbolDetail';

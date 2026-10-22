@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { Virtuoso } from 'react-virtuoso';
-import { Badge } from '@/components/Delta';
+import { Badge } from '@/components/Badge';
 import { EmptyState } from '@/components/StateViews';
 import { useSymbolDetail } from '@/hooks/useSymbolDetail';
 import type { WidgetComponentProps } from '@/types';

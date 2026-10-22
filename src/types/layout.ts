@@ -1,7 +1,7 @@
 import type { WidgetInstance } from './widget';
 
 export type PageId = 'workstation' | 'risk' | 'holdings' | 'performance' | 'research';
-export type AppRoute = PageId | 'marketplace';
+export type AppRoute = PageId | 'marketplace' | 'settings';
 
 export type Breakpoint = 'lg' | 'md' | 'sm' | 'xs';
 

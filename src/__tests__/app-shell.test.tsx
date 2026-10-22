@@ -2,8 +2,8 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { getConnectionState } from '@/data/connection';
 import { EndpointFetcherContext, type EndpointFetcher } from '@/hooks/useEndpoint';
-import { buildHash, parseHash } from '@/hooks/useHashRoute';
-import { AppShell } from '@/layout/AppShell';
+import { routeFromPath, routePath } from '@/hooks/useAppRoute';
+import { AppRouter } from '@/layout/AppRoutes';
 import { search } from '@/layout/searchIndex';
 import { captureSnapshot } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
@@ -24,7 +24,7 @@ const fixtureFetcher: EndpointFetcher = (endpoint) => Promise.resolve(fixture(en
 function renderShell() {
   return renderWithProviders(
     <EndpointFetcherContext.Provider value={fixtureFetcher}>
-      <AppShell />
+      <AppRouter />
     </EndpointFetcherContext.Provider>,
   );
 }
@@ -36,10 +36,11 @@ const initial = {
   theme: useThemeStore.getState(),
 };
 
+/** Navigate like the address bar would: HashRouter listens for popstate. */
 function goTo(hash: string) {
   act(() => {
     window.location.hash = hash;
-    window.dispatchEvent(new HashChangeEvent('hashchange'));
+    window.dispatchEvent(new PopStateEvent('popstate'));
   });
 }
 
@@ -58,12 +59,12 @@ beforeEach(() => {
   goTo('#/workstation');
 });
 
-describe('hash routing helpers', () => {
-  it('parses routes and params, falling back to the workstation', () => {
-    expect(parseHash('#/risk?share=abc')).toMatchObject({ route: 'risk' });
-    expect(parseHash('#/risk?share=abc').params.get('share')).toBe('abc');
-    expect(parseHash('#/unknown').route).toBe('workstation');
-    expect(buildHash('marketplace', { target: 'risk' })).toBe('#/marketplace?target=risk');
+describe('routing helpers', () => {
+  it('maps router paths to app routes and back', () => {
+    expect(routeFromPath('/risk')).toBe('risk');
+    expect(routeFromPath('/settings')).toBe('settings');
+    expect(routeFromPath('/unknown')).toBeNull();
+    expect(routePath('marketplace', { target: 'risk' })).toBe('/marketplace?target=risk');
   });
 });
 
@@ -81,8 +82,20 @@ describe('AppShell', () => {
   it('renders the workstation: nav rail, command bar, simulated-data label and 10 widgets', async () => {
     renderShell();
     const nav = screen.getByRole('navigation', { name: 'Primary' });
-    expect(within(nav).getAllByRole('link')).toHaveLength(7);
-    expect(within(nav).getByRole('link', { name: 'Portfolio Workstation' })).toHaveAttribute(
+    // Home mark plus seven destinations.
+    expect(within(nav).getAllByRole('link')).toHaveLength(8);
+    for (const name of [
+      'Workstation',
+      'Risk',
+      'Holdings',
+      'Performance',
+      'Research & Alerts',
+      'Marketplace',
+      'Settings',
+    ]) {
+      expect(within(nav).getByRole('link', { name })).toBeInTheDocument();
+    }
+    expect(within(nav).getByRole('link', { name: 'Workstation' })).toHaveAttribute(
       'aria-current',
       'page',
     );
@@ -105,8 +118,43 @@ describe('AppShell', () => {
     });
     goTo('#/marketplace');
     expect(
-      screen.getByRole('heading', { level: 1, name: 'Widget Marketplace' }),
+      await screen.findByRole('heading', { level: 1, name: 'Widget Marketplace' }),
     ).toBeInTheDocument();
+    goTo('#/settings');
+    expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+  });
+
+  it('redirects unknown routes to the workstation', async () => {
+    renderShell();
+    goTo('#/no-such-page');
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Portfolio Workstation' }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/workstation');
+  });
+
+  it('switches dashboards from the command-bar selector', async () => {
+    renderShell();
+    fireEvent.click(screen.getByRole('button', { name: /^Dashboard: Portfolio Workstation/ }));
+    fireEvent.click(screen.getByRole('menuitemradio', { name: 'Holdings Explorer' }));
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Holdings Explorer' }),
+    ).toBeInTheDocument();
+    expect(window.location.hash).toBe('#/holdings');
+  });
+
+  it('applies grid settings from the Settings page', async () => {
+    renderShell();
+    goTo('#/settings');
+    const cols = await screen.findByLabelText('Desktop columns');
+    fireEvent.change(cols, { target: { value: '30' } });
+    expect(screen.getByText('Allowed range is 6 to 24.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+    fireEvent.change(cols, { target: { value: '24' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    expect(useDashboardStore.getState().gridConfig.cols).toBe(24);
+    const lg = useDashboardStore.getState().pages.workstation.layouts.lg ?? [];
+    expect(Math.max(...lg.map((l) => l.x + l.w))).toBe(24);
   });
 
   it('opens global search with Ctrl+K and shows a symbol detail', async () => {
@@ -121,21 +169,21 @@ describe('AppShell', () => {
     expect(await screen.findByText('Quantity', {}, { timeout: 8000 })).toBeInTheDocument();
   });
 
-  it('adds a widget from the marketplace to the chosen page', () => {
+  it('adds a widget from the marketplace to the chosen page', async () => {
     renderShell();
     goTo('#/marketplace?target=research');
     const before = useDashboardStore.getState().pages.research.itemIds.length;
-    const card = screen.getByRole('heading', { name: 'Value at Risk' }).closest('li');
+    const card = (await screen.findByRole('heading', { name: 'Value at Risk' })).closest('li');
     if (!card) throw new Error('card not found');
     fireEvent.click(within(card).getByRole('button', { name: 'Add to Research' }));
     expect(useDashboardStore.getState().pages.research.itemIds).toHaveLength(before + 1);
     expect(screen.getByText(/Added Value at Risk to Research/)).toBeInTheDocument();
   });
 
-  it('filters the marketplace by category', () => {
+  it('filters the marketplace by category', async () => {
     renderShell();
     goTo('#/marketplace');
-    fireEvent.click(screen.getByRole('button', { name: 'Gauges' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Gauges' }));
     expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
       'Value at Risk',
     ]);

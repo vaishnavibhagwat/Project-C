@@ -50,7 +50,8 @@ Every folder has an `index.ts` barrel (widget folders use `index.tsx`). New fold
   `component`, `icon`, `dataSource`). `WidgetCategory` is `CHART | TABLE | FEED | GAUGE | ANALYSIS`.
 - **Stack**: Vite, React 18, TS strict, react-grid-layout, Recharts (D3 for heat map, treemap and
   custom visuals), TanStack Query 5, Zustand 4 with persist + devtools + immer, Tailwind 3 with CSS
-  custom properties, Framer Motion, zod, react-virtuoso. No Redux, no CSS-in-JS, no Next.js.
+  custom properties, Framer Motion, zod, react-virtuoso, react-router-dom 6 (HashRouter, lazy
+  pages). No Redux, no CSS-in-JS, no Next.js.
 - **Four stores only**: DashboardStore (grid layout), WidgetStore (instances, configs), ThemeStore
   (themes, builder), LayoutStore (saved layouts, sharing, versions). Select small slices.
 - **Code**: no `any`, no unsafe type assertions, no `innerHTML` or `dangerouslySetInnerHTML`

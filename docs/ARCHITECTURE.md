@@ -71,6 +71,31 @@ Rules that keep the tiers apart:
 - Server data lives only in the TanStack Query cache. The stores hold user state (layouts,
   settings, theme, saved layouts), so persisted state and share links never contain datasets.
 
+### Presentation: routes and design system
+
+Routing uses `react-router-dom` 6 with a `HashRouter`, so every page is deep-linkable on any
+static host and share links keep the `#/<page>?share=…` form. `src/layout/AppRoutes.tsx` holds
+the route table: `AppShell` is the layout route (nav rail, command bar, dialogs, keyboard
+shortcuts) and renders the page through `<Outlet>`. The pages in `src/layout/pages/` are lazy
+chunks: `/:pageId` (the five dashboards; the grid and react-grid-layout load with it),
+`/marketplace` and `/settings`. Unknown paths redirect to `/workstation`. Components use
+`useAppRoute()` rather than the router hooks directly.
+
+The design system has three layers:
+
+- **Tokens.** Colours are per theme (`src/theme/themes.ts`). Spacing (a 4 px unit, kept in
+  rem), radii (2, 4 and 6 px), the 1 px divider and the font stacks are structural custom
+  properties in `src/theme/global.css`. Tailwind's spacing, border-radius, border-width and font
+  scales point at these variables (`src/theme/tokens.ts`), so `p-3` is
+  `calc(var(--space-unit) * 3)`. Numbers use the `.num` class (Inter, `tabular-nums`).
+- **Primitives** in `src/components`: `Button` (primary, secondary, ghost, danger; sm, md, lg;
+  `loading`; icon), `IconButton` (always labelled, with a tooltip), `Tooltip`, `Badge`, `Tabs`
+  (WAI-ARIA tabs), `Toggle` (`role="switch"`) and `Dropdown` (WAI-ARIA menu button with arrow
+  keys, Home and End, type-ahead and focus return), plus overlays, form controls and state
+  views. Each has stories and unit tests.
+- **Shell.** A 56 px icon rail and a 44 px command bar. Panels are flat (1 px borders, small
+  radii, no gradients, glass or large cards) so the grid gets the space.
+
 ## 2. The widget contract
 
 `src/types/widget.ts` defines the contract. Its field names are fixed by the brief:
@@ -460,7 +485,9 @@ widget settings and the theme id, never datasets; the default workstation snapsh
 ### Theming
 
 - `src/theme/themes.ts`: three built-in themes (Midnight Graphite, Porcelain, High Contrast) as
-  hex tokens.
+  hex tokens. Midnight Graphite: background `#0B0E13`, panels `#111720`, text `#E8EDF5`, cyan
+  accent, emerald positive, coral negative, amber warning. `VITE_DEFAULT_THEME` picks the first-run
+  theme: `light`, `dark` or a theme id (`porcelain`, `midnight-graphite`, `high-contrast`).
 - `applyTheme` writes `--color-*` custom properties as `r g b` channels, used by Tailwind
   (`rgb(var(--color-x) / <alpha>)`) and by SVG attributes (`cssColor('accent')`). A theme
   switch writes about 20 variables and re-renders no charts.

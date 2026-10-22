@@ -8,7 +8,8 @@ const meta = {
   args: { children: 'Add widget', variant: 'secondary', size: 'md' },
   argTypes: {
     variant: { control: 'inline-radio', options: ['primary', 'secondary', 'ghost', 'danger'] },
-    size: { control: 'inline-radio', options: ['sm', 'md'] },
+    size: { control: 'inline-radio', options: ['sm', 'md', 'lg'] },
+    loading: { control: 'boolean' },
   },
 } satisfies Meta<typeof Button>;
 
@@ -27,7 +28,11 @@ export const AllVariants: Story = {
       <Button variant="ghost">Ghost</Button>
       <Button variant="danger">Danger</Button>
       <Button size="sm">Small</Button>
+      <Button size="lg">Large</Button>
       <Button disabled>Disabled</Button>
     </div>
   ),
 };
+
+/** Loading keeps the label, swaps the icon for a spinner, disables the button and sets aria-busy. */
+export const Loading: Story = { args: { variant: 'primary', loading: true, children: 'Saving' } };

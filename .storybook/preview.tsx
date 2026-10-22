@@ -29,11 +29,14 @@ const withTheme: Decorator = (Story, context) => {
   );
 };
 
-const withProviders: Decorator = (Story) => (
-  <StoryProviders>
-    <Story />
-  </StoryProviders>
-);
+const withProviders: Decorator = (Story, context) => {
+  const route: unknown = context.parameters.route;
+  return (
+    <StoryProviders route={typeof route === 'string' ? route : undefined}>
+      <Story />
+    </StoryProviders>
+  );
+};
 
 const preview: Preview = {
   decorators: [withProviders, withTheme],

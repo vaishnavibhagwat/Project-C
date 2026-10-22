@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react';
 import { cx } from '@/utils/cx';
 import { direction, directionArrow, formatPct } from '@/utils/format';
 
@@ -32,34 +31,6 @@ export function Delta({ value, text, digits = 2, className, arrow = true }: Delt
         </span>
       ) : null}
       {text ?? formatPct(value, digits)}
-    </span>
-  );
-}
-
-export interface BadgeProps {
-  tone?: 'neutral' | 'accent' | 'positive' | 'negative' | 'warning';
-  children: ReactNode;
-  className?: string;
-}
-
-const BADGE_TONES = {
-  neutral: 'border-line-strong text-muted',
-  accent: 'border-accent/40 text-accent bg-accent/10',
-  positive: 'border-pos/40 text-pos bg-pos/10',
-  negative: 'border-neg/40 text-neg bg-neg/10',
-  warning: 'border-warn/40 text-warn bg-warn/10',
-} as const;
-
-export function Badge({ tone = 'neutral', children, className }: BadgeProps) {
-  return (
-    <span
-      className={cx(
-        'inline-flex h-5 items-center whitespace-nowrap rounded-sm border px-1.5 text-2xs font-semibold uppercase tracking-wide',
-        BADGE_TONES[tone],
-        className,
-      )}
-    >
-      {children}
     </span>
   );
 }

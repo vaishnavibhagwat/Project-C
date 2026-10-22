@@ -1,4 +1,5 @@
 export * from './AppErrorBoundary';
+export * from './AppRoutes';
 export * from './AppShell';
 export * from './CommandBar';
 export * from './CommandPalette';
@@ -13,5 +14,8 @@ export * from './ShareDialog';
 export * from './SharedLayoutBanner';
 export * from './ShortcutsList';
 export * from './SymbolDetail';
+export * from './shellContext';
 export * from './UserMenu';
 export * from './WidgetMarketplace';
+export * from './WorkspaceSelector';
+// Routed pages (./pages) are not re-exported: each is a lazy chunk loaded by AppRoutes.
