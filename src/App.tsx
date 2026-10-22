@@ -2,6 +2,7 @@ import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react
 import { MotionProvider } from '@/components/MotionProvider';
 import { ToastProvider } from '@/components/Toast';
 import { getConnectionState, subscribeConnection } from '@/data/connection';
+import { AppErrorBoundary } from '@/layout/AppErrorBoundary';
 import { AppShell } from '@/layout/AppShell';
 
 /** Queries pause while the simulated feed is down and resume (refetch) when it returns. */
@@ -28,12 +29,14 @@ const queryClient = createQueryClient();
 
 export function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <MotionProvider>
-        <ToastProvider>
-          <AppShell />
-        </ToastProvider>
-      </MotionProvider>
-    </QueryClientProvider>
+    <AppErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <MotionProvider>
+          <ToastProvider>
+            <AppShell />
+          </ToastProvider>
+        </MotionProvider>
+      </QueryClientProvider>
+    </AppErrorBoundary>
   );
 }

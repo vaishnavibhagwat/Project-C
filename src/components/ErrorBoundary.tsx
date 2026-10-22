@@ -12,7 +12,10 @@ interface ErrorBoundaryState {
   error: Error | null;
 }
 
-/** Catches render errors in a widget so one failure never takes down the grid. */
+/**
+ * Catches render errors below it. Used around the whole app (AppErrorBoundary) and around each
+ * widget (WidgetFrame), so one widget failing never takes down the grid.
+ */
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   override state: ErrorBoundaryState = { error: null };
 

@@ -1,3 +1,4 @@
+export * from './AppErrorBoundary';
 export * from './AppShell';
 export * from './CommandBar';
 export * from './CommandPalette';
