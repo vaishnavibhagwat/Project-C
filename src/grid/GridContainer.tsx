@@ -1,32 +1,42 @@
-import { memo, useCallback, useEffect, useMemo } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Responsive, WidthProvider, type Layout, type Layouts } from 'react-grid-layout';
 import { useShallow } from 'zustand/react/shallow';
 import { useViewportWidth } from '@/hooks/useViewportWidth';
-import { isPlaceholder, PLACEHOLDER_SIZE } from '@/registry/placeholder';
-import { widgetRegistry } from '@/registry/registry';
+import { isPlaceholder } from '@/registry/placeholder';
 import { commitLayouts } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
-import type { BreakpointLayouts, GridItemLayout, GridSize, PageId } from '@/types';
+import type { BreakpointLayouts, GridItemLayout, PageId } from '@/types';
 import { cx } from '@/utils/cx';
 import {
   BREAKPOINT_KEYS,
   breakpointForViewport,
-  convertSize,
-  DEFAULT_GRID_CONFIG,
   deriveLayout,
   gridBreakpointsFor,
   responsiveGridProps,
 } from '@/utils/gridLayout';
 import { GridItem } from './GridItem';
 import { PlaceholderCard } from './PlaceholderCard';
+import { sizeLimitsFor, withSizeLimits } from './sizeLimits';
 import { DRAG_HANDLE_CLASS, NO_DRAG_CLASS, WidgetFrame } from './WidgetFrame';
 
 /** react-grid-layout's Responsive grid, sized by WidthProvider (ResizeObserver). */
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
-/** Smallest size of an empty slot on the default grid. */
-const PLACEHOLDER_MIN: GridSize = { w: 2, h: 2 };
+type ResizeHandle = 'se' | 'sw' | 'ne' | 'nw' | 'n' | 's' | 'e' | 'w';
+
+/** Every corner and edge; the bottom-right one is always visible (see global.css). */
+export const RESIZE_HANDLES: ResizeHandle[] = ['se', 'sw', 'ne', 'nw', 'n', 's', 'e', 'w'];
+
+/** How long after mount before moves animate, so widgets do not slide in on first paint. */
+const SETTLE_MS = 400;
+
+interface Box {
+  left: number;
+  top: number;
+  width: number;
+  height: number;
+}
 
 function toStored(layout: readonly Layout[]): GridItemLayout[] {
   return layout.map(({ i, x, y, w, h }) => ({ i, x, y, w, h }));
@@ -97,42 +107,78 @@ function GridContainerImpl({ page }: { page: PageId }) {
     commitLayouts(page, { ...grid.layouts, [breakpoint]: derived });
   }, [missing, breakpoint, grid.layouts, gridProps.cols, gridConfig.compaction, page]);
 
-  // Apply per-widget min/max sizes at render time; only x/y/w/h are persisted. Sizes are
-  // written for the default grid, so convert them to the current one.
+  // Each widget's minSize/maxSize from its WidgetDefinition, applied at render time (only
+  // x/y/w/h are persisted). Sizes are written for the default grid, so they are converted.
   const layouts = useMemo<Layouts>(() => {
     const limits = new Map(
-      grid.itemIds.map((id, k) => {
-        const type = types[k] ?? '';
-        const def = widgetRegistry.getWidget(type);
-        const minSize = isPlaceholder(type) ? PLACEHOLDER_MIN : (def?.minSize ?? PLACEHOLDER_SIZE);
-        const min = convertSize(minSize, DEFAULT_GRID_CONFIG, gridConfig, 'up');
-        const max = def?.maxSize
-          ? convertSize(def.maxSize, DEFAULT_GRID_CONFIG, gridConfig, 'down')
-          : undefined;
-        return [id, { min, max }] as const;
-      }),
+      grid.itemIds.map((id, k) => [id, sizeLimitsFor(types[k] ?? '', gridConfig)] as const),
     );
     const out: Layouts = {};
     for (const bp of BREAKPOINT_KEYS) {
       const layout = grid.layouts[bp];
       if (!layout) continue;
-      const cols = gridProps.cols[bp];
-      out[bp] = layout
-        .filter((l) => grid.itemIds.includes(l.i))
-        .map((l) => {
-          const limit = limits.get(l.i);
-          return {
-            ...l,
-            minW: Math.min(limit?.min.w ?? 1, cols),
-            minH: limit?.min.h ?? 1,
-            maxW: limit?.max ? Math.min(limit.max.w, cols) : undefined,
-            maxH: limit?.max?.h,
-          };
-        });
+      out[bp] = withSizeLimits(
+        layout.filter((l) => grid.itemIds.includes(l.i)),
+        (id) => limits.get(id),
+        gridProps.cols[bp],
+      );
     }
     return out;
   }, [grid.itemIds, grid.layouts, types, gridConfig, gridProps]);
 
+  // Store a finished drag or resize. Nothing is written while the pointer moves.
+  const commitBreakpoint = useCallback(
+    (layout: Layout[]) => {
+      const stored = toStored(layout);
+      if (sameLayout(grid.layouts[breakpoint], stored)) return;
+      commitLayouts(page, { ...grid.layouts, [breakpoint]: stored });
+    },
+    [grid.layouts, breakpoint, page],
+  );
+
+  // Departure indicator: the dragged widget's starting box, shown once it actually moves.
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const dragOrigin = useRef<Box | null>(null);
+  const [departure, setDeparture] = useState<Box | null>(null);
+
+  const onDragStart = useCallback(
+    (_l: Layout[], _o: Layout, _n: Layout, _p: Layout, _e: MouseEvent, element: HTMLElement) => {
+      const wrapper = wrapperRef.current?.getBoundingClientRect();
+      const rect = element.getBoundingClientRect();
+      dragOrigin.current = wrapper
+        ? {
+            left: rect.left - wrapper.left,
+            top: rect.top - wrapper.top,
+            width: rect.width,
+            height: rect.height,
+          }
+        : null;
+    },
+    [],
+  );
+  // Called for every pointer move; after the first it returns the same state, so React skips it.
+  const onDrag = useCallback(() => setDeparture((shown) => shown ?? dragOrigin.current), []);
+  const onDragStop = useCallback(
+    (layout: Layout[]) => {
+      dragOrigin.current = null;
+      setDeparture(null);
+      commitBreakpoint(layout);
+    },
+    [commitBreakpoint],
+  );
+  const onResizeStop = useCallback(
+    (layout: Layout[]) => commitBreakpoint(layout),
+    [commitBreakpoint],
+  );
+
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSettled(true), SETTLE_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  // Safety net for changes react-grid-layout makes on its own (never during a drag: it only
+  // reports after a drop, which commitBreakpoint has already stored).
   const onLayoutChange = useCallback(
     (_current: Layout[], all: Layouts) => {
       const next: BreakpointLayouts = { ...grid.layouts };
@@ -165,27 +211,41 @@ function GridContainerImpl({ page }: { page: PageId }) {
   // then replaced, and its ResizeObserver reports the removed node as 0 px wide, which
   // collapses every widget. Without it WidthProvider observes the grid's own root.
   return (
-    <ResponsiveGridLayout
-      className={cx('layout', locked && 'is-locked')}
-      layouts={layouts}
-      breakpoints={gridProps.breakpoints}
-      cols={gridProps.cols}
-      rowHeight={gridProps.rowHeight}
-      margin={gridProps.margin}
-      containerPadding={gridProps.containerPadding}
-      compactType={gridProps.compactType}
-      preventCollision={false}
-      allowOverlap={false}
-      isDraggable={!locked}
-      isResizable={!locked}
-      draggableHandle={`.${DRAG_HANDLE_CLASS}`}
-      draggableCancel={`.${NO_DRAG_CLASS}`}
-      useCSSTransforms
-      onLayoutChange={onLayoutChange}
-      resizeHandles={['se']}
-    >
-      {children}
-    </ResponsiveGridLayout>
+    <div ref={wrapperRef} className="relative isolate">
+      <ResponsiveGridLayout
+        className={cx('layout', locked && 'is-locked', settled && 'grid-animate')}
+        layouts={layouts}
+        breakpoints={gridProps.breakpoints}
+        cols={gridProps.cols}
+        rowHeight={gridProps.rowHeight}
+        margin={gridProps.margin}
+        containerPadding={gridProps.containerPadding}
+        compactType={gridProps.compactType}
+        preventCollision={false}
+        allowOverlap={false}
+        isDraggable={!locked}
+        isResizable={!locked}
+        draggableHandle={`.${DRAG_HANDLE_CLASS}`}
+        draggableCancel={`.${NO_DRAG_CLASS}`}
+        useCSSTransforms
+        resizeHandles={RESIZE_HANDLES}
+        onDragStart={onDragStart}
+        onDrag={onDrag}
+        onDragStop={onDragStop}
+        onResizeStop={onResizeStop}
+        onLayoutChange={onLayoutChange}
+      >
+        {children}
+      </ResponsiveGridLayout>
+      {departure ? (
+        <div
+          aria-hidden="true"
+          data-testid="drag-departure"
+          className="grid-departure"
+          style={departure}
+        />
+      ) : null}
+    </div>
   );
 }
 

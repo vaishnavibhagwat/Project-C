@@ -101,8 +101,10 @@ and profile menu.
 
 **Grid**: react-grid-layout with three breakpoints, each with its own stored layout: desktop
 ≥ 1280 px (12 columns by default, configurable 6–24), tablet 768–1279 px (6 columns) and mobile
-< 768 px (1 column, stacked). Widgets push each other and never overlap; vertical compaction
-can be switched off from the grid toolbar. **Add widget** drops an empty slot at the next free
+< 768 px (1 column, stacked). Drag by the title bar: a ghost shows the target cell, an outline
+marks where the widget came from, and pushed widgets animate into place. Resize from any corner
+or edge, within each widget's min and max size, with the content reflowing as you go. Widgets
+never overlap; vertical compaction can be switched off from the grid toolbar. **Add widget** drops an empty slot at the next free
 position, which becomes any widget from its **Choose widget** menu.
 
 **Workstation features**: drag and resize (react-grid-layout, responsive breakpoints), lock

@@ -290,6 +290,31 @@ three breakpoints, each with its own layout stored in DashboardStore:
   collapsing every widget. jsdom's fake ResizeObserver hides this, so it was found in the
   browser.
 
+**Dragging and resizing**
+
+- **Drag by the title bar only** (`draggableHandle` is the header's title area; the header's
+  buttons are excluded with `draggableCancel`).
+- **While dragging**, the widget lifts and follows the pointer, react-grid-layout's placeholder
+  shows a **ghost at the target cell** (snapped to the grid), and GridContainer draws a
+  translucent dashed **departure outline** where the widget started. On release the widget
+  snaps into the ghost's cell.
+- **Pushed widgets animate** into their new places with CSS `transform` transitions (180 ms).
+  Items are positioned with transforms (`useCSSTransforms`). Transitions switch on 400 ms after
+  mount, so widgets do not slide in on first paint, and they respect `prefers-reduced-motion`.
+- **Resize handles on every corner and edge** (`se`, `sw`, `ne`, `nw`, `n`, `s`, `e`, `w`),
+  drawn with theme tokens: corners show an L, edges a short bar. All show on hover; the
+  bottom-right one is always visible. Hidden when the layout is locked.
+- **Size limits** from each widget's `minSize`/`maxSize` (`src/grid/sizeLimits.ts`): converted
+  to the current grid, passed to every item as `minW`/`minH`/`maxW`/`maxH`, and used to clamp
+  stored sizes saved under other grid settings.
+- **Content reflows during a resize**: each frame measures its body with a ResizeObserver
+  (batched to one update per frame), so the widget redraws at the new size while the pointer
+  moves.
+- **No widget re-renders during a drag.** Grid children are memoised on the list of ids, and
+  the store is written only in `onDragStop` and `onResizeStop`. A test drags a widget in jsdom
+  and checks the store and the React Profiler stay untouched until the drop. In Chrome, a
+  20-step drag recorded 0 widget renders before release.
+
 `GridItem` is the cell wrapper: react-grid-layout clones it to add position styles, handlers
 and the resize handle, so it forwards its ref and props. Each cell renders a `WidgetFrame`, or a
 `PlaceholderCard` for an empty slot.
