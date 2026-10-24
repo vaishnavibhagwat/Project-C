@@ -55,7 +55,7 @@ export default function ThemeBuilder() {
       onClose={closeBuilder}
       title="Theme builder"
       description="Changes preview live across the workstation. Cancel restores the previous theme."
-      footer={
+      actions={
         <>
           <Button onClick={closeBuilder}>Cancel</Button>
           <Button

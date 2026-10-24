@@ -5,6 +5,8 @@ import {
   useCallback,
   useDeferredValue,
   useMemo,
+  useRef,
+  useState,
   type ReactNode,
 } from 'react';
 import { Button, IconButton } from '@/components/Button';
@@ -18,6 +20,7 @@ import {
   IconSettings,
   IconWifiOff,
 } from '@/components/Icons';
+import { Modal } from '@/components/Overlay';
 import { DisconnectedState, EmptyState, ErrorState } from '@/components/StateViews';
 import { useToast } from '@/components/Toast';
 import { InfoTooltip } from '@/components/Tooltip';
@@ -103,7 +106,11 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
     void refetch();
   }, [refetch]);
 
+  // The header's X asks first; the widget is removed only on confirm (Undo stays in the toast).
+  const [confirmRemove, setConfirmRemove] = useState(false);
+  const cancelRef = useRef<HTMLButtonElement>(null);
   const onRemove = useCallback(() => {
+    setConfirmRemove(false);
     const removed = removeWidgetFromPage(page, instanceId);
     if (removed) {
       notify({
@@ -257,7 +264,13 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
             size="xs"
             onClick={onDuplicate}
           />
-          <IconButton label={`Remove ${title}`} icon={IconClose} size="xs" onClick={onRemove} />
+          <IconButton
+            label={`Remove ${title}`}
+            icon={IconClose}
+            size="xs"
+            aria-haspopup="dialog"
+            onClick={() => setConfirmRemove(true)}
+          />
         </div>
       </header>
       {data !== undefined && disconnected ? (
@@ -292,6 +305,29 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
       <p className="sr-only" aria-live="polite">
         {liveSummary}
       </p>
+      <Modal
+        open={confirmRemove}
+        onClose={() => setConfirmRemove(false)}
+        title={`Remove ${title}?`}
+        size="sm"
+        role="alertdialog"
+        initialFocusRef={cancelRef}
+        actions={
+          <>
+            <Button ref={cancelRef} onClick={() => setConfirmRemove(false)}>
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={onRemove}>
+              Remove
+            </Button>
+          </>
+        }
+      >
+        <p className="text-sm text-muted">
+          The widget and its settings leave this page. You can undo from the message that follows,
+          or add it again from the marketplace.
+        </p>
+      </Modal>
     </section>
   );
 }

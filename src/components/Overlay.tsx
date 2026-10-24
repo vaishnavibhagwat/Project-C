@@ -1,35 +1,52 @@
 import { AnimatePresence, m } from 'framer-motion';
-import { useCallback, useId, useRef, type ReactNode } from 'react';
+import { useCallback, useId, useRef, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
 import { cx } from '@/utils/cx';
 import { IconButton } from './Button';
 import { IconClose } from './Icons';
 
-interface OverlayBaseProps {
+export interface OverlayBaseProps {
   open: boolean;
+  /** Called on Escape, overlay click and the close button. */
   onClose: () => void;
   title: string;
   description?: string;
+  /** Body. */
   children: ReactNode;
-  footer?: ReactNode;
+  /** Buttons in the footer, right-aligned. */
+  actions?: ReactNode;
   className?: string;
 }
+
+export interface ModalProps extends OverlayBaseProps {
+  /** sm for confirmations, lg (default) for content. */
+  size?: 'sm' | 'md' | 'lg';
+  /** Element focused on open (e.g. Cancel in a destructive confirmation). */
+  initialFocusRef?: RefObject<HTMLElement | null>;
+  /** 'alertdialog' for confirmations that interrupt the user. */
+  role?: 'dialog' | 'alertdialog';
+}
+
+const MODAL_WIDTH = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl' } as const;
 
 function Panel({
   onClose,
   title,
   description,
   children,
-  footer,
+  actions,
   className,
   kind,
-}: Omit<OverlayBaseProps, 'open'> & { kind: 'drawer' | 'modal' }) {
+  size = 'lg',
+  initialFocusRef,
+  role = 'dialog',
+}: Omit<ModalProps, 'open'> & { kind: 'drawer' | 'modal' }) {
   const ref = useRef<HTMLDivElement>(null);
   const titleId = useId();
   const descId = useId();
   const close = useCallback(() => onClose(), [onClose]);
-  useFocusTrap(ref, true, close);
+  useFocusTrap(ref, true, close, initialFocusRef);
 
   const motionProps =
     kind === 'drawer'
@@ -56,7 +73,7 @@ function Panel({
       />
       <m.div
         ref={ref}
-        role="dialog"
+        role={role}
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
@@ -66,7 +83,7 @@ function Panel({
           'relative flex max-h-full flex-col border-line-strong bg-panel shadow-2xl outline-none',
           kind === 'drawer'
             ? 'ml-auto h-full w-full max-w-md border-l'
-            : 'm-auto max-h-[85vh] w-[calc(100%-2rem)] max-w-2xl rounded-md border',
+            : cx('m-auto max-h-[85vh] w-[calc(100%-2rem)] rounded-md border', MODAL_WIDTH[size]),
           className,
         )}
       >
@@ -84,9 +101,9 @@ function Panel({
           <IconButton label="Close" icon={IconClose} onClick={close} />
         </header>
         <div className="scroll-thin min-h-0 flex-1 overflow-y-auto px-4 py-3">{children}</div>
-        {footer ? (
+        {actions ? (
           <footer className="flex items-center justify-end gap-2 border-t border-line px-4 py-3">
-            {footer}
+            {actions}
           </footer>
         ) : null}
       </m.div>
@@ -104,8 +121,11 @@ export function Drawer({ open, ...props }: OverlayBaseProps) {
   );
 }
 
-/** Centred dialog for focused tasks (command palette, symbol detail, share). */
-export function Modal({ open, ...props }: OverlayBaseProps) {
+/**
+ * Centred dialog with a title, body and actions. Closes on Escape, overlay click and the close
+ * button; traps focus while open and returns it to the trigger on close.
+ */
+export function Modal({ open, ...props }: ModalProps) {
   return createPortal(
     <AnimatePresence>
       {open ? <Panel key="modal" kind="modal" {...props} /> : null}

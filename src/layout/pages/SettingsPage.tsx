@@ -265,7 +265,7 @@ function WorkspaceSection() {
         onClose={() => setConfirmReset(false)}
         title="Reset all dashboards?"
         description="Every dashboard returns to its default widgets, settings and layout."
-        footer={
+        actions={
           <>
             <Button onClick={() => setConfirmReset(false)}>Cancel</Button>
             <Button

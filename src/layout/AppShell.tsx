@@ -212,7 +212,7 @@ export function AppShell() {
         onClose={() => setResetOpen(false)}
         title={`Reset ${meta.short}?`}
         description="Restores this page's default widgets, settings and layout."
-        footer={
+        actions={
           <>
             <Button onClick={() => setResetOpen(false)}>Cancel</Button>
             <Button

@@ -117,7 +117,7 @@ export function UserMenu() {
         onClose={() => setDialog(null)}
         title="Reset workspace?"
         description="Restores the default widgets and layout on every page. Saved layouts and themes are kept."
-        footer={
+        actions={
           <>
             <Button onClick={() => setDialog(null)}>Cancel</Button>
             <Button

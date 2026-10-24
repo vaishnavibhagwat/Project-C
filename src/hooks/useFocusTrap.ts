@@ -4,13 +4,17 @@ const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 /**
- * Keep keyboard focus inside `ref` while `active`, close on Escape, and restore focus to the
- * previously focused element on close. Listeners are removed on cleanup.
+ * Keep keyboard focus inside `ref` while `active`, close on Escape, and return focus to the
+ * element that had it before (the trigger) on close. If the trigger is gone by then (for
+ * example a widget that was just removed), focus goes to the main content instead. Focus
+ * starts on `initialFocus` when given, else the first focusable element. Listeners are removed
+ * on cleanup.
  */
 export function useFocusTrap(
   ref: RefObject<HTMLElement | null>,
   active: boolean,
   onEscape: () => void,
+  initialFocus?: RefObject<HTMLElement | null>,
 ): void {
   // Latest callback in a ref so an inline onEscape doesn't re-run the trap every render.
   const escapeRef = useRef(onEscape);
@@ -23,7 +27,7 @@ export function useFocusTrap(
     const focusables = () =>
       container ? Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)) : [];
 
-    const first = focusables()[0];
+    const first = initialFocus?.current ?? focusables()[0];
     (first ?? container)?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -48,7 +52,8 @@ export function useFocusTrap(
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
-      previous?.focus();
+      if (previous?.isConnected) previous.focus();
+      else document.getElementById('main')?.focus();
     };
-  }, [active, ref]);
+  }, [active, ref, initialFocus]);
 }

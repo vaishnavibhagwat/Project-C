@@ -14,7 +14,7 @@ function OverlayDemo({ kind }: { kind: 'modal' | 'drawer' }) {
         onClose={() => setOpen(false)}
         title={kind === 'modal' ? 'Reset Workstation?' : 'Configure · Value at Risk'}
         description="Focus is trapped inside; Escape or the close button dismisses."
-        footer={
+        actions={
           <>
             <Button onClick={() => setOpen(false)}>Cancel</Button>
             <Button variant="primary" onClick={() => setOpen(false)}>

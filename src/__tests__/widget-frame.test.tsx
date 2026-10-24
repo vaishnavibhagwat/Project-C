@@ -1,4 +1,5 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { StrictMode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as ApiModule from '@/data/api';
@@ -118,12 +119,62 @@ describe('WidgetFrame states', () => {
     expect(await screen.findByText('$45.0B')).toBeInTheDocument();
   });
 
-  it('removes the widget and offers Undo', async () => {
+  it('asks before removing: Cancel, Escape and the overlay keep the widget', async () => {
+    const user = userEvent.setup();
     fetchMock.mockResolvedValue(fixture('portfolio/summary'));
     renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
-    fireEvent.click(screen.getByRole('button', { name: /Remove/ }));
+    const trigger = screen.getByRole('button', { name: 'Remove Portfolio Overview' });
+    const onPage = () => useDashboardStore.getState().pages.performance.itemIds;
+
+    await user.click(trigger);
+    const dialog = screen.getByRole('alertdialog', { name: 'Remove Portfolio Overview?' });
+    expect(screen.getByRole('button', { name: 'Cancel' })).toHaveFocus();
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    // The dialog leaves after its exit animation.
+    await waitFor(() => expect(dialog).not.toBeInTheDocument());
+    expect(trigger).toHaveFocus();
+
+    await user.click(trigger);
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(trigger).toHaveFocus();
+
+    await user.click(trigger);
+    const overlay = document.querySelector('[data-overlay="modal"] > [aria-hidden="true"]');
+    if (!(overlay instanceof HTMLElement)) throw new Error('no overlay');
+    await user.click(overlay);
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument());
+    expect(onPage()).toContain(OVERVIEW);
+  });
+
+  it('keeps focus inside the confirmation while it is open', async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue(fixture('portfolio/summary'));
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
+    await user.click(screen.getByRole('button', { name: 'Remove Portfolio Overview' }));
+    const dialog = screen.getByRole('alertdialog');
+    for (let i = 0; i < 5; i += 1) {
+      await user.tab();
+      expect(dialog.contains(document.activeElement)).toBe(true);
+    }
+    await user.tab({ shift: true });
+    expect(dialog.contains(document.activeElement)).toBe(true);
+  });
+
+  it('removes on confirm, moves focus to the main content and offers Undo', async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValue(fixture('portfolio/summary'));
+    renderWithProviders(
+      <main id="main" tabIndex={-1}>
+        <WidgetFrame page="performance" instanceId={OVERVIEW} />
+      </main>,
+    );
+    await user.click(screen.getByRole('button', { name: 'Remove Portfolio Overview' }));
+    await user.click(screen.getByRole('button', { name: 'Remove' }));
     expect(useDashboardStore.getState().pages.performance.itemIds).not.toContain(OVERVIEW);
-    fireEvent.click(await screen.findByRole('button', { name: 'Undo' }));
+    // The trigger went with the widget, so focus lands on the main content, not the body.
+    await waitFor(() => expect(document.getElementById('main')).toHaveFocus());
+    await user.click(await screen.findByRole('button', { name: 'Undo' }));
     expect(useDashboardStore.getState().pages.performance.itemIds).toContain(OVERVIEW);
   });
 
