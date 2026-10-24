@@ -3,6 +3,7 @@ import { isPlaceholder, PLACEHOLDER_SIZE } from '@/registry/placeholder';
 import { widgetRegistry } from '@/registry/registry';
 import type { GridConfig, GridItemLayout, GridSize } from '@/types';
 import { convertSize, DEFAULT_GRID_CONFIG } from '@/utils/gridLayout';
+import { clampToConstraints } from './utils';
 
 export interface SizeLimits {
   min: GridSize;
@@ -25,10 +26,6 @@ export function sizeLimitsFor(widgetId: string, grid: GridConfig): SizeLimits {
   };
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
-
 /**
  * The layout handed to react-grid-layout. Every item carries its limits (minW/minH/maxW/maxH,
  * widths capped at the column count) so resizing stops at them, and a stored size outside
@@ -41,22 +38,19 @@ export function withSizeLimits(
 ): Layout[] {
   return layout.map((item) => {
     const limits = limitsOf(item.i);
+    const fitted = clampToConstraints(
+      { i: item.i, x: item.x, y: item.y, w: item.w, h: item.h },
+      limits,
+      cols,
+    );
     const minW = Math.min(limits?.min.w ?? 1, cols);
-    const maxW = Math.max(minW, Math.min(limits?.max?.w ?? cols, cols));
     const minH = limits?.min.h ?? 1;
-    const maxH = limits?.max ? Math.max(minH, limits.max.h) : undefined;
-    const w = clamp(item.w, minW, maxW);
-    const h = clamp(item.h, minH, maxH ?? Number.POSITIVE_INFINITY);
     return {
-      i: item.i,
-      x: clamp(item.x, 0, cols - w),
-      y: item.y,
-      w,
-      h,
+      ...fitted,
       minW,
       minH,
-      maxW: limits?.max ? maxW : undefined,
-      maxH,
+      maxW: limits?.max ? Math.max(minW, Math.min(limits.max.w, cols)) : undefined,
+      maxH: limits?.max ? Math.max(minH, limits.max.h) : undefined,
     };
   });
 }

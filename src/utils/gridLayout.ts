@@ -226,7 +226,8 @@ export function bottomOf(layout: readonly GridItemLayout[]): number {
   return layout.reduce((max, item) => Math.max(max, item.y + item.h), 0);
 }
 
-function collides(a: GridItemLayout, b: GridItemLayout): boolean {
+/** True when two different items share at least one cell. */
+export function collides(a: GridItemLayout, b: GridItemLayout): boolean {
   return a.i !== b.i && a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 }
 

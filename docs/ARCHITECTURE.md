@@ -315,6 +315,12 @@ three breakpoints, each with its own layout stored in DashboardStore:
   and checks the store and the React Profiler stay untouched until the drop. In Chrome, a
   20-step drag recorded 0 widget renders before release.
 
+Pure helpers for the grid live in `src/grid/utils.ts`: `nextAvailablePosition`,
+`detectCollision`, `isPositionValid` and `clampToConstraints` (also used to apply widget size
+limits). Integration tests (`src/__tests__/grid-integration.test.tsx`) drive the real grid with
+mouse events: a drag from (0,0) to (2,0), a resize from 4×3 towards 6×4 that stops at the
+widget's max height, and adding and removing a widget, each checked in DashboardStore.
+
 `GridItem` is the cell wrapper: react-grid-layout clones it to add position styles, handlers
 and the resize handle, so it forwards its ref and props. Each cell renders a `WidgetFrame`, or a
 `PlaceholderCard` for an empty slot.
