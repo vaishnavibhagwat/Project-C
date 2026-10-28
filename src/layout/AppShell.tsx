@@ -25,6 +25,8 @@ import { SymbolDetail } from './SymbolDetail';
 
 // The theme builder pulls in react-colorful; load it only when someone opens it.
 const ThemeBuilder = lazy(() => import('@/theme/ThemeBuilder'));
+// Developer overlay (Ctrl+Shift+P); loaded the first time it is opened.
+const PerformanceOverlay = lazy(() => import('./PerformanceOverlay'));
 
 const ROUTE_TITLES: Partial<Record<AppRoute, string>> = {
   marketplace: 'Widget Marketplace',
@@ -64,6 +66,7 @@ export function AppShell() {
   const [shareOpen, setShareOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [symbol, setSymbol] = useState<string | null>(null);
+  const [perfOpen, setPerfOpen] = useState(false);
   const builderOpen = useThemeStore((s) => s.builder.open);
   const openBuilder = useThemeStore((s) => s.openBuilder);
   const notify = useToast();
@@ -93,6 +96,11 @@ export function AppShell() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.code === 'KeyP') {
+        e.preventDefault();
+        setPerfOpen((open) => !open);
+        return;
+      }
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         setSearchOpen(true);
@@ -232,6 +240,11 @@ export function AppShell() {
           Save the current layout first from Layouts if you want to keep it.
         </p>
       </Modal>
+      {perfOpen ? (
+        <Suspense fallback={null}>
+          <PerformanceOverlay onClose={() => setPerfOpen(false)} />
+        </Suspense>
+      ) : null}
       {builderOpen ? (
         <Suspense fallback={null}>
           <ThemeBuilder />

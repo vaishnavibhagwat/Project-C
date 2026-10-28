@@ -167,7 +167,7 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
       >
         <Suspense fallback={<WidgetSkeleton variant={entry.skeleton} />}>
           {size.width > 0 ? (
-            <Profiler id={entry.id} onRender={recordWidgetRender}>
+            <Profiler id={instanceId} onRender={recordWidgetRender}>
               <Widget
                 instanceId={instanceId}
                 config={config}

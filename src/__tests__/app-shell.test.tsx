@@ -50,6 +50,7 @@ function goTo(hash: string) {
 const lazyChunks = {
   ...import.meta.glob('/src/widgets/*/index.tsx'),
   ...import.meta.glob('/src/layout/pages/*.tsx'),
+  ...import.meta.glob('/src/layout/PerformanceOverlay.tsx'),
 };
 beforeAll(async () => {
   await Promise.all(Object.values(lazyChunks).map((load) => load()));
@@ -251,6 +252,16 @@ describe('AppShell', () => {
     expect(useDashboardStore.getState().locked).toBe(true);
     fireEvent.click(screen.getByRole('button', { name: 'Locked' }));
     expect(useDashboardStore.getState().locked).toBe(false);
+  });
+
+  it('toggles the performance overlay with Ctrl+Shift+P', async () => {
+    renderShell();
+    // Query by label: role queries over the whole rendered workstation are slow under load.
+    const overlay = () => document.querySelector('section[aria-label="Performance overlay"]');
+    fireEvent.keyDown(window, { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true });
+    await waitFor(() => expect(overlay()).not.toBeNull(), { timeout: 5000 });
+    fireEvent.keyDown(window, { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true });
+    expect(overlay()).toBeNull();
   });
 
   it('navigates with G then a number', () => {

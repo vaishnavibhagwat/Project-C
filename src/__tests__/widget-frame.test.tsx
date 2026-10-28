@@ -1,7 +1,7 @@
 import { act, fireEvent, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StrictMode } from 'react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type * as ApiModule from '@/data/api';
 import { ApiError, fetchEndpoint, parseEndpoint } from '@/data/api';
 import { getConnectionState, setSimulatedOutage } from '@/data/connection';
@@ -23,6 +23,13 @@ const HOLDINGS = 'workstation-holdings-table';
 const initialWidgets = useWidgetStore.getState();
 const initialDashboard = useDashboardStore.getState();
 const never = () => new Promise<never>(() => undefined);
+
+// Compile the widget chunks once, up front, so the first test that renders a chart does not
+// pay the one-off Recharts transform cost inside its own timeout (it flaked under load).
+const widgetChunks = import.meta.glob('/src/widgets/*/index.tsx');
+beforeAll(async () => {
+  await Promise.all(Object.values(widgetChunks).map((load) => load()));
+}, 120_000);
 
 beforeEach(() => {
   fetchMock.mockReset();

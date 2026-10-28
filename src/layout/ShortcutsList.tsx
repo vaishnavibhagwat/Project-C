@@ -3,6 +3,7 @@ export const SHORTCUTS: readonly [string, string][] = [
   ['/', 'Open global search'],
   ['G then 1-7', 'Go to app area (Workstation … Settings)'],
   ['L', 'Lock / unlock layout'],
+  ['Ctrl / ⌘ + Shift + P', 'Performance overlay (FPS, memory, renders)'],
   ['Esc', 'Close dialogs and panels'],
   ['↑ ↓ Enter', 'Navigate search results'],
 ];

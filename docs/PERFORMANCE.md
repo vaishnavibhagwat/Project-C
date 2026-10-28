@@ -21,6 +21,24 @@ npm run analyze                       # bundle sizes and budgets
 npx lighthouse http://localhost:4173/#/workstation --preset=desktop
 ```
 
+## Performance overlay (Ctrl+Shift+P)
+
+A developer overlay for watching the app live, for example to screenshot FPS during a drag.
+Press **Ctrl+Shift+P** (⌘+Shift+P on macOS) to toggle it. It samples twice a second:
+
+| Reading                            | Source                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------- |
+| FPS, min, worst frame              | `requestAnimationFrame` timestamps over each 0.5 s window; sparkline of the last 30 s       |
+| JS heap                            | `performance.memory` (Chrome and Edge only; other browsers show "not exposed")              |
+| Active widgets                     | Widget frames mounted on the page                                                           |
+| Subscriptions                      | TanStack Query observers, and the queries they watch                                        |
+| Renders per widget, longest render | React Profiler `actualDuration` per widget instance since the overlay opened (reset with ↻) |
+
+Render counts and timings need a **development build** (`npm run dev`): React only reports
+Profiler timings there. FPS, heap, widgets and subscriptions work in any build. Render counts
+include data refreshes (Holdings and the treemap refresh every 5 s), not only drags. The overlay
+itself re-renders twice a second; it lives outside the grid, so it does not re-render widgets.
+
 ## Bundle sizes (`npm run analyze`, gzip level 9, 22 Oct 2026)
 
 | Chunk                         | gzip                            | Notes                                                                                       |
