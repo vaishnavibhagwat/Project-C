@@ -17,6 +17,7 @@ npm run build
 npx vite preview --port 4173          # terminal 1 (production build)
 npx vite --port 5173                  # terminal 2 (dev server, for React Profiler timings)
 python scripts/measure-perf.py        # needs: pip install playwright
+python scripts/measure-drag-fps.py    # drag FPS, Chrome trace and docs/screenshots/drag-fps.png
 npm run analyze                       # bundle sizes and budgets
 npx lighthouse http://localhost:4173/#/workstation --preset=desktop
 ```
@@ -38,6 +39,38 @@ Render counts and timings need a **development build** (`npm run dev`): React on
 Profiler timings there. FPS, heap, widgets and subscriptions work in any build. Render counts
 include data refreshes (Holdings and the treemap refresh every 5 s), not only drags. The overlay
 itself re-renders twice a second; it lives outside the grid, so it does not re-render widgets.
+
+## Drag FPS check (`scripts/measure-drag-fps.py`, 28 Oct 2026)
+
+Production build in headed Google Chrome 156 (1440 × 900, Windows 11, Intel Core i3-10110U, 60 Hz
+display), Workstation page, Performance Overlay open. The NAV widget is held by its title bar and
+swept 500 px right and back for 4 s, one pointer move per frame, pushing other widgets as it goes.
+Each run records a Chrome performance trace (the same data as DevTools > Performance; the file
+loads there with _Load profile_) and counts frames from it and from `requestAnimationFrame`.
+
+| Run | rAF FPS | p95 frame | Worst frame | Trace: frames drawn / BeginFrames | Trace FPS | Dropped frames |
+| --- | ------- | --------- | ----------- | --------------------------------- | --------- | -------------- |
+| 1   | 59.8    | 16.9 ms   | 33.0 ms     | 255 / 257                         | 60.0      | 8              |
+| 2   | 59.0    | 17.6 ms   | 48.2 ms     | 253 / 256                         | 59.4      | 9              |
+| 3   | 59.8    | 16.9 ms   | 33.2 ms     | 251 / 253                         | 59.9      | 6              |
+
+All three runs are above 55 FPS. The dropped frames fall in the first ~0.4 s, when the drag
+starts (the widget lifts and the target ghost and departure outline appear); after that the
+drag holds 60 FPS. Screenshot of run 3, taken with the widget still held:
+
+![Dragging the NAV widget with the Performance Overlay showing 60 FPS](screenshots/drag-fps.png)
+
+Notes on method:
+
+- Pointer moves are sent from the page once per animation frame. Sending each move from
+  Playwright took ~50 ms on this machine, so most frames had nothing new to draw and the
+  trace showed ~29 drawn frames per second while the page itself ran at 59.6 FPS. That
+  measured the input rate, not the app.
+- Chrome drops a covered or minimised window to 1 FPS. Two runs made while the window was
+  hidden read 1 FPS; the script now launches Chrome with
+  `--disable-backgrounding-occluded-windows` (as Lighthouse and Puppeteer do) and rejects a
+  run if the page was hidden.
+- This is one laptop with a 60 Hz display; slower machines or larger layouts may differ.
 
 ## Bundle sizes (`npm run analyze`, gzip level 9, 22 Oct 2026)
 
