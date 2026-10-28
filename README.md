@@ -80,10 +80,12 @@ deep-linkable on static hosting; each page is a lazy chunk):
 ¹ `VITE_DATA_REFRESH_INTERVAL` (default 30 s): widgets backed by end-of-day data. Widgets driven
 by the intraday tape keep their own 5–15 s intervals.
 
-**Every widget has**: a header with title, info tooltip, last-updated time (IST) and actions
-(refresh, configure, duplicate, remove with undo); a shimmer skeleton shaped like the widget; an
-error state with message and Retry; a "No data available" empty state; an amber border plus
-`Stale · HH:MM:SS IST` when data is older than 2× its refresh interval; a disconnected state
+**Every widget has** (one shared `WidgetShell`): a header with drag grip, title, optional badge
+count (e.g. active alerts), info tooltip, last-updated time (IST) and actions (refresh,
+configure, duplicate, collapse, remove with undo); body and footer slots; a shimmer skeleton
+shaped like the widget; an error state with message and Retry; a "No data available" empty
+state; an amber border plus a **Stale** badge and the time when data is older than 2× its
+refresh interval; a disconnected state
 (and a banner that keeps the last data visible); reflow on resize; `role="region"` with an
 `aria-label` and a throttled `aria-live="polite"` text summary; its own data subscription;
 two Storybook stories (Default and Configured) and unit tests.

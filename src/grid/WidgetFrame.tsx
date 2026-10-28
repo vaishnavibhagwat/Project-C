@@ -7,23 +7,20 @@ import {
   useMemo,
   useRef,
   useState,
-  type ReactNode,
 } from 'react';
 import { Button, IconButton } from '@/components/Button';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
-import {
-  IconAlert,
-  IconClose,
-  IconCopy,
-  IconDrag,
-  IconRefresh,
-  IconSettings,
-  IconWifiOff,
-} from '@/components/Icons';
+import { IconAlert, IconCopy, IconRefresh, IconWifiOff } from '@/components/Icons';
 import { Modal } from '@/components/Overlay';
-import { DisconnectedState, EmptyState, ErrorState } from '@/components/StateViews';
+import { EmptyState, ErrorState } from '@/components/StateViews';
 import { useToast } from '@/components/Toast';
 import { InfoTooltip } from '@/components/Tooltip';
+import {
+  DRAG_HANDLE_CLASS,
+  NO_DRAG_CLASS,
+  WidgetShell,
+  type WidgetShellStatus,
+} from '@/components/WidgetShell';
 import { WidgetSkeleton } from '@/components/WidgetSkeleton';
 import { endpointUrl } from '@/data/api';
 import { setSimulatedOutage } from '@/data/connection';
@@ -39,16 +36,19 @@ import {
   MAX_WIDGETS_PER_PAGE,
   removeWidgetFromPage,
   restoreRemovedWidget,
+  setWidgetCollapsed,
 } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { PageId, WidgetConfig, WidgetInstance } from '@/types';
-import { cx } from '@/utils/cx';
 import { recordWidgetRender } from '@/utils/perf';
 import { formatIstTime, toIstIso } from '@/utils/time';
 
-export const DRAG_HANDLE_CLASS = 'widget-drag-handle';
-export const NO_DRAG_CLASS = 'widget-no-drag';
+// The grid's drag handle classes live with the shell that renders them.
+export { DRAG_HANDLE_CLASS, NO_DRAG_CLASS };
+
+/** Below this width (px) the header drops its plain timestamp so the title is not cut off. */
+const COMPACT_HEADER_PX = 380;
 
 /** Data older than this multiple of the refresh interval is flagged as stale. */
 export const STALE_MULTIPLIER = 2;
@@ -79,7 +79,8 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   const now = useNow(5000);
   const [bodyRef, size] = useElementSize<HTMLDivElement>();
   const openSettings = useWidgetStore((s) => s.openSettings);
-  // View mode (locked) hides the layout controls: drag handle, settings, duplicate, remove.
+  // View mode (locked) hides the layout controls: drag handle, settings, duplicate, collapse,
+  // remove.
   const editing = !useDashboardStore((s) => s.locked);
   const updateConfig = useWidgetStore((s) => s.updateConfig);
   const notify = useToast();
@@ -95,10 +96,15 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
     () => (data === undefined ? '' : entry.summarize(data, instance.config)),
     [data, entry, instance.config],
   );
+  const badgeCount = useMemo(
+    () => (data === undefined ? null : entry.badge(data, instance.config)),
+    [data, entry, instance.config],
+  );
   const liveSummary = useThrottledValue(summary, 15_000);
   const updated = dataUpdatedAt > 0 ? formatIstTime(dataUpdatedAt) : null;
   const lastUpdated = dataUpdatedAt > 0 ? toIstIso(dataUpdatedAt) : null;
   const { instanceId } = instance;
+  const collapsed = instance.collapsed !== undefined;
 
   const onConfigChange = useCallback(
     (patch: Partial<WidgetConfig>) => updateConfig(instanceId, patch),
@@ -108,6 +114,10 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   const onRefresh = useCallback(() => {
     void refetch();
   }, [refetch]);
+
+  const onToggleCollapse = useCallback(() => {
+    setWidgetCollapsed(page, instanceId, !collapsed);
+  }, [page, instanceId, collapsed]);
 
   // The header's X asks first; the widget is removed only on confirm (Undo stays in the toast).
   const [confirmRemove, setConfirmRemove] = useState(false);
@@ -134,185 +144,132 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
     }
   }, [instanceId, title, notify, page]);
 
-  let body: ReactNode;
-  if (disconnected && data === undefined) {
-    body = (
-      <DisconnectedState
-        since={formatIstTime(connection.changedAt, false)}
+  // The deferred value can trail the query by one render, so "no data yet" stays loading.
+  let status: WidgetShellStatus;
+  if (disconnected && data === undefined) status = 'disconnected';
+  else if (isPending || (data === undefined && !isError)) status = 'loading';
+  else if (data === undefined) status = 'error';
+  else status = entry.isEmpty(data) ? 'empty' : 'ready';
+
+  return (
+    <>
+      <WidgetShell
+        title={title}
+        status={status}
+        skeleton={<WidgetSkeleton variant={entry.skeleton} />}
+        errorMessage={errorMessage(error)}
+        onRetry={onRefresh}
+        retrying={isFetching}
+        emptyMessage="The data source returned no rows for this widget."
+        disconnectedSince={formatIstTime(connection.changedAt, false)}
         onReconnect={() => {
           setSimulatedOutage(false);
           onRefresh();
         }}
-      />
-    );
-  } else if (isPending) {
-    body = <WidgetSkeleton variant={entry.skeleton} />;
-  } else if (isError && data === undefined) {
-    body = <ErrorState message={errorMessage(error)} onRetry={onRefresh} retrying={isFetching} />;
-  } else if (data === undefined) {
-    // The deferred value can trail the query by one render; keep the skeleton meanwhile.
-    body = <WidgetSkeleton variant={entry.skeleton} />;
-  } else if (data !== undefined && entry.isEmpty(data)) {
-    body = <EmptyState message="The data source returned no rows for this widget." />;
-  } else {
-    body = (
-      <ErrorBoundary
-        resetKeys={[data, instance.config]}
-        fallback={(err, reset) => (
-          <ErrorState
-            message={`This widget failed to render: ${err.message}`}
-            onRetry={() => {
-              reset();
-              onRefresh();
-            }}
-          />
-        )}
-      >
-        <Suspense fallback={<WidgetSkeleton variant={entry.skeleton} />}>
-          {size.width > 0 ? (
-            <Profiler id={instanceId} onRender={recordWidgetRender}>
-              <Widget
-                instanceId={instanceId}
-                config={config}
-                data={data}
-                isLoading={isFetching}
-                error={isError ? error : null}
-                isStale={stale}
-                lastUpdated={lastUpdated}
-                onConfigChange={onConfigChange}
-                width={size.width}
-                height={size.height}
-              />
-            </Profiler>
-          ) : null}
-        </Suspense>
-      </ErrorBoundary>
-    );
-  }
-
-  return (
-    <section
-      role="region"
-      aria-label={title}
-      aria-busy={isFetching}
-      data-stale={stale || undefined}
-      data-testid={`widget-${instanceId}`}
-      className={cx(
-        'flex h-full flex-col overflow-hidden rounded border bg-panel',
-        stale ? 'border-warn' : 'border-line',
-      )}
-    >
-      <header className="flex h-8 shrink-0 items-center gap-1 border-b border-line pl-1 pr-1">
-        <div
-          className={cx(
-            DRAG_HANDLE_CLASS,
-            'flex min-w-0 flex-1 items-center gap-1',
-            editing ? 'cursor-grab active:cursor-grabbing' : 'pl-1',
-          )}
-        >
-          {editing ? <IconDrag size={14} className="shrink-0 text-subtle" /> : null}
-          <h2 className="truncate text-xs font-semibold text-fg">{title}</h2>
-        </div>
-        <div className={cx(NO_DRAG_CLASS, 'flex shrink-0 items-center gap-0.5')}>
-          <InfoTooltip
-            label={`About ${title}`}
-            content={
-              <>
-                <span className="block font-medium">{entry.name}</span>
-                <span className="block text-muted">{entry.description}</span>
-                <span className="mt-1 block text-2xs text-subtle">
-                  Source GET {endpointUrl(entry.dataSource.endpoint)} · refresh every{' '}
-                  {Math.round(refresh / 1000)}s · simulated data
-                </span>
-              </>
-            }
-          />
-          {updated ? (
-            <span
-              className={cx(
-                'num hidden whitespace-nowrap px-1 text-2xs sm:inline',
-                stale ? 'font-medium text-warn' : 'text-subtle',
-              )}
-              title={
-                stale
-                  ? `Data is older than ${STALE_MULTIPLIER}× the ${Math.round(refresh / 1000)}s refresh interval`
-                  : 'Last updated'
-              }
-            >
-              {stale ? (
+        badgeCount={badgeCount}
+        lastUpdated={updated}
+        stale={stale}
+        staleReason={`Data is older than ${STALE_MULTIPLIER}× the ${Math.round(refresh / 1000)}s refresh interval`}
+        summary={liveSummary}
+        compactHeader={size.width > 0 && size.width < COMPACT_HEADER_PX}
+        draggable={editing}
+        collapsed={collapsed}
+        onToggleCollapse={editing ? onToggleCollapse : undefined}
+        onSettings={editing ? () => openSettings(instanceId) : undefined}
+        onRemove={editing ? () => setConfirmRemove(true) : undefined}
+        actions={
+          <>
+            <InfoTooltip
+              label={`About ${title}`}
+              content={
                 <>
-                  <IconAlert size={11} className="mr-0.5 inline align-[-1px]" />
-                  Stale · {updated}
+                  <span className="block font-medium">{entry.name}</span>
+                  <span className="block text-muted">{entry.description}</span>
+                  <span className="mt-1 block text-2xs text-subtle">
+                    Source GET {endpointUrl(entry.dataSource.endpoint)} · refresh every{' '}
+                    {Math.round(refresh / 1000)}s · simulated data
+                  </span>
+                  {updated ? (
+                    <span className="block text-2xs text-subtle">Last updated {updated}</span>
+                  ) : null}
                 </>
-              ) : (
-                updated
-              )}
-            </span>
-          ) : null}
-          <IconButton
-            label="Refresh"
-            icon={IconRefresh}
-            size="xs"
-            onClick={onRefresh}
-            disabled={disconnected}
-          />
-          {editing ? (
-            <>
-              <IconButton
-                label={`Configure ${title}`}
-                icon={IconSettings}
-                size="xs"
-                onClick={() => openSettings(instanceId)}
-              />
+              }
+            />
+            <IconButton
+              label="Refresh"
+              icon={IconRefresh}
+              size="xs"
+              onClick={onRefresh}
+              disabled={disconnected}
+            />
+            {editing ? (
               <IconButton
                 label={`Duplicate ${title}`}
                 icon={IconCopy}
                 size="xs"
                 onClick={onDuplicate}
               />
-              <IconButton
-                label={`Remove ${title}`}
-                icon={IconClose}
-                size="xs"
-                aria-haspopup="dialog"
-                onClick={() => setConfirmRemove(true)}
-              />
-            </>
-          ) : null}
-        </div>
-      </header>
-      {data !== undefined && disconnected ? (
-        <p
-          role="status"
-          className="flex shrink-0 items-center gap-1.5 border-b border-warn/30 bg-warn/10 px-3 py-1 text-2xs text-warn"
-        >
-          <IconWifiOff size={12} /> Disconnected · showing data from {updated ?? 'earlier'}
-        </p>
-      ) : null}
-      {data !== undefined && isError && !disconnected ? (
-        <p
-          role="alert"
-          className="flex shrink-0 items-center gap-1.5 border-b border-neg/30 bg-neg/10 px-3 py-1 text-2xs text-neg"
-        >
-          <IconAlert size={12} /> Refresh failed · showing last good data
-          <button type="button" onClick={onRefresh} className="ml-auto font-semibold underline">
-            Retry
-          </button>
-        </p>
-      ) : null}
-      <div
-        ref={bodyRef}
-        data-widget-body
-        className={cx(
-          'relative min-h-0 flex-1',
-          disconnected && data !== undefined && 'opacity-70',
-        )}
+            ) : null}
+          </>
+        }
+        notice={
+          data !== undefined && disconnected ? (
+            <p
+              role="status"
+              className="flex shrink-0 items-center gap-1.5 border-b border-warn/30 bg-warn/10 px-3 py-1 text-2xs text-warn"
+            >
+              <IconWifiOff size={12} /> Disconnected · showing data from {updated ?? 'earlier'}
+            </p>
+          ) : data !== undefined && isError ? (
+            <p
+              role="alert"
+              className="flex shrink-0 items-center gap-1.5 border-b border-neg/30 bg-neg/10 px-3 py-1 text-2xs text-neg"
+            >
+              <IconAlert size={12} /> Refresh failed · showing last good data
+              <button type="button" onClick={onRefresh} className="ml-auto font-semibold underline">
+                Retry
+              </button>
+            </p>
+          ) : null
+        }
+        dimmed={disconnected && data !== undefined}
+        busy={isFetching}
+        bodyRef={bodyRef}
+        testId={`widget-${instanceId}`}
       >
-        {body}
-      </div>
-      <p className="sr-only" aria-live="polite">
-        {liveSummary}
-      </p>
+        <ErrorBoundary
+          resetKeys={[data, instance.config]}
+          fallback={(err, reset) => (
+            <ErrorState
+              message={`This widget failed to render: ${err.message}`}
+              onRetry={() => {
+                reset();
+                onRefresh();
+              }}
+            />
+          )}
+        >
+          <Suspense fallback={<WidgetSkeleton variant={entry.skeleton} />}>
+            {/* Widgets render once the body has been measured: charts need a size. */}
+            {size.width > 0 && data !== undefined ? (
+              <Profiler id={instanceId} onRender={recordWidgetRender}>
+                <Widget
+                  instanceId={instanceId}
+                  config={config}
+                  data={data}
+                  isLoading={isFetching}
+                  error={isError ? error : null}
+                  isStale={stale}
+                  lastUpdated={lastUpdated}
+                  onConfigChange={onConfigChange}
+                  width={size.width}
+                  height={size.height}
+                />
+              </Profiler>
+            ) : null}
+          </Suspense>
+        </ErrorBoundary>
+      </WidgetShell>
       <Modal
         open={confirmRemove}
         onClose={() => setConfirmRemove(false)}
@@ -336,7 +293,7 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
           or add it again from the marketplace.
         </p>
       </Modal>
-    </section>
+    </>
   );
 }
 
@@ -362,7 +319,11 @@ function UnknownWidget({ page, instance }: { page: PageId; instance: WidgetInsta
   );
 }
 
-/** Frame around every widget: header, actions and all loading / error / stale states. */
+/**
+ * Every widget on the grid: looks up the instance and its registered type, then renders it in
+ * a WidgetShell wired to the widget's data query, the connection state, the stores (settings,
+ * duplicate, collapse, remove with confirmation) and edit / view mode.
+ */
 export const WidgetFrame = memo(function WidgetFrame({
   page,
   instanceId,

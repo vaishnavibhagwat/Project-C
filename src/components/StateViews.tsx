@@ -29,7 +29,8 @@ function StateView({ icon: Icon, tone, title, message, action }: StateViewProps)
 
 export interface ErrorStateProps {
   message: string;
-  onRetry: () => void;
+  /** Retry button; omitted when not given. */
+  onRetry?: () => void;
   retrying?: boolean;
 }
 
@@ -42,9 +43,11 @@ export function ErrorState({ message, onRetry, retrying = false }: ErrorStatePro
         title="Couldn’t load this widget"
         message={message}
         action={
-          <Button size="sm" icon={IconRefresh} onClick={onRetry} disabled={retrying}>
-            {retrying ? 'Retrying…' : 'Retry'}
-          </Button>
+          onRetry ? (
+            <Button size="sm" icon={IconRefresh} onClick={onRetry} disabled={retrying}>
+              {retrying ? 'Retrying…' : 'Retry'}
+            </Button>
+          ) : undefined
         }
       />
     </div>
@@ -64,7 +67,8 @@ export function EmptyState({ title = 'No data available', message, action }: Emp
 }
 
 export interface DisconnectedStateProps {
-  onReconnect: () => void;
+  /** Reconnect button; omitted when not given. */
+  onReconnect?: () => void;
   since?: string;
 }
 
@@ -81,9 +85,11 @@ export function DisconnectedState({ onReconnect, since }: DisconnectedStateProps
             : 'Data will refresh automatically when the feed is back.'
         }
         action={
-          <Button size="sm" icon={IconPlug} onClick={onReconnect}>
-            Reconnect
-          </Button>
+          onReconnect ? (
+            <Button size="sm" icon={IconPlug} onClick={onReconnect}>
+              Reconnect
+            </Button>
+          ) : undefined
         }
       />
     </div>

@@ -3,7 +3,7 @@ import { Responsive, WidthProvider, type Layout, type Layouts } from 'react-grid
 import { useShallow } from 'zustand/react/shallow';
 import { useViewportWidth } from '@/hooks/useViewportWidth';
 import { isPlaceholder } from '@/registry/placeholder';
-import { commitLayouts } from '@/store/actions';
+import { COLLAPSED_ROWS, commitLayouts } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { BreakpointLayouts, GridItemLayout, PageId } from '@/types';
@@ -17,7 +17,7 @@ import {
 } from '@/utils/gridLayout';
 import { GridItem } from './GridItem';
 import { PlaceholderCard } from './PlaceholderCard';
-import { sizeLimitsFor, withSizeLimits } from './sizeLimits';
+import { sizeLimitsFor, withSizeLimits, type SizeLimits } from './sizeLimits';
 import { DRAG_HANDLE_CLASS, NO_DRAG_CLASS, WidgetFrame } from './WidgetFrame';
 
 /** react-grid-layout's Responsive grid, sized by WidthProvider (ResizeObserver). */
@@ -85,6 +85,9 @@ function GridContainerImpl({ page }: { page: PageId }) {
   const types = useWidgetStore(
     useShallow((s) => grid.itemIds.map((id) => s.instances[id]?.widgetId ?? '')),
   );
+  const collapsed = useWidgetStore(
+    useShallow((s) => grid.itemIds.map((id) => s.instances[id]?.collapsed !== undefined)),
+  );
   // The breakpoint follows the viewport (≥ 1280 px desktop, ≥ 768 px tablet), not the grid's
   // own width; WidthProvider only supplies the width the columns are laid out in.
   const breakpoint = breakpointForViewport(useViewportWidth());
@@ -110,10 +113,19 @@ function GridContainerImpl({ page }: { page: PageId }) {
 
   // Each widget's minSize/maxSize from its WidgetDefinition, applied at render time (only
   // x/y/w/h are persisted). Sizes are written for the default grid, so they are converted.
+  // A collapsed widget is held at its header height and cannot be resized until expanded.
   const layouts = useMemo<Layouts>(() => {
     const limits = new Map(
-      grid.itemIds.map((id, k) => [id, sizeLimitsFor(types[k] ?? '', gridConfig)] as const),
+      grid.itemIds.map((id, k) => {
+        const own = sizeLimitsFor(types[k] ?? '', gridConfig);
+        const held: SizeLimits = {
+          min: { w: own.min.w, h: COLLAPSED_ROWS },
+          max: { w: own.max?.w ?? gridConfig.cols, h: COLLAPSED_ROWS },
+        };
+        return [id, collapsed[k] ? held : own] as const;
+      }),
     );
+    const frozen = new Set(grid.itemIds.filter((_, k) => collapsed[k]));
     const out: Layouts = {};
     for (const bp of BREAKPOINT_KEYS) {
       const layout = grid.layouts[bp];
@@ -122,10 +134,10 @@ function GridContainerImpl({ page }: { page: PageId }) {
         layout.filter((l) => grid.itemIds.includes(l.i)),
         (id) => limits.get(id),
         gridProps.cols[bp],
-      );
+      ).map((item) => (frozen.has(item.i) ? { ...item, isResizable: false } : item));
     }
     return out;
-  }, [grid.itemIds, grid.layouts, types, gridConfig, gridProps]);
+  }, [grid.itemIds, grid.layouts, types, collapsed, gridConfig, gridProps]);
 
   // Store a finished drag or resize. Nothing is written while the pointer moves.
   const commitBreakpoint = useCallback(

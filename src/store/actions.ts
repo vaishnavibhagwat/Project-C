@@ -337,6 +337,54 @@ export function configureWidget(
   else apply();
 }
 
+/** Rows a collapsed widget takes: enough for its header. */
+export const COLLAPSED_ROWS = 1;
+
+function setWidgetCollapsedNow(page: PageId, instanceId: string, collapse: boolean): boolean {
+  const instance = useWidgetStore.getState().instances[instanceId];
+  if (!instance || (instance.collapsed !== undefined) === collapse) return false;
+  const dashboard = useDashboardStore.getState();
+  const layouts = dashboard.pages[page].layouts;
+  if (collapse) {
+    // Shrink to the header on every breakpoint and remember each height for expanding.
+    const heights: Partial<Record<Breakpoint, number>> = {};
+    for (const bp of BREAKPOINT_KEYS) {
+      const item = layouts[bp]?.find((l) => l.i === instanceId);
+      if (!item) continue;
+      heights[bp] = item.h;
+      dashboard.resizeWidget(page, instanceId, { w: item.w, h: COLLAPSED_ROWS }, bp);
+    }
+    useWidgetStore.getState().upsertInstances([{ ...instance, collapsed: heights }]);
+  } else {
+    // A breakpoint first shown while collapsed has no saved height: use the default size.
+    const defaultSize =
+      widgetRegistry.getWidget(instance.widgetId)?.defaultSize ?? PLACEHOLDER_SIZE;
+    const fallback = convertSize(defaultSize, DEFAULT_GRID_CONFIG, currentGrid(), 'up').h;
+    for (const bp of BREAKPOINT_KEYS) {
+      const item = layouts[bp]?.find((l) => l.i === instanceId);
+      if (!item) continue;
+      const h = instance.collapsed?.[bp] ?? fallback;
+      dashboard.resizeWidget(page, instanceId, { w: item.w, h }, bp);
+    }
+    const expanded: WidgetInstance = { ...instance };
+    delete expanded.collapsed;
+    useWidgetStore.getState().upsertInstances([expanded]);
+  }
+  syncPositions(page);
+  return true;
+}
+
+/**
+ * Collapse a widget to its header (widgets below move up) or expand it back to the height it
+ * had on each breakpoint (widgets below are pushed down). Undoable. Returns false when the
+ * widget is missing or already in that state.
+ */
+export function setWidgetCollapsed(page: PageId, instanceId: string, collapse: boolean): boolean {
+  return recorded(page, collapse ? 'Collapse widget' : 'Expand widget', () =>
+    setWidgetCollapsedNow(page, instanceId, collapse),
+  );
+}
+
 /** The page a widget instance is placed on, if any. */
 export function pageOf(instanceId: string): PageId | null {
   const { pages } = useDashboardStore.getState();

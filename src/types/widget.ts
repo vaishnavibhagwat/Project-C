@@ -1,6 +1,7 @@
 import type { ComponentType, LazyExoticComponent } from 'react';
 import type { JSONSchema7 } from 'json-schema';
 import type { EndpointId } from './data';
+import type { Breakpoint } from './layout';
 
 /** Widget categories used by the registry and the marketplace. */
 export enum WidgetCategory {
@@ -99,4 +100,9 @@ export interface WidgetInstance {
   position: GridPosition;
   /** Optional user-chosen title; the widget's name is shown when absent. */
   title?: string;
+  /**
+   * Present while the widget is collapsed to its header: the height (rows) to restore on each
+   * breakpoint when it is expanded again.
+   */
+  collapsed?: Partial<Record<Breakpoint, number>>;
 }

@@ -62,6 +62,7 @@ export const alertsMonitorWidget = defineWidget(alertsMonitorDefinition, {
   configParser: AlertsMonitorConfigSchema,
   isData: isEndpointData('alerts/active'),
   summarize: summarizeAlerts,
+  badge: (data, config) => filterAlerts(data.alerts, config).length,
   skeleton: 'feed',
   preload: () => import('./index'),
 });

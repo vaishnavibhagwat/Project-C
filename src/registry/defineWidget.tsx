@@ -32,6 +32,8 @@ export interface RegisteredWidget extends WidgetDefinition {
   resolveConfig: (stored: WidgetConfig) => WidgetConfig;
   isEmpty: (data: unknown) => boolean;
   summarize: (data: unknown, config: WidgetConfig) => string;
+  /** Count shown as a badge in the widget header (e.g. active alerts), or null for none. */
+  badge: (data: unknown, config: WidgetConfig) => number | null;
   /** Loads the lazy chunk ahead of render (used on hover in the marketplace). */
   preload: () => void;
 }
@@ -41,6 +43,8 @@ export interface DefineWidgetOptions<TConfig extends WidgetConfig, TData> {
   isData: (value: unknown) => value is TData;
   isEmpty?: (data: TData) => boolean;
   summarize: (data: TData, config: TConfig) => string;
+  /** Optional header badge count, e.g. how many alerts match the widget's filters. */
+  badge?: (data: TData, config: TConfig) => number | null;
   skeleton: SkeletonVariant;
   preload: () => Promise<unknown>;
 }
@@ -110,6 +114,8 @@ export function defineWidget<TConfig extends WidgetConfig, TData>(
     resolveConfig: resolve,
     isEmpty: (data) => isData(data) && isEmpty(data),
     summarize: (data, config) => (isData(data) ? summarize(data, resolve(config)) : ''),
+    badge: (data, config) =>
+      options.badge && isData(data) ? options.badge(data, resolve(config)) : null,
     preload: () => {
       void options.preload();
     },

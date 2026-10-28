@@ -135,8 +135,14 @@ placed widget is a `WidgetInstance`: `{ instanceId, widgetId, config, position: 
 - **Each widget declares exactly one typed data source.** `TData` is the validated response of
   that endpoint, for example `HoldingsData`, so the widget works with domain fields (`ticker`,
   `weight`, `dailyPnL`) with no transform layer.
-- **The frame owns every state.** Loading skeleton, error with Retry, "No data available",
-  stale marker and the disconnected state are drawn by `WidgetFrame`, not by widgets. A widget
+- **The shell owns every state.** Every widget renders inside `WidgetShell`
+  (`src/components/WidgetShell.tsx`), a presentational card: header (drag grip, title, optional
+  badge count, last-updated time or a "Stale" badge, extra actions, settings, collapse,
+  remove), a body slot and an optional footer slot. It draws the loading skeleton (a
+  `LoadingSkeleton` in `text`, `chart`, `table` or `widget` shape, or the widget's own
+  `WidgetSkeleton`), the error with Retry, "No data available" and the disconnected state, and
+  carries `role="region"`, `aria-label` and the polite live summary. `WidgetFrame`
+  (`src/grid/`) wires it to the widget's query, the stores and edit / view mode. A widget
   only draws data. `isLoading`, `error` and `isStale` are passed for background refreshes, where
   the widget still shows the last good data.
 - **Sizes belong to the widget.** `defaultSize`, `minSize` and `maxSize` let the marketplace
@@ -162,7 +168,7 @@ plugin API.
 
 ### Registration and validation
 
-`defineWidget(definition, { configParser, isData, summarize, skeleton, preload, isEmpty? })`
+`defineWidget(definition, { configParser, isData, summarize, skeleton, preload, isEmpty?, badge? })`
 turns a typed definition into a `RegisteredWidget`: a type-erased `WidgetDefinition` whose
 `component` checks config (zod) and data (type guard) before rendering the widget's typed
 component, plus the helpers the frame needs. This is how widgets with different config and

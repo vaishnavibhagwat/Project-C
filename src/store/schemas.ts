@@ -58,6 +58,7 @@ const CurrentWidgetInstanceSchema = z.object({
   config: configRecord,
   position: GridPositionSchema,
   title: z.string().max(80).optional(),
+  collapsed: z.record(BreakpointSchema, z.number().int().min(1).max(200)).optional(),
 });
 
 /** Shape used before the spec-aligned WidgetInstance (saved layouts and share links). */

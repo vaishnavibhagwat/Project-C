@@ -1,4 +1,4 @@
-import { act, fireEvent, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { StrictMode } from 'react';
 import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -104,7 +104,8 @@ describe('WidgetFrame states', () => {
     const region = screen.getByRole('region', { name: 'Portfolio Overview' });
     await waitFor(() => expect(region).toHaveAttribute('data-stale', 'true'));
     expect(region.className).toContain('border-warn');
-    expect(screen.getByText(/Stale ·/)).toHaveTextContent(/IST/);
+    expect(within(region).getByText('Stale')).toBeInTheDocument();
+    expect(within(region).getByText(/IST$/)).toHaveClass('text-warn');
   });
 
   it('shows the disconnected state and reconnects', async () => {
@@ -202,6 +203,19 @@ describe('WidgetFrame states', () => {
     renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
     fireEvent.click(screen.getByRole('button', { name: /Configure/ }));
     expect(useWidgetStore.getState().settingsFor).toBe(OVERVIEW);
+  });
+
+  it('collapses to its header from the header toggle, and hides it in view mode', async () => {
+    fetchMock.mockResolvedValue(fixture('portfolio/summary'));
+    renderWithProviders(<WidgetFrame page="performance" instanceId={OVERVIEW} />);
+    expect(await screen.findByText('$45.0B')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse Portfolio Overview' }));
+    expect(useWidgetStore.getState().instances[OVERVIEW]?.collapsed).toBeDefined();
+    expect(screen.queryByText('$45.0B')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Expand Portfolio Overview' }));
+    expect(useWidgetStore.getState().instances[OVERVIEW]?.collapsed).toBeUndefined();
+    act(() => useDashboardStore.getState().setLocked(true));
+    expect(screen.queryByRole('button', { name: /Collapse|Configure|Remove/ })).toBeNull();
   });
 
   it('explains when a widget type is not installed', () => {
