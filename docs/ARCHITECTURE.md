@@ -213,12 +213,12 @@ that change two stores run in a fixed order instead (see below).
 
 ### Why four stores
 
-| Store            | Owns                                                                                                        | Persisted under      |
-| ---------------- | ----------------------------------------------------------------------------------------------------------- | -------------------- |
-| `DashboardStore` | `gridConfig`, layouts per page and breakpoint, widget order, lock, display currency, acknowledged alert ids | `meridian:dashboard` |
-| `WidgetStore`    | widget instances keyed by `instanceId` (type, title, settings, position); which settings drawer is open     | `meridian:widgets`   |
-| `ThemeStore`     | active theme id, custom themes, theme builder draft (live preview)                                          | `meridian:theme`     |
-| `LayoutStore`    | `savedLayouts` with up to 20 versions each, active layout per page, the last 10 `shares`                    | `meridian:layouts`   |
+| Store            | Owns                                                                                                                 | Persisted under      |
+| ---------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `DashboardStore` | `gridConfig`, layouts per page and breakpoint, widget order, lock, density, display currency, acknowledged alert ids | `meridian:dashboard` |
+| `WidgetStore`    | widget instances keyed by `instanceId` (type, title, settings, position); which settings drawer is open              | `meridian:widgets`   |
+| `ThemeStore`     | active theme id, custom themes, theme builder draft (live preview)                                                   | `meridian:theme`     |
+| `LayoutStore`    | `savedLayouts` with up to 20 versions each, active layout per page, the last 10 `shares`                             | `meridian:layouts`   |
 
 The split follows how often each kind of state changes and how bad it is to lose it:
 
@@ -241,7 +241,7 @@ Actions per store (each has a unit test in `src/__tests__/<store>-store.test.ts`
 
 - **DashboardStore**: `setGridConfig`, `resetGridConfig`, `addWidget`, `removeWidget`,
   `restoreWidget`, `moveWidget`, `resizeWidget`, `setLayouts`, `replacePage`, `setLocked`,
-  `setDisplayCurrency`, `acknowledgeAlerts`.
+  `setDensity`, `setDisplayCurrency`, `acknowledgeAlerts`.
 - **WidgetStore**: `createInstance`, `upsertInstances`, `updateConfig`, `replaceConfig`,
   `renameInstance`, `setPositions`, `removeInstances`, `duplicateInstance`, `openSettings`,
   `closeSettings`.
@@ -331,6 +331,31 @@ and the resize handle, so it forwards its ref and props. Each cell renders a `Wi
 be moved and resized; **Choose widget** turns it into any registered widget in place, growing
 it to at least that widget's default size. Saved layouts and share links keep empty slots. The
 toolbar also links to the marketplace, toggles compaction and shows the active breakpoint.
+
+### Workspace toolbar: edit mode, undo / redo, density
+
+- **Edit layout** (`aria-pressed`, shortcut `L`) maps to DashboardStore `locked`. View mode
+  (locked) turns off dragging and resizing and hides the drag grip, settings, duplicate and
+  remove buttons, Add widget, Marketplace, compaction and Reset layout. Refresh stays.
+- **Undo / Redo** (`Ctrl+Z`, `Ctrl+Shift+Z` or `Ctrl+Y`, edit mode only; text fields keep
+  their own undo). `src/store/history.ts` holds a `LayoutHistory`: two stacks of
+  `{ page, label, before, after }` page snapshots, at most 50, in memory only. It is not a
+  fifth store: it holds snapshots of the stores, not app state, and is never persisted. The
+  cross-store actions record themselves through `recorded()`, which captures the page before
+  and after; nested actions (a reset applies a snapshot) record once. Recorded: add, empty
+  slot, choose widget, remove (and its toast Undo), duplicate, configure (settings drawer),
+  load layout, reset, and drag and resize (GridContainer passes a label to `commitLayouts` on
+  drop). Derived breakpoint layouts and react-grid-layout's safety-net commits are not
+  recorded. A change that leaves the page unchanged is ignored, a new change clears redo, and
+  Save layout or Save version clears the history. Undo applies `before` with the original ids,
+  so instances come back with their settings.
+- **Density** (Comfortable / Compact, persisted). `DENSITY_TOKENS` in `src/theme/tokens.ts`
+  scale the grid's row height (×0.8) and gap (×0.75) on screen, so stored layouts never change,
+  and `--font-scale` (0.9375) on `:root[data-density='compact']`, which every Tailwind font size
+  multiplies.
+- Every operation shows a toast: undo / redo results ("Undid: Move widget", "Nothing to
+  undo"), mode and density changes, and failures (page full, compaction or version save
+  failed).
 
 Snapshots (saved versions and share links) record the grid they were captured on and are
 converted when applied. Data saved before grid settings existed used 12 columns and 28 px rows;

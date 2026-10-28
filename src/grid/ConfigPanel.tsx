@@ -8,6 +8,7 @@ import { endpointUrl } from '@/data/api';
 import { configErrorsByField } from '@/registry/configValidator';
 import type { RegisteredWidget } from '@/registry/defineWidget';
 import { widgetRegistry } from '@/registry/registry';
+import { configureWidget } from '@/store/actions';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { ConfigValue, WidgetConfig, WidgetInstance } from '@/types';
 import { sanitizeText } from '@/utils/sanitize';
@@ -22,8 +23,6 @@ interface ConfigFormProps {
 
 /** Keyed by instance id, so the draft starts fresh whenever a different widget is opened. */
 function ConfigForm({ instance, widget, onDone }: ConfigFormProps) {
-  const replaceConfig = useWidgetStore((s) => s.replaceConfig);
-  const renameInstance = useWidgetStore((s) => s.renameInstance);
   const notify = useToast();
   const [draft, setDraft] = useState<WidgetConfig>(() => widget.resolveConfig(instance.config));
   const [title, setTitle] = useState(instance.title ?? widget.name);
@@ -38,10 +37,13 @@ function ConfigForm({ instance, widget, onDone }: ConfigFormProps) {
 
   const save = () => {
     if (invalid) return;
-    replaceConfig(instance.instanceId, widget.resolveConfig(draft));
     // Store a custom title only when it differs from the widget's name.
     const clean = sanitizeText(title, 80);
-    renameInstance(instance.instanceId, clean === widget.name ? undefined : clean);
+    configureWidget(
+      instance.instanceId,
+      widget.resolveConfig(draft),
+      clean === widget.name ? undefined : clean,
+    );
     onDone();
     notify({ message: 'Widget settings saved', tone: 'success' });
   };

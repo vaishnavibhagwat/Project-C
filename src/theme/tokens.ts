@@ -42,4 +42,45 @@ export const STRUCTURAL_VARS = [
   '--divider',
   '--font-sans',
   '--font-mono',
+  '--font-scale',
 ] as const;
+
+/** Multiplies every Tailwind font size; set per density on `:root[data-density]`. */
+export const FONT_SCALE_VAR = '--font-scale';
+
+/** Type scale in rem at density 1: [size, line height]. */
+const FONT_SIZES = {
+  '2xs': [0.6875, 1],
+  xs: [0.75, 1.125],
+  sm: [0.8125, 1.25],
+  base: [0.875, 1.375],
+  lg: [1, 1.5],
+  xl: [1.25, 1.75],
+} as const;
+
+/** Tailwind `fontSize` scale: every size and line height follows the font-scale token. */
+export function fontSizeScale(): Record<string, [string, { lineHeight: string }]> {
+  const scale: Record<string, [string, { lineHeight: string }]> = {};
+  for (const [key, [size, line]] of Object.entries(FONT_SIZES)) {
+    scale[key] = [
+      `calc(${size}rem * var(${FONT_SCALE_VAR}))`,
+      { lineHeight: `calc(${line}rem * var(${FONT_SCALE_VAR}))` },
+    ];
+  }
+  return scale;
+}
+
+export type Density = 'comfortable' | 'compact';
+
+/**
+ * Density tokens. Grid row height and gap are multiples of the user's grid settings (so a
+ * density switch never rewrites stored layouts); fontScale is written to --font-scale by the
+ * `:root[data-density]` rules in global.css (kept equal to these values by a test).
+ */
+export const DENSITY_TOKENS: Record<
+  Density,
+  { rowScale: number; gapScale: number; fontScale: number }
+> = {
+  comfortable: { rowScale: 1, gapScale: 1, fontScale: 1 },
+  compact: { rowScale: 0.8, gapScale: 0.75, fontScale: 0.9375 },
+};

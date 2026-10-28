@@ -1,6 +1,6 @@
 import { Button } from '@/components/Button';
 import { GridToolbar } from '@/grid/GridToolbar';
-import { IconLock, IconRotate, IconSave, IconShare, IconUnlock } from '@/components/Icons';
+import { IconRotate, IconSave, IconShare } from '@/components/Icons';
 import { useLayoutStore } from '@/store/layoutStore';
 import { useDashboardStore } from '@/store/dashboardStore';
 import type { PageMeta } from '@/registry/pages';
@@ -21,7 +21,6 @@ export function PageToolbar({
   onReset,
 }: PageToolbarProps) {
   const locked = useDashboardStore((s) => s.locked);
-  const setLocked = useDashboardStore((s) => s.setLocked);
   const activeId = useLayoutStore((s) => s.activeByPage[page.id]);
   const activeName = useLayoutStore((s) => s.savedLayouts.find((l) => l.id === activeId)?.name);
 
@@ -43,19 +42,11 @@ export function PageToolbar({
         <Button size="sm" icon={IconShare} onClick={onShare}>
           Share
         </Button>
-        <Button
-          size="sm"
-          variant="ghost"
-          icon={locked ? IconLock : IconUnlock}
-          aria-pressed={locked}
-          onClick={() => setLocked(!locked)}
-          title="Lock prevents dragging and resizing (shortcut L)"
-        >
-          {locked ? 'Locked' : 'Unlocked'}
-        </Button>
-        <Button size="sm" variant="ghost" icon={IconRotate} onClick={onReset}>
-          Reset
-        </Button>
+        {locked ? null : (
+          <Button size="sm" variant="ghost" icon={IconRotate} onClick={onReset}>
+            Reset layout
+          </Button>
+        )}
       </div>
     </div>
   );

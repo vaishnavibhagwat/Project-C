@@ -5,7 +5,7 @@ import { EndpointFetcherContext, type EndpointFetcher } from '@/hooks/useEndpoin
 import { routeFromPath, routePath } from '@/hooks/useAppRoute';
 import { AppRouter } from '@/layout/AppRoutes';
 import { search } from '@/layout/searchIndex';
-import { captureSnapshot } from '@/store/actions';
+import { addWidgetToPage, captureSnapshot } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useLayoutStore } from '@/store/layoutStore';
 import { buildShareUrl, encodeShare } from '@/store/share';
@@ -241,17 +241,53 @@ describe('AppShell', () => {
   it('resets the page after confirmation', () => {
     useWidgetStore.getState().updateConfig('workstation-var-gauge', { confidence: '95' });
     renderShell();
-    fireEvent.click(screen.getByRole('button', { name: 'Reset' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Reset layout' }));
     fireEvent.click(screen.getByRole('button', { name: 'Reset page' }));
     expect(useWidgetStore.getState().instances['workstation-var-gauge']?.config).toEqual({});
   });
 
-  it('locks the layout with the L shortcut and the toolbar button', () => {
+  it('switches between edit and view mode with the L shortcut and Edit layout', () => {
     renderShell();
+    const edit = screen.getByRole('button', { name: 'Edit layout' });
+    expect(edit).toHaveAttribute('aria-pressed', 'true');
     fireEvent.keyDown(window, { key: 'l' });
     expect(useDashboardStore.getState().locked).toBe(true);
-    fireEvent.click(screen.getByRole('button', { name: 'Locked' }));
+    expect(edit).toHaveAttribute('aria-pressed', 'false');
+    // View mode hides the layout controls.
+    expect(screen.queryByRole('button', { name: 'Reset layout' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Remove / })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Add widget' })).toBeNull();
+    fireEvent.click(edit);
     expect(useDashboardStore.getState().locked).toBe(false);
+    expect(screen.getByRole('button', { name: 'Reset layout' })).toBeInTheDocument();
+  });
+
+  it('undoes and redoes with Ctrl+Z and Ctrl+Shift+Z', () => {
+    renderShell();
+    const ids = () => useDashboardStore.getState().pages.workstation.itemIds;
+    const before = [...ids()];
+    act(() => {
+      addWidgetToPage('workstation', 'research-feed');
+    });
+    expect(ids()).toHaveLength(before.length + 1);
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    expect(ids()).toEqual(before);
+    expect(screen.getByText('Undid: Add widget')).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'Z', ctrlKey: true, shiftKey: true });
+    expect(ids()).toHaveLength(before.length + 1);
+    expect(screen.getByText('Redid: Add widget')).toBeInTheDocument();
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    fireEvent.keyDown(window, { key: 'z', ctrlKey: true });
+    expect(screen.getByText('Nothing to undo')).toBeInTheDocument();
+  });
+
+  it('switches density from the workspace toolbar', () => {
+    renderShell();
+    fireEvent.click(screen.getByRole('radio', { name: 'Compact' }));
+    expect(useDashboardStore.getState().density).toBe('compact');
+    expect(document.documentElement.dataset.density).toBe('compact');
+    fireEvent.click(screen.getByRole('radio', { name: 'Comfortable' }));
+    expect(document.documentElement.dataset.density).toBe('comfortable');
   });
 
   it('toggles the performance overlay with Ctrl+Shift+P', async () => {

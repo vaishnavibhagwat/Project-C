@@ -88,9 +88,10 @@ function GridContainerImpl({ page }: { page: PageId }) {
   // The breakpoint follows the viewport (≥ 1280 px desktop, ≥ 768 px tablet), not the grid's
   // own width; WidthProvider only supplies the width the columns are laid out in.
   const breakpoint = breakpointForViewport(useViewportWidth());
+  const density = useDashboardStore((s) => s.density);
   const gridProps = useMemo(
-    () => responsiveGridProps(gridConfig, gridBreakpointsFor(breakpoint)),
-    [gridConfig, breakpoint],
+    () => responsiveGridProps(gridConfig, gridBreakpointsFor(breakpoint), density),
+    [gridConfig, breakpoint, density],
   );
 
   useEffect(() => {
@@ -128,10 +129,10 @@ function GridContainerImpl({ page }: { page: PageId }) {
 
   // Store a finished drag or resize. Nothing is written while the pointer moves.
   const commitBreakpoint = useCallback(
-    (layout: Layout[]) => {
+    (layout: Layout[], label: string) => {
       const stored = toStored(layout);
       if (sameLayout(grid.layouts[breakpoint], stored)) return;
-      commitLayouts(page, { ...grid.layouts, [breakpoint]: stored });
+      commitLayouts(page, { ...grid.layouts, [breakpoint]: stored }, label);
     },
     [grid.layouts, breakpoint, page],
   );
@@ -162,12 +163,12 @@ function GridContainerImpl({ page }: { page: PageId }) {
     (layout: Layout[]) => {
       dragOrigin.current = null;
       setDeparture(null);
-      commitBreakpoint(layout);
+      commitBreakpoint(layout, 'Move widget');
     },
     [commitBreakpoint],
   );
   const onResizeStop = useCallback(
-    (layout: Layout[]) => commitBreakpoint(layout),
+    (layout: Layout[]) => commitBreakpoint(layout, 'Resize widget'),
     [commitBreakpoint],
   );
 

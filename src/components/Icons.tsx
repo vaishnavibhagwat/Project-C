@@ -191,6 +191,8 @@ export const IconDrag = createIcon('IconDrag', [
   'M15 19h.01',
 ]);
 export const IconUndo = createIcon('IconUndo', ['M9 14L4 9l5-5', 'M4 9h11a5 5 0 0 1 0 10h-3']);
+export const IconRedo = createIcon('IconRedo', ['M15 14l5-5-5-5', 'M20 9H9a5 5 0 0 0 0 10h3']);
+export const IconPencil = createIcon('IconPencil', ['M4 20h4L19 9l-4-4L4 16z', 'M13.5 6.5l4 4']);
 export const IconRotate = createIcon('IconRotate', ['M3 12a9 9 0 1 0 2.6-6.4L3 8', 'M3 3v5h5']);
 export const IconLink = createIcon('IconLink', [
   'M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1',

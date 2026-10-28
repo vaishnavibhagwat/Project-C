@@ -91,7 +91,7 @@ describe('GridContainer', () => {
     renderGrid();
     fireEvent.click(screen.getByRole('radio', { name: 'Free' }));
     expect(store().gridConfig.compaction).toBe('none');
-    fireEvent.click(screen.getByRole('radio', { name: 'Compact' }));
+    fireEvent.click(screen.getByRole('radio', { name: 'Packed' }));
     expect(store().gridConfig.compaction).toBe('vertical');
   });
 });

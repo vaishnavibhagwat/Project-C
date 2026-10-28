@@ -11,6 +11,7 @@ import type {
   PageId,
 } from '@/types';
 import { defaultSnapshot } from '@/registry/pages';
+import type { Density } from '@/theme/tokens';
 import {
   BREAKPOINT_KEYS,
   columnsFor,
@@ -37,7 +38,10 @@ interface DashboardData {
   /** Breakpoint the grid is showing right now (UI state from the grid, not persisted). */
   activeBreakpoint: Breakpoint;
   pages: Record<PageId, PageGrid>;
+  /** View mode when true: widgets cannot be dragged, resized, duplicated or removed. */
   locked: boolean;
+  /** Compact or comfortable spacing: grid row height, gap and font scale (DENSITY_TOKENS). */
+  density: Density;
   displayCurrency: DisplayCurrency;
   /** Alert ids the user has acknowledged (alert ids are stable per rule and entity). */
   acknowledgedAlertIds: string[];
@@ -81,6 +85,7 @@ interface DashboardActions {
   resizeWidget: (page: PageId, instanceId: string, size: GridSize, breakpoint?: Breakpoint) => void;
   replacePage: (page: PageId, grid: PageGrid) => void;
   setLocked: (locked: boolean) => void;
+  setDensity: (density: Density) => void;
   setDisplayCurrency: (currency: DisplayCurrency) => void;
   acknowledgeAlerts: (ids: string[]) => void;
 }
@@ -124,6 +129,8 @@ const PersistedSchema = z.preprocess(
     /** Missing pages are filled with defaults on load, so new app areas appear. */
     pages: z.record(PageIdSchema, PageGridSchema),
     locked: z.boolean(),
+    /** Absent before density existed. */
+    density: z.enum(['comfortable', 'compact']).default('comfortable'),
     displayCurrency: z.enum(['INR', 'USD']),
     acknowledgedAlertIds: z.array(z.string().max(80)).max(500).default([]),
   }),
@@ -159,6 +166,7 @@ export const useDashboardStore = create<DashboardState>()(
         activeBreakpoint: 'desktop',
         pages: defaultPages(),
         locked: false,
+        density: 'comfortable',
         displayCurrency: 'INR',
         acknowledgedAlertIds: [],
 
@@ -296,6 +304,11 @@ export const useDashboardStore = create<DashboardState>()(
             s.locked = locked;
           }),
 
+        setDensity: (density) =>
+          set((s) => {
+            s.density = density;
+          }),
+
         setDisplayCurrency: (currency) =>
           set((s) => {
             s.displayCurrency = currency;
@@ -316,6 +329,7 @@ export const useDashboardStore = create<DashboardState>()(
           gridConfig: s.gridConfig,
           pages: s.pages,
           locked: s.locked,
+          density: s.density,
           displayCurrency: s.displayCurrency,
           acknowledgedAlertIds: s.acknowledgedAlertIds,
         }),
@@ -325,6 +339,7 @@ export const useDashboardStore = create<DashboardState>()(
             gridConfig: { ...DEFAULT_GRID_CONFIG },
             pages: defaultPages(),
             locked: false,
+            density: 'comfortable',
             displayCurrency: 'INR',
             acknowledgedAlertIds: [],
           },

@@ -1,5 +1,6 @@
 export * from './actions';
 export * from './dashboardStore';
+export * from './history';
 export * from './layoutStore';
 export * from './schemas';
 export * from './share';

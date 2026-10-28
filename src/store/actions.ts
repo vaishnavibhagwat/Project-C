@@ -6,6 +6,7 @@ import type {
   GridPosition,
   PageId,
   PageSnapshot,
+  WidgetConfig,
   WidgetInstance,
 } from '@/types';
 import { widgetRegistry } from '@/registry/registry';
@@ -23,6 +24,7 @@ import {
   LEGACY_GRID_CONFIG,
 } from '@/utils/gridLayout';
 import { useDashboardStore } from './dashboardStore';
+import { layoutHistory, type HistoryEntry } from './history';
 import { PAGE_IDS } from './schemas';
 import { createId } from './storage';
 import { useWidgetStore } from './widgetStore';
@@ -69,7 +71,7 @@ function syncPositions(page: PageId): void {
 }
 
 /** Add a widget at the bottom of a page. Returns null for unknown types or a full page. */
-export function addWidgetToPage(page: PageId, widgetId: string): string | null {
+function addWidgetToPageNow(page: PageId, widgetId: string): string | null {
   const widget = widgetRegistry.getWidget(widgetId);
   if (!widget || !canAddWidget(page)) return null;
   // Widget sizes are written for the default grid.
@@ -81,11 +83,15 @@ export function addWidgetToPage(page: PageId, widgetId: string): string | null {
   return instanceId;
 }
 
+export function addWidgetToPage(page: PageId, widgetId: string): string | null {
+  return recorded(page, 'Add widget', () => addWidgetToPageNow(page, widgetId));
+}
+
 /**
  * Add an empty slot (placeholder) at the first free desktop position: the first gap it fits,
  * else the bottom. Returns its id, or null when the page is full.
  */
-export function addPlaceholder(page: PageId): string | null {
+function addPlaceholderNow(page: PageId): string | null {
   if (!canAddWidget(page)) return null;
   const grid = currentGrid();
   const size = convertSize(PLACEHOLDER_SIZE, DEFAULT_GRID_CONFIG, grid);
@@ -97,12 +103,16 @@ export function addPlaceholder(page: PageId): string | null {
   return instanceId;
 }
 
+export function addPlaceholder(page: PageId): string | null {
+  return recorded(page, 'Add widget', () => addPlaceholderNow(page));
+}
+
 /**
  * Turn an empty slot into a widget in the same place. The slot grows to at least the widget's
  * default size (a slot the user already made bigger keeps its size). Returns false for an
  * unknown widget or an instance that is not a placeholder.
  */
-export function fillPlaceholder(page: PageId, instanceId: string, widgetId: string): boolean {
+function fillPlaceholderNow(page: PageId, instanceId: string, widgetId: string): boolean {
   const instance = useWidgetStore.getState().instances[instanceId];
   const widget = widgetRegistry.getWidget(widgetId);
   if (!instance || !isPlaceholder(instance.widgetId) || !widget) return false;
@@ -123,10 +133,25 @@ export function fillPlaceholder(page: PageId, instanceId: string, widgetId: stri
   return true;
 }
 
-/** Save grid changes (drag, resize, breakpoint) and mirror the desktop placement into instances. */
-export function commitLayouts(page: PageId, layouts: BreakpointLayouts): void {
-  useDashboardStore.getState().setLayouts(page, layouts);
-  syncPositions(page);
+export function fillPlaceholder(page: PageId, instanceId: string, widgetId: string): boolean {
+  return recorded(page, 'Choose widget', () => fillPlaceholderNow(page, instanceId, widgetId));
+}
+
+/**
+ * Save grid changes (drag, resize, breakpoint) and mirror the desktop placement into instances.
+ * Pass `historyLabel` (e.g. "Move widget") when the user made the change, so it can be undone.
+ */
+export function commitLayouts(
+  page: PageId,
+  layouts: BreakpointLayouts,
+  historyLabel: string | null = null,
+): void {
+  const commit = () => {
+    useDashboardStore.getState().setLayouts(page, layouts);
+    syncPositions(page);
+  };
+  if (historyLabel) recorded(page, historyLabel, commit);
+  else commit();
 }
 
 /** Change grid settings and keep instance positions in step. See DashboardStore.setGridConfig. */
@@ -143,7 +168,7 @@ export interface RemovedWidget {
 }
 
 /** Remove a widget and return what is needed to undo it. */
-export function removeWidgetFromPage(page: PageId, instanceId: string): RemovedWidget | null {
+function removeWidgetFromPageNow(page: PageId, instanceId: string): RemovedWidget | null {
   const instance = useWidgetStore.getState().instances[instanceId];
   if (!instance) return null;
   const grid = useDashboardStore.getState().pages[page];
@@ -158,8 +183,12 @@ export function removeWidgetFromPage(page: PageId, instanceId: string): RemovedW
   return { page, instance, layouts };
 }
 
+export function removeWidgetFromPage(page: PageId, instanceId: string): RemovedWidget | null {
+  return recorded(page, 'Remove widget', () => removeWidgetFromPageNow(page, instanceId));
+}
+
 /** Undo removeWidgetFromPage. */
-export function restoreRemovedWidget(removed: RemovedWidget): void {
+function restoreRemovedWidgetNow(removed: RemovedWidget): void {
   useWidgetStore.getState().upsertInstances([removed.instance]);
   useDashboardStore
     .getState()
@@ -167,8 +196,12 @@ export function restoreRemovedWidget(removed: RemovedWidget): void {
   syncPositions(removed.page);
 }
 
+export function restoreRemovedWidget(removed: RemovedWidget): void {
+  return recorded(removed.page, 'Restore widget', () => restoreRemovedWidgetNow(removed));
+}
+
 /** Duplicate a widget with its settings. Returns null when the page is full. */
-export function duplicateWidget(page: PageId, instanceId: string): string | null {
+function duplicateWidgetNow(page: PageId, instanceId: string): string | null {
   if (!canAddWidget(page)) return null;
   const source = useWidgetStore.getState().instances[instanceId];
   if (!source) return null;
@@ -188,6 +221,10 @@ export function duplicateWidget(page: PageId, instanceId: string): string | null
   useDashboardStore.getState().addWidget(page, { i: copyId, ...position });
   syncPositions(page);
   return copyId;
+}
+
+export function duplicateWidget(page: PageId, instanceId: string): string | null {
+  return recorded(page, 'Duplicate widget', () => duplicateWidgetNow(page, instanceId));
 }
 
 /** Capture a page: layout, widget settings, placement and grid settings. Never datasets. */
@@ -222,7 +259,17 @@ export interface ApplyResult {
  * at their own `position`. Layouts are converted from the snapshot's grid (the old 28 px grid
  * when it has none) to the current grid.
  */
-export function applySnapshot(page: PageId, snapshot: PageSnapshot, keepIds = false): ApplyResult {
+export function applySnapshot(
+  page: PageId,
+  snapshot: PageSnapshot,
+  keepIds = false,
+  historyLabel: string | null = 'Load layout',
+): ApplyResult {
+  const apply = () => applySnapshotNow(page, snapshot, keepIds);
+  return historyLabel ? recorded(page, historyLabel, apply) : apply();
+}
+
+function applySnapshotNow(page: PageId, snapshot: PageSnapshot, keepIds: boolean): ApplyResult {
   const from = snapshot.grid ?? LEGACY_GRID_CONFIG;
   const to = currentGrid();
   const known = snapshot.instances
@@ -272,5 +319,60 @@ export function applySnapshot(page: PageId, snapshot: PageSnapshot, keepIds = fa
 }
 
 export function resetPage(page: PageId): void {
-  void applySnapshot(page, defaultSnapshot(page), true);
+  void applySnapshot(page, defaultSnapshot(page), true, 'Reset layout');
+}
+
+/** Change a widget's settings and title from the settings drawer (undoable). */
+export function configureWidget(
+  instanceId: string,
+  config: WidgetConfig,
+  title: string | undefined,
+): void {
+  const page = pageOf(instanceId);
+  const apply = () => {
+    useWidgetStore.getState().replaceConfig(instanceId, config);
+    useWidgetStore.getState().renameInstance(instanceId, title);
+  };
+  if (page) recorded(page, 'Configure widget', apply);
+  else apply();
+}
+
+/** The page a widget instance is placed on, if any. */
+export function pageOf(instanceId: string): PageId | null {
+  const { pages } = useDashboardStore.getState();
+  return PAGE_IDS.find((id) => pages[id].itemIds.includes(instanceId)) ?? null;
+}
+
+// --- Undo / redo --------------------------------------------------------------------------
+
+let recording = 0;
+
+/**
+ * Run a layout change and record it for undo: the page is captured before and after. Nested
+ * calls (a reset that applies a snapshot) record once, as the outermost change.
+ */
+function recorded<T>(page: PageId, label: string, change: () => T): T {
+  if (recording > 0) return change();
+  const before = captureSnapshot(page);
+  recording += 1;
+  try {
+    return change();
+  } finally {
+    recording -= 1;
+    layoutHistory.record({ page, label, before, after: captureSnapshot(page) });
+  }
+}
+
+/** Revert the latest recorded change. Returns it, or null when there is nothing to undo. */
+export function undoLayoutChange(): HistoryEntry | null {
+  const entry = layoutHistory.undo();
+  if (entry) applySnapshot(entry.page, entry.before, true, null);
+  return entry;
+}
+
+/** Re-apply the latest undone change. Returns it, or null when there is nothing to redo. */
+export function redoLayoutChange(): HistoryEntry | null {
+  const entry = layoutHistory.redo();
+  if (entry) applySnapshot(entry.page, entry.after, true, null);
+  return entry;
 }

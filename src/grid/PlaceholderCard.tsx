@@ -4,6 +4,7 @@ import { Dropdown, type DropdownItem } from '@/components/Dropdown';
 import { IconChevronDown, IconClose, IconDrag, IconPlus } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
 import { CATEGORIES, CATEGORY_LABELS, widgetRegistry } from '@/registry/registry';
+import { useDashboardStore } from '@/store/dashboardStore';
 import { fillPlaceholder, removeWidgetFromPage, restoreRemovedWidget } from '@/store/actions';
 import type { PageId } from '@/types';
 import { cx } from '@/utils/cx';
@@ -38,6 +39,7 @@ export const PlaceholderCard = memo(function PlaceholderCard({
   instanceId: string;
 }) {
   const notify = useToast();
+  const editing = !useDashboardStore((s) => s.locked);
   const items = widgetMenu((widgetId, name) => {
     if (fillPlaceholder(page, instanceId, widgetId)) {
       notify({ message: `Added ${name}`, tone: 'success' });
@@ -65,19 +67,22 @@ export const PlaceholderCard = memo(function PlaceholderCard({
         <div
           className={cx(
             DRAG_HANDLE_CLASS,
-            'flex min-w-0 flex-1 cursor-grab items-center gap-1 active:cursor-grabbing',
+            'flex min-w-0 flex-1 items-center gap-1',
+            editing ? 'cursor-grab active:cursor-grabbing' : 'pl-1',
           )}
         >
-          <IconDrag size={14} className="shrink-0 text-subtle" />
+          {editing ? <IconDrag size={14} className="shrink-0 text-subtle" /> : null}
           <h2 className="truncate text-xs font-semibold text-muted">Empty slot</h2>
         </div>
-        <IconButton
-          label="Remove empty slot"
-          icon={IconClose}
-          size="xs"
-          className={NO_DRAG_CLASS}
-          onClick={remove}
-        />
+        {editing ? (
+          <IconButton
+            label="Remove empty slot"
+            icon={IconClose}
+            size="xs"
+            className={NO_DRAG_CLASS}
+            onClick={remove}
+          />
+        ) : null}
       </header>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-3 text-center">
         <p className="text-xs text-muted">Choose a widget for this space.</p>

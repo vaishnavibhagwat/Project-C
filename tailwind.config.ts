@@ -1,5 +1,5 @@
 import type { Config } from 'tailwindcss';
-import { RADIUS_VARS, spacingScale } from './src/theme/tokens';
+import { fontSizeScale, RADIUS_VARS, spacingScale } from './src/theme/tokens';
 
 /** Every colour resolves to a CSS custom property so themes swap without re-rendering CSS. */
 const token = (name: string) => `rgb(var(--${name}) / <alpha-value>)`;
@@ -39,14 +39,8 @@ export default {
         sans: 'var(--font-sans)',
         mono: 'var(--font-mono)',
       },
-      fontSize: {
-        '2xs': ['0.6875rem', { lineHeight: '1rem' }],
-        xs: ['0.75rem', { lineHeight: '1.125rem' }],
-        sm: ['0.8125rem', { lineHeight: '1.25rem' }],
-        base: ['0.875rem', { lineHeight: '1.375rem' }],
-        lg: ['1rem', { lineHeight: '1.5rem' }],
-        xl: ['1.25rem', { lineHeight: '1.75rem' }],
-      },
+      // Every size follows --font-scale, which the density setting changes.
+      fontSize: fontSizeScale(),
       keyframes: {
         shimmer: {
           '0%': { backgroundPosition: '-400px 0' },

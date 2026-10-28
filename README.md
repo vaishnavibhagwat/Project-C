@@ -107,8 +107,9 @@ or edge, within each widget's min and max size, with the content reflowing as yo
 never overlap; vertical compaction can be switched off from the grid toolbar. **Add widget** drops an empty slot at the next free
 position, which becomes any widget from its **Choose widget** menu.
 
-**Workstation features**: drag and resize (react-grid-layout, responsive breakpoints), lock
-layout (`L`), global search for pages, widgets, Nifty 50 symbols and commands (`Ctrl/⌘+K` or `/`),
+**Workstation features**: drag and resize (react-grid-layout, responsive breakpoints), an edit /
+view mode toggle (`L`), undo and redo of every layout change (`Ctrl+Z` / `Ctrl+Shift+Z`, cleared
+on save), Compact / Comfortable density, global search for pages, widgets, Nifty 50 symbols and commands (`Ctrl/⌘+K` or `/`),
 symbol detail, saved layouts with version history and restore, JSON export/import, compressed
 share links (lz-string, validated on open), three themes plus a theme builder with computed WCAG
 contrast checks, NSE market status in IST, notifications from rule-based alerts, and a

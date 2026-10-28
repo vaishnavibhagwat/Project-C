@@ -6,6 +6,7 @@ import { Drawer } from '@/components/Overlay';
 import { useToast } from '@/components/Toast';
 import type { PageMeta } from '@/registry/pages';
 import { applySnapshot, captureSnapshot } from '@/store/actions';
+import { layoutHistory } from '@/store/history';
 import { useLayoutStore } from '@/store/layoutStore';
 import { PageSnapshotSchema } from '@/store/schemas';
 import { MAX_LAYOUT_BYTES, snapshotBytes } from '@/store/share';
@@ -76,7 +77,15 @@ function SavedRow({
           variant="ghost"
           onClick={() => {
             const v = saveVersion(layout.id, captureSnapshot(pageId), '', toIstIso(Date.now()));
-            if (v) notify({ message: `Saved “${layout.name}” as v${v}`, tone: 'success' });
+            if (v) {
+              layoutHistory.clear();
+              notify({ message: `Saved “${layout.name}” as v${v}`, tone: 'success' });
+            } else {
+              notify({
+                message: `Could not save a new version of “${layout.name}”`,
+                tone: 'error',
+              });
+            }
           }}
         >
           Save current as new version
@@ -168,6 +177,8 @@ export function LayoutManager({
               toIstIso(Date.now()),
             );
             setName('');
+            // An explicit save is the new baseline: undo history starts again from here.
+            layoutHistory.clear();
             notify({ message: 'Layout saved', tone: 'success' });
           }}
         >

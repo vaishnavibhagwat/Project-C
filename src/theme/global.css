@@ -16,6 +16,12 @@
   --divider: 1px;
   --font-sans: 'Inter Variable', Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --font-scale: 1; /* density: every Tailwind font size is multiplied by this */
+}
+
+/* Density (Settings / workspace toolbar). Values match DENSITY_TOKENS in tokens.ts. */
+:root[data-density='compact'] {
+  --font-scale: 0.9375;
 }
 
 /* Colour tokens: Midnight Graphite defaults so the first paint is correct before JS runs. */

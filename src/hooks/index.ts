@@ -9,3 +9,4 @@ export * from './useLastUpdated';
 export * from './useSymbolDetail';
 export * from './useAlertAcknowledgements';
 export * from './useViewportWidth';
+export * from './useUndoRedo';

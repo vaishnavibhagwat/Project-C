@@ -6,6 +6,7 @@ import { useToast } from '@/components/Toast';
 import { getConnectionState, setSimulatedOutage } from '@/data/connection';
 import { ConfigPanel } from '@/grid/ConfigPanel';
 import { isPageRoute, useAppRoute } from '@/hooks/useAppRoute';
+import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { SymbolDetailContext, type SymbolDetailApi } from '@/hooks/useSymbolDetail';
 import { getPageMeta } from '@/registry/pages';
 import { addWidgetToPage, MAX_WIDGETS_PER_PAGE, resetPage } from '@/store/actions';
@@ -91,8 +92,18 @@ export function AppShell() {
   const toggleLock = useCallback(() => {
     const { locked, setLocked } = useDashboardStore.getState();
     setLocked(!locked);
-    notify({ message: locked ? 'Layout unlocked' : 'Layout locked' });
+    notify({
+      message: locked ? 'Edit mode: drag, resize and remove widgets' : 'View mode: layout locked',
+    });
   }, [notify]);
+
+  const { undo, redo } = useUndoRedo();
+
+  // Density changes the font scale token on :root (see global.css).
+  const density = useDashboardStore((s) => s.density);
+  useEffect(() => {
+    document.documentElement.dataset.density = density;
+  }, [density]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -105,6 +116,21 @@ export function AppShell() {
         e.preventDefault();
         setSearchOpen(true);
         return;
+      }
+      // Undo / redo layout changes; text fields keep their own undo.
+      if ((e.ctrlKey || e.metaKey) && !e.altKey && !isTypingTarget(e.target)) {
+        const key = e.key.toLowerCase();
+        if (key === 'z' || key === 'y') {
+          e.preventDefault();
+          if (useDashboardStore.getState().locked) {
+            notify({ message: 'Turn on Edit layout to undo or redo changes' });
+          } else if (key === 'y' || e.shiftKey) {
+            redo();
+          } else {
+            undo();
+          }
+          return;
+        }
       }
       if (isTypingTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
       if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
@@ -123,7 +149,7 @@ export function AppShell() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [go, toggleLock]);
+  }, [go, toggleLock, undo, redo, notify]);
 
   const onSelect = useCallback(
     (r: SearchResult) => {

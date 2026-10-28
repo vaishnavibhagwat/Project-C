@@ -40,6 +40,7 @@ import {
   removeWidgetFromPage,
   restoreRemovedWidget,
 } from '@/store/actions';
+import { useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { PageId, WidgetConfig, WidgetInstance } from '@/types';
 import { cx } from '@/utils/cx';
@@ -78,6 +79,8 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   const now = useNow(5000);
   const [bodyRef, size] = useElementSize<HTMLDivElement>();
   const openSettings = useWidgetStore((s) => s.openSettings);
+  // View mode (locked) hides the layout controls: drag handle, settings, duplicate, remove.
+  const editing = !useDashboardStore((s) => s.locked);
   const updateConfig = useWidgetStore((s) => s.updateConfig);
   const notify = useToast();
 
@@ -203,10 +206,11 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
         <div
           className={cx(
             DRAG_HANDLE_CLASS,
-            'flex min-w-0 flex-1 cursor-grab items-center gap-1 active:cursor-grabbing',
+            'flex min-w-0 flex-1 items-center gap-1',
+            editing ? 'cursor-grab active:cursor-grabbing' : 'pl-1',
           )}
         >
-          <IconDrag size={14} className="shrink-0 text-subtle" />
+          {editing ? <IconDrag size={14} className="shrink-0 text-subtle" /> : null}
           <h2 className="truncate text-xs font-semibold text-fg">{title}</h2>
         </div>
         <div className={cx(NO_DRAG_CLASS, 'flex shrink-0 items-center gap-0.5')}>
@@ -252,25 +256,29 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
             onClick={onRefresh}
             disabled={disconnected}
           />
-          <IconButton
-            label={`Configure ${title}`}
-            icon={IconSettings}
-            size="xs"
-            onClick={() => openSettings(instanceId)}
-          />
-          <IconButton
-            label={`Duplicate ${title}`}
-            icon={IconCopy}
-            size="xs"
-            onClick={onDuplicate}
-          />
-          <IconButton
-            label={`Remove ${title}`}
-            icon={IconClose}
-            size="xs"
-            aria-haspopup="dialog"
-            onClick={() => setConfirmRemove(true)}
-          />
+          {editing ? (
+            <>
+              <IconButton
+                label={`Configure ${title}`}
+                icon={IconSettings}
+                size="xs"
+                onClick={() => openSettings(instanceId)}
+              />
+              <IconButton
+                label={`Duplicate ${title}`}
+                icon={IconCopy}
+                size="xs"
+                onClick={onDuplicate}
+              />
+              <IconButton
+                label={`Remove ${title}`}
+                icon={IconClose}
+                size="xs"
+                aria-haspopup="dialog"
+                onClick={() => setConfirmRemove(true)}
+              />
+            </>
+          ) : null}
         </div>
       </header>
       {data !== undefined && disconnected ? (

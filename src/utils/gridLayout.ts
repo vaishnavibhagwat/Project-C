@@ -7,6 +7,7 @@ import type {
   GridPosition,
   GridSize,
 } from '@/types';
+import { DENSITY_TOKENS, type Density } from '@/theme/tokens';
 
 /** Minimum viewport width (px) for each breakpoint, like CSS `min-width` media queries. */
 export const GRID_BREAKPOINTS: Readonly<Record<Breakpoint, number>> = {
@@ -75,16 +76,22 @@ export function gridBreakpointsFor(active: Breakpoint): Record<Breakpoint, numbe
   return { desktop: 2 * NEVER, tablet: NEVER, mobile: 0 };
 }
 
-/** Props for react-grid-layout's Responsive component. */
+/**
+ * Props for react-grid-layout's Responsive component. Density scales the row height and gap on
+ * screen only; stored layouts stay in grid units, so switching density never moves widgets.
+ */
 export function responsiveGridProps(
   config: GridConfig,
   breakpoints: Record<Breakpoint, number> = { ...GRID_BREAKPOINTS },
+  density: Density = 'comfortable',
 ) {
+  const { rowScale, gapScale } = DENSITY_TOKENS[density];
+  const gap = Math.max(2, Math.round(config.gap * gapScale));
   return {
     breakpoints,
     cols: columnsFor(config),
-    rowHeight: config.rowHeight,
-    margin: [config.gap, config.gap] satisfies [number, number],
+    rowHeight: Math.round(config.rowHeight * rowScale),
+    margin: [gap, gap] satisfies [number, number],
     containerPadding: [0, 0] satisfies [number, number],
     compactType: config.compaction === 'vertical' ? ('vertical' as const) : null,
   };
