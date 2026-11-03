@@ -16,7 +16,7 @@ export const istIso = z
   .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\+05:30$/, 'Expected an IST ISO timestamp');
 export const dateKey = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Expected YYYY-MM-DD');
 
-const SectorSchema = z.enum([
+export const SectorSchema = z.enum([
   'Financial Services',
   'Information Technology',
   'Oil, Gas & Fuels',

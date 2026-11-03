@@ -11,3 +11,5 @@ export { LIMITS } from './derive/alerts';
 export { ATTRIBUTION_METHODOLOGY, ATTRIBUTION_PERIODS } from './derive/attribution';
 export { RESEARCH_DISCLAIMER } from './derive/research';
 export { VAR_ASSUMPTIONS, VAR_LOOKBACK_DAYS } from './derive/risk';
+// The REST-style mock API (./mockApi) and its generators (./mock) are imported directly, not
+// re-exported here, so the dashboard's main bundle does not carry code it does not use.

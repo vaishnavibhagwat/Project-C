@@ -167,6 +167,7 @@ src/
   layout/       AppRoutes, AppShell, NavRail, CommandBar, dialogs; pages/ (lazy routed pages)
   theme/        tokens (spacing, radii, type), themes, applyTheme, ThemeMenu, lazy ThemeBuilder
   data/         seeded dataset, intraday simulation, derivations, zod schemas, mock API
+    mock/       generators for the REST-style mockApi.ts: book, benchmarks, news, alerts
   store/        DashboardStore, WidgetStore, ThemeStore, LayoutStore, cross-store actions, share
   registry/     WidgetRegistry + singleton, definition and config validators, defineWidget, pages
   hooks/        useEndpoint, useAppRoute, useElementSize, useNow, useConnection, ...

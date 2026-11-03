@@ -448,6 +448,19 @@ sequenceDiagram
    state to show, and renders the registered component, which checks config and data before
    handing them to the widget.
 
+### REST-style mock API
+
+`src/data/mockApi.ts` exposes the same dataset as `GET` resources:
+`getPortfolio(id)`, `getPortfolioHoldings(id)`, `getPortfolioPerformance(id)`,
+`getPortfolioRisk(id)` (`/api/portfolio/:id[/holdings|/performance|/risk]`), and
+`getMarketOverview()`, `getMarketNews()`, `getMarketAlerts()`
+(`/api/market/overview|news|alerts`). `mockGet(path)` routes a path string to them. The
+generators in `src/data/mock/` (book, benchmarks, news, alerts) run once per dataset and are
+cached in a `WeakMap`. Each request waits its latency profile (50 / 200 / 500 ms), may fail
+with 503 at `failureRate`, builds the response, round-trips it through JSON and validates it
+with zod. Widgets do not use it yet; see docs/ASSUMPTIONS.md §11. Import it from
+`@/data/mockApi` (it is left out of the `@/data` barrel to keep it out of the main bundle).
+
 ### Planned WebSocket path (not built)
 
 ```mermaid
