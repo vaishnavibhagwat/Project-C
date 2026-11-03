@@ -1,18 +1,7 @@
-import {
-  memo,
-  Profiler,
-  Suspense,
-  useCallback,
-  useDeferredValue,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import { memo, Profiler, useCallback, useDeferredValue, useMemo, useRef, useState } from 'react';
 import { Button, IconButton } from '@/components/Button';
-import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { IconAlert, IconCopy, IconRefresh, IconWifiOff } from '@/components/Icons';
 import { Modal } from '@/components/Overlay';
-import { EmptyState, ErrorState } from '@/components/StateViews';
 import { useToast } from '@/components/Toast';
 import { InfoTooltip } from '@/components/Tooltip';
 import {
@@ -31,6 +20,7 @@ import { useNow } from '@/hooks/useNow';
 import { useThrottledValue } from '@/hooks/useThrottledValue';
 import type { RegisteredWidget } from '@/registry/defineWidget';
 import { widgetRegistry } from '@/registry/registry';
+import { UnknownWidgetPlaceholder, WidgetRenderer } from '@/registry/WidgetRenderer';
 import {
   duplicateWidget,
   MAX_WIDGETS_PER_PAGE,
@@ -71,7 +61,6 @@ interface FrameBodyProps {
 }
 
 function FrameBody({ page, instance, entry }: FrameBodyProps) {
-  const Widget = entry.component;
   const refresh = entry.dataSource.refreshInterval;
   const title = instance.title ?? entry.name;
   const query = useDataSource(entry.dataSource);
@@ -237,38 +226,24 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
         bodyRef={bodyRef}
         testId={`widget-${instanceId}`}
       >
-        <ErrorBoundary
-          resetKeys={[data, instance.config]}
-          fallback={(err, reset) => (
-            <ErrorState
-              message={`This widget failed to render: ${err.message}`}
-              onRetry={() => {
-                reset();
-                onRefresh();
-              }}
+        {/* Widgets render once the body has been measured: charts need a size. */}
+        {size.width > 0 && data !== undefined ? (
+          <Profiler id={instanceId} onRender={recordWidgetRender}>
+            <WidgetRenderer
+              instance={instance}
+              config={config}
+              data={data}
+              isLoading={isFetching}
+              error={isError ? error : null}
+              isStale={stale}
+              lastUpdated={lastUpdated}
+              onConfigChange={onConfigChange}
+              width={size.width}
+              height={size.height}
+              onRetry={onRefresh}
             />
-          )}
-        >
-          <Suspense fallback={<WidgetSkeleton variant={entry.skeleton} />}>
-            {/* Widgets render once the body has been measured: charts need a size. */}
-            {size.width > 0 && data !== undefined ? (
-              <Profiler id={instanceId} onRender={recordWidgetRender}>
-                <Widget
-                  instanceId={instanceId}
-                  config={config}
-                  data={data}
-                  isLoading={isFetching}
-                  error={isError ? error : null}
-                  isStale={stale}
-                  lastUpdated={lastUpdated}
-                  onConfigChange={onConfigChange}
-                  width={size.width}
-                  height={size.height}
-                />
-              </Profiler>
-            ) : null}
-          </Suspense>
-        </ErrorBoundary>
+          </Profiler>
+        ) : null}
       </WidgetShell>
       <Modal
         open={confirmRemove}
@@ -297,25 +272,21 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
   );
 }
 
+/** An instance whose widget type is not registered: a shell with the placeholder and Remove. */
 function UnknownWidget({ page, instance }: { page: PageId; instance: WidgetInstance | undefined }) {
+  const remove = instance ? (
+    <Button size="sm" onClick={() => removeWidgetFromPage(page, instance.instanceId)}>
+      Remove from page
+    </Button>
+  ) : undefined;
   return (
-    <section
-      role="region"
-      aria-label="Unavailable widget"
-      className="flex h-full flex-col rounded border border-line bg-panel"
-    >
-      <EmptyState
-        title="Widget unavailable"
-        message={`Widget type “${instance?.widgetId ?? 'unknown'}” is not installed in this build.`}
-        action={
-          instance ? (
-            <Button size="sm" onClick={() => removeWidgetFromPage(page, instance.instanceId)}>
-              Remove from page
-            </Button>
-          ) : undefined
-        }
-      />
-    </section>
+    <WidgetShell title="Unavailable widget" status="ready">
+      {instance ? (
+        <WidgetRenderer instance={instance} data={undefined} unknownAction={remove} />
+      ) : (
+        <UnknownWidgetPlaceholder widgetId="unknown" />
+      )}
+    </WidgetShell>
   );
 }
 

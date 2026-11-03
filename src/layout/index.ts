@@ -1,4 +1,4 @@
-export * from './AppErrorBoundary';
+export * from './GlobalErrorBoundary';
 export * from './AppRoutes';
 export * from './AppShell';
 export * from './CommandBar';

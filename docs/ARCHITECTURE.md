@@ -444,10 +444,10 @@ the disconnected state. Widgets, the frame and the stores would not change. `VIT
 
 ```mermaid
 flowchart TB
-  subgraph G["Global: AppErrorBoundary"]
+  subgraph G["Global: GlobalErrorBoundary"]
     shellNode["Shell, navigation, dialogs, providers"]
-    subgraph WB["Widget: ErrorBoundary per frame"]
-      renderNode["Widget component render"]
+    subgraph WB["Widget: WidgetErrorBoundary per widget (WidgetRenderer)"]
+      renderNode["Widget component render · lazy chunk load"]
       subgraph DT["Data: query state, no throw"]
         fetchNode["fetchEndpoint<br/>ConnectionError · ApiError · ValidationError"]
       end
@@ -455,11 +455,19 @@ flowchart TB
   end
 ```
 
-| Level  | Where                                                           | Catches                                                       | What the user sees                                                                                                                               | Recovery                                                                                                             |
-| ------ | --------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------- |
-| Global | `AppErrorBoundary`, outside every provider (`src/App.tsx`)      | Render errors in the shell, navigation, dialogs or a provider | A full-page message with the error text; layouts and settings are untouched                                                                      | **Try again** re-renders the app; **Reload page**                                                                    |
-| Widget | `ErrorBoundary` around each widget's `Suspense` (`WidgetFrame`) | Render errors in one widget, including a failed chunk load    | That widget shows "This widget failed to render: …" with Retry; every other widget keeps working                                                 | Retry resets the boundary and refetches; it also resets by itself when new data or new settings arrive (`resetKeys`) |
-| Data   | Query state, read by `WidgetFrame`                              | Network, outage and validation errors from `fetchEndpoint`    | First load: error state with Retry, or the disconnected state. Later failures: last good data stays, with the stale marker after 2× the interval | Automatic retries (twice, not for validation errors), Retry button, automatic refetch on reconnect                   |
+| Level  | Where                                                                                           | Catches                                                       | What the user sees                                                                                                                                                                                                 | Recovery                                                                                                                                                                                                                        |
+| ------ | ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Global | `GlobalErrorBoundary`, outside every provider (`src/App.tsx`)                                   | Render errors in the shell, navigation, dialogs or a provider | A full-page "The dashboard stopped working" screen with the message and the stack trace under Technical details; layouts and settings are untouched. The stack trace and component stack are logged to the console | **Reload Dashboard** reloads the page; **Try again** re-renders without reloading                                                                                                                                               |
+| Widget | `WidgetErrorBoundary` inside `WidgetRenderer` (`src/registry/`), around the widget's `Suspense` | Render errors in one widget, and a failed chunk load          | That widget shows "_Widget name_ failed to render" and the message, or "Failed to load widget" for a chunk failure, with Retry; every other widget keeps working                                                   | Retry remounts the widget (new key) and refetches its data; after a chunk failure it also creates a fresh lazy component, since React never retries a failed one. It also resets when new data or settings arrive (`resetKeys`) |
+| Data   | Query state, read by `WidgetFrame`                                                              | Network, outage and validation errors from `fetchEndpoint`    | First load: error state with Retry, or the disconnected state. Later failures: last good data stays, with the stale marker after 2× the interval                                                                   | Automatic retries (twice, not for validation errors), Retry button, automatic refetch on reconnect                                                                                                                              |
+
+`WidgetRenderer` takes a `WidgetInstance`, looks up its definition in the registry and renders
+`definition.component` inside `Suspense` (a `LoadingSkeleton` while the chunk loads) inside the
+`WidgetErrorBoundary`. An instance whose type is not registered renders a placeholder ("Widget
+unavailable", with Remove on the grid) instead of throwing. `defineWidget` wraps a failed
+`preload()` in `WidgetChunkLoadError`; `isChunkLoadError` also recognises the browsers' own
+dynamic-import messages. If a browser keeps a failed module import cached, Retry fails again and
+Reload Dashboard is the way out.
 
 Data errors never become React errors: TanStack Query turns a rejected request into query state,
 and the frame draws it. Problems that could still reach a widget are handled before render:
@@ -471,8 +479,9 @@ fail handle their own errors: copying a share link and importing layout or theme
 message instead.
 
 `src/__tests__/error-boundaries.test.tsx` covers all three levels: a shell error shows the
-global page and recovers, a crashing widget is contained while its neighbour renders, and a
-failed request shows the widget's error state without reaching any boundary.
+global page, logs the stack and recovers; one widget throwing and another failing to load while
+three others render; Retry remounting a widget and reloading a failed chunk; unknown widget
+types; and a failed request showing the widget's error state without reaching any boundary.
 
 ## 6. Adding a widget in under four hours
 

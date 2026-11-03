@@ -1,4 +1,4 @@
-import { lazy, memo, useCallback, useMemo } from 'react';
+import { lazy, memo, useCallback, useMemo, type LazyExoticComponent } from 'react';
 import type { ZodType } from 'zod';
 import type {
   WidgetComponentProps,
@@ -36,6 +36,40 @@ export interface RegisteredWidget extends WidgetDefinition {
   badge: (data: unknown, config: WidgetConfig) => number | null;
   /** Loads the lazy chunk ahead of render (used on hover in the marketplace). */
   preload: () => void;
+  /**
+   * A fresh lazy component that loads the chunk again. React keeps a lazy component's failed
+   * load forever, so retrying after a chunk-load failure needs a new one (WidgetRenderer).
+   */
+  createComponent: () => LazyExoticComponent<WidgetComponentType<WidgetConfig, unknown>>;
+}
+
+/** A widget's code chunk could not be loaded (network error, deploy replaced the file). */
+export class WidgetChunkLoadError extends Error {
+  override readonly name = 'WidgetChunkLoadError';
+
+  constructor(
+    readonly widgetId: string,
+    override readonly cause: unknown,
+  ) {
+    super(
+      `The code for widget “${widgetId}” could not be loaded${cause instanceof Error ? `: ${cause.message}` : ''}.`,
+    );
+  }
+}
+
+/**
+ * Whether an error came from loading code rather than rendering: our WidgetChunkLoadError, or
+ * the browsers' own dynamic-import failures (Chrome, Firefox, Safari) and webpack-style names.
+ */
+export function isChunkLoadError(error: unknown): boolean {
+  if (error instanceof WidgetChunkLoadError) return true;
+  if (!(error instanceof Error)) return false;
+  return (
+    error.name === 'ChunkLoadError' ||
+    /dynamically imported module|Importing a module script failed|Loading chunk .* failed/i.test(
+      error.message,
+    )
+  );
 }
 
 export interface DefineWidgetOptions<TConfig extends WidgetConfig, TData> {
@@ -101,15 +135,23 @@ export function defineWidget<TConfig extends WidgetConfig, TData>(
   Erased.displayName = `Widget(${definition.id})`;
   const ErasedWidget = memo(Erased);
 
+  const createComponent = () =>
+    lazy<WidgetComponentType<WidgetConfig, unknown>>(async () => {
+      try {
+        await options.preload();
+      } catch (cause) {
+        throw new WidgetChunkLoadError(definition.id, cause);
+      }
+      return { default: ErasedWidget };
+    });
+
   return {
     ...rest,
     defaultConfig,
     // Still a lazy component, as the contract requires: it resolves once the widget's chunk
     // has loaded.
-    component: lazy<WidgetComponentType<WidgetConfig, unknown>>(async () => {
-      await options.preload();
-      return { default: ErasedWidget };
-    }),
+    component: createComponent(),
+    createComponent,
     skeleton: options.skeleton,
     resolveConfig: resolve,
     isEmpty: (data) => isData(data) && isEmpty(data),
