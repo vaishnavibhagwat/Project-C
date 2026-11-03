@@ -107,7 +107,9 @@ and profile menu.
 marks where the widget came from, and pushed widgets animate into place. Resize from any corner
 or edge, within each widget's min and max size, with the content reflowing as you go. Widgets
 never overlap; vertical compaction can be switched off from the grid toolbar. **Add widget** drops an empty slot at the next free
-position, which becomes any widget from its **Choose widget** menu.
+position, which becomes any widget from its **Choose widget** menu. In edit mode the **widget
+catalogue** sidebar lists every widget by category with a search box: click one to add it, or
+drag it onto the grid to place it. Opening the catalogue prefetches the widget code chunks.
 
 **Workstation features**: drag and resize (react-grid-layout, responsive breakpoints), an edit /
 view mode toggle (`L`), undo and redo of every layout change (`Ctrl+Z` / `Ctrl+Shift+Z`, cleared
@@ -116,8 +118,8 @@ symbol detail, saved layouts with version history and restore, JSON export/impor
 share links (lz-string, validated on open), three themes plus a theme builder with computed WCAG
 contrast checks, NSE market status in IST, notifications from rule-based alerts, and a
 **simulated feed outage** switch (command bar → feed) to demonstrate disconnected and stale states.
-Each page holds up to `VITE_MAX_WIDGETS` widgets (default 20). Adding, duplicating or loading a
-layout beyond that is refused with a message.
+Each page holds up to `VITE_MAX_WIDGETS` widgets (default 20). Adding (button, catalogue click or
+drop), duplicating or loading a layout beyond that is refused with a message.
 
 ## Configuration
 
@@ -161,7 +163,7 @@ src/
   components/   primitives: Button, IconButton, Tooltip, Badge, Tabs, Toggle, Dropdown, overlays, forms
     charts/     chart helpers used only inside lazy widget chunks (not in the main barrel)
   widgets/      one folder per widget: index.tsx, config.ts, types.ts, model.ts, __tests__/
-  grid/         GridContainer, GridItem, GridToolbar, PlaceholderCard, WidgetFrame, ConfigPanel
+  grid/         GridContainer, GridItem, GridToolbar, WidgetCatalogue, PlaceholderCard, WidgetFrame, ConfigPanel
   layout/       AppRoutes, AppShell, NavRail, CommandBar, dialogs; pages/ (lazy routed pages)
   theme/        tokens (spacing, radii, type), themes, applyTheme, ThemeMenu, lazy ThemeBuilder
   data/         seeded dataset, intraday simulation, derivations, zod schemas, mock API

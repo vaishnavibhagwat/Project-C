@@ -159,7 +159,9 @@ export function defineWidget<TConfig extends WidgetConfig, TData>(
     badge: (data, config) =>
       options.badge && isData(data) ? options.badge(data, resolve(config)) : null,
     preload: () => {
-      void options.preload();
+      // A failed prefetch is not an error yet: rendering loads the chunk again and shows
+      // the widget's chunk-load error with Retry if it still fails.
+      options.preload().catch(() => undefined);
     },
   };
 }

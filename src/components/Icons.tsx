@@ -105,6 +105,8 @@ export const IconPalette = createIcon('IconPalette', [
   'M15 7.5h.01',
 ]);
 export const IconChevronDown = createIcon('IconChevronDown', ['M6 9l6 6 6-6']);
+export const IconChevronLeft = createIcon('IconChevronLeft', ['M15 6l-6 6 6 6']);
+export const IconChevronRight = createIcon('IconChevronRight', ['M9 6l6 6-6 6']);
 export const IconCheck = createIcon('IconCheck', ['M5 12l5 5 9-10']);
 export const IconWifiOff = createIcon('IconWifiOff', [
   'M2 2l20 20',

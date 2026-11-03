@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import { SelectField } from '@/components/FormControls';
-import { IconPlus, IconSearch } from '@/components/Icons';
+import { IconPlus } from '@/components/Icons';
+import { SearchInput } from '@/components/SearchInput';
 import { useToast } from '@/components/Toast';
 import { PAGES } from '@/registry/pages';
 import { CATEGORIES, CATEGORY_LABELS, widgetRegistry } from '@/registry/registry';
@@ -50,17 +51,13 @@ export function WidgetMarketplace({
         </p>
       </div>
       <div className="flex flex-wrap items-end gap-3">
-        <label className="relative w-64">
-          <span className="sr-only">Search widgets</span>
-          <IconSearch size={14} className="pointer-events-none absolute left-2 top-2 text-subtle" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search widgets"
-            className="h-8 w-full rounded border border-line-strong bg-bg pl-7 pr-2 text-sm text-fg placeholder:text-subtle focus:border-accent focus:outline-none"
-          />
-        </label>
+        <SearchInput
+          label="Search widgets"
+          placeholder="Search widgets"
+          value={query}
+          onSearch={setQuery}
+          className="w-64"
+        />
         <div role="group" aria-label="Filter by category" className="flex flex-wrap gap-1">
           {(['ALL', ...CATEGORIES] as const).map((c) => (
             <button

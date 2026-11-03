@@ -42,6 +42,8 @@ interface DashboardData {
   locked: boolean;
   /** Compact or comfortable spacing: grid row height, gap and font scale (DENSITY_TOKENS). */
   density: Density;
+  /** Whether the widget catalogue sidebar is expanded (edit mode only). */
+  catalogueOpen: boolean;
   displayCurrency: DisplayCurrency;
   /** Alert ids the user has acknowledged (alert ids are stable per rule and entity). */
   acknowledgedAlertIds: string[];
@@ -86,6 +88,7 @@ interface DashboardActions {
   replacePage: (page: PageId, grid: PageGrid) => void;
   setLocked: (locked: boolean) => void;
   setDensity: (density: Density) => void;
+  setCatalogueOpen: (open: boolean) => void;
   setDisplayCurrency: (currency: DisplayCurrency) => void;
   acknowledgeAlerts: (ids: string[]) => void;
 }
@@ -131,6 +134,8 @@ const PersistedSchema = z.preprocess(
     locked: z.boolean(),
     /** Absent before density existed. */
     density: z.enum(['comfortable', 'compact']).default('comfortable'),
+    /** Absent before the widget catalogue existed. */
+    catalogueOpen: z.boolean().default(true),
     displayCurrency: z.enum(['INR', 'USD']),
     acknowledgedAlertIds: z.array(z.string().max(80)).max(500).default([]),
   }),
@@ -167,6 +172,7 @@ export const useDashboardStore = create<DashboardState>()(
         pages: defaultPages(),
         locked: false,
         density: 'comfortable',
+        catalogueOpen: true,
         displayCurrency: 'INR',
         acknowledgedAlertIds: [],
 
@@ -309,6 +315,11 @@ export const useDashboardStore = create<DashboardState>()(
             s.density = density;
           }),
 
+        setCatalogueOpen: (open) =>
+          set((s) => {
+            s.catalogueOpen = open;
+          }),
+
         setDisplayCurrency: (currency) =>
           set((s) => {
             s.displayCurrency = currency;
@@ -330,6 +341,7 @@ export const useDashboardStore = create<DashboardState>()(
           pages: s.pages,
           locked: s.locked,
           density: s.density,
+          catalogueOpen: s.catalogueOpen,
           displayCurrency: s.displayCurrency,
           acknowledgedAlertIds: s.acknowledgedAlertIds,
         }),
@@ -340,6 +352,7 @@ export const useDashboardStore = create<DashboardState>()(
             pages: defaultPages(),
             locked: false,
             density: 'comfortable',
+            catalogueOpen: true,
             displayCurrency: 'INR',
             acknowledgedAlertIds: [],
           },

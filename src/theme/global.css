@@ -360,3 +360,10 @@
 .recharts-cartesian-grid line {
   shape-rendering: crispEdges;
 }
+
+/* SearchInput draws its own clear button; hide the browser's. */
+.search-input::-webkit-search-cancel-button,
+.search-input::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}

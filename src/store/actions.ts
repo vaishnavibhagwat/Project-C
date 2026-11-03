@@ -88,6 +88,45 @@ export function addWidgetToPage(page: PageId, widgetId: string): string | null {
 }
 
 /**
+ * Add a widget where it was dropped on the grid: cell `at` of `breakpoint`'s layout, with
+ * overlapping widgets moved down. The other breakpoints place it in their first free space
+ * (on a tablet or mobile drop, the desktop layout does the same). Returns null for unknown
+ * types, a full page or a non-numeric cell.
+ */
+function dropWidgetOnPageNow(
+  page: PageId,
+  widgetId: string,
+  at: { x: number; y: number },
+  breakpoint: Breakpoint,
+): string | null {
+  const widget = widgetRegistry.getWidget(widgetId);
+  if (!widget || !canAddWidget(page)) return null;
+  if (!Number.isFinite(at.x) || !Number.isFinite(at.y)) return null;
+  const grid = currentGrid();
+  const size = convertSize(widget.defaultSize, DEFAULT_GRID_CONFIG, grid);
+  const desktop = useDashboardStore.getState().pages[page].layouts.desktop ?? [];
+  const position: GridPosition =
+    breakpoint === 'desktop'
+      ? { ...at, ...size }
+      : findFreePosition(desktop, size.w, size.h, grid.cols);
+  const instanceId = useWidgetStore.getState().createInstance(widgetId, position, {});
+  const dashboard = useDashboardStore.getState();
+  dashboard.addWidget(page, { i: instanceId, ...position });
+  if (breakpoint !== 'desktop') dashboard.moveWidget(page, instanceId, at, breakpoint);
+  syncPositions(page);
+  return instanceId;
+}
+
+export function dropWidgetOnPage(
+  page: PageId,
+  widgetId: string,
+  at: { x: number; y: number },
+  breakpoint: Breakpoint = 'desktop',
+): string | null {
+  return recorded(page, 'Add widget', () => dropWidgetOnPageNow(page, widgetId, at, breakpoint));
+}
+
+/**
  * Add an empty slot (placeholder) at the first free desktop position: the first gap it fits,
  * else the bottom. Returns its id, or null when the page is full.
  */

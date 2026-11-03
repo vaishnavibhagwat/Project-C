@@ -338,6 +338,33 @@ be moved and resized; **Choose widget** turns it into any registered widget in p
 it to at least that widget's default size. Saved layouts and share links keep empty slots. The
 toolbar also links to the marketplace, toggles compaction and shows the active breakpoint.
 
+### Widget catalogue: click or drag to add
+
+`WidgetCatalogue` (`src/grid/`) is a collapsible sidebar beside the grid, shown in edit mode
+only (hidden below 768 px, where HTML5 drag and drop is unavailable on touch). It lists every
+registered widget grouped by category (icon, name, description) and has a `SearchInput` that
+filters by name, description or category label. Whether it is open is a persisted DashboardStore
+flag (`catalogueOpen`).
+
+- **Click** adds the widget at the bottom of the page (`addWidgetToPage`) and scrolls it into view.
+- **Drag** uses react-grid-layout's `isDroppable`. The catalogue item is `draggable`; on dragstart
+  it records the widget type in `catalogueDrag.ts` (browsers hide DataTransfer contents until the
+  drop, and the grid needs the size for its preview). `onDropDragOver` sizes the preview from the
+  widget's `defaultSize` and refuses anything not dragged from the catalogue. `onDrop` calls
+  `dropWidgetOnPage(page, type, {x, y}, breakpoint)`: the widget goes to that cell of the active
+  breakpoint's layout (overlapping widgets move down) and to the first free space on the others.
+  While the preview is over the grid, `onLayoutChange` stores nothing. Both paths are undoable.
+- **Limit**: at `VITE_MAX_WIDGETS` widgets the items are disabled (not draggable), a notice
+  explains why, and the grid refuses drops.
+- **Prefetch**: opening the catalogue calls every widget's `preload()` when the browser is idle
+  (`requestIdleCallback`, 2 s timeout; `setTimeout` fallback), so the page's own widgets load
+  first and added widgets render without a chunk-loading pause. A failed prefetch is ignored;
+  rendering loads the chunk again and shows the chunk-load error with Retry if it still fails.
+
+`SearchInput` (`src/components/`) is the shared search box: debounced `onSearch` (300 ms by
+default), a clear button, Escape to clear (kept from closing an enclosing dialog while there is
+text) and Enter to search at once. The marketplace uses it too.
+
 ### Workspace toolbar: edit mode, undo / redo, density
 
 - **Edit layout** (`aria-pressed`, shortcut `L`) maps to DashboardStore `locked`. View mode

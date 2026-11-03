@@ -136,6 +136,17 @@ describe('AppShell', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
   });
 
+  it('shows the widget catalogue beside the grid in edit mode only', async () => {
+    renderShell();
+    goTo('#/research');
+    expect(
+      await screen.findByRole('complementary', { name: 'Widget catalogue' }),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Edit layout' }));
+    expect(useDashboardStore.getState().locked).toBe(true);
+    expect(screen.queryByRole('complementary', { name: 'Widget catalogue' })).toBeNull();
+  });
+
   it('redirects unknown routes to the workstation', async () => {
     renderShell();
     goTo('#/no-such-page');

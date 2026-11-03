@@ -1,9 +1,16 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Responsive, WidthProvider, type Layout, type Layouts } from 'react-grid-layout';
 import { useShallow } from 'zustand/react/shallow';
+import { useToast } from '@/components/Toast';
 import { useViewportWidth } from '@/hooks/useViewportWidth';
 import { isPlaceholder } from '@/registry/placeholder';
-import { COLLAPSED_ROWS, commitLayouts } from '@/store/actions';
+import { widgetRegistry } from '@/registry/registry';
+import {
+  COLLAPSED_ROWS,
+  commitLayouts,
+  dropWidgetOnPage,
+  MAX_WIDGETS_PER_PAGE,
+} from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { BreakpointLayouts, GridItemLayout, PageId } from '@/types';
@@ -11,10 +18,13 @@ import { cx } from '@/utils/cx';
 import {
   BREAKPOINT_KEYS,
   breakpointForViewport,
+  convertSize,
+  DEFAULT_GRID_CONFIG,
   deriveLayout,
   gridBreakpointsFor,
   responsiveGridProps,
 } from '@/utils/gridLayout';
+import { DROPPING_ITEM_ID, draggedCatalogueWidget, endCatalogueDrag } from './catalogueDrag';
 import { GridItem } from './GridItem';
 import { PlaceholderCard } from './PlaceholderCard';
 import { sizeLimitsFor, withSizeLimits, type SizeLimits } from './sizeLimits';
@@ -30,6 +40,9 @@ export const RESIZE_HANDLES: ResizeHandle[] = ['se', 'sw', 'ne', 'nw', 'n', 's',
 
 /** How long after mount before moves animate, so widgets do not slide in on first paint. */
 const SETTLE_MS = 400;
+
+/** Drop preview before the dragged widget's own size is known. */
+const DROPPING_ITEM = { i: DROPPING_ITEM_ID, w: 4, h: 4 };
 
 interface Box {
   left: number;
@@ -155,7 +168,12 @@ function GridContainerImpl({ page }: { page: PageId }) {
   const [departure, setDeparture] = useState<Box | null>(null);
 
   const onDragStart = useCallback(
-    (_l: Layout[], _o: Layout, _n: Layout, _p: Layout, _e: MouseEvent, element: HTMLElement) => {
+    (_l: Layout[], _o: Layout, item: Layout, _p: Layout, _e: MouseEvent, element: HTMLElement) => {
+      // A catalogue drop preview is not a widget leaving its place.
+      if (item.i === DROPPING_ITEM_ID) {
+        dragOrigin.current = null;
+        return;
+      }
       const wrapper = wrapperRef.current?.getBoundingClientRect();
       const rect = element.getBoundingClientRect();
       dragOrigin.current = wrapper
@@ -193,7 +211,10 @@ function GridContainerImpl({ page }: { page: PageId }) {
   // Safety net for changes react-grid-layout makes on its own (never during a drag: it only
   // reports after a drop, which commitBreakpoint has already stored).
   const onLayoutChange = useCallback(
-    (_current: Layout[], all: Layouts) => {
+    (current: Layout[], all: Layouts) => {
+      // While a catalogue widget is dragged over the grid, its drop preview is in the layout.
+      // Nothing is stored until it is dropped (onDrop).
+      if (current.some((l) => l.i === DROPPING_ITEM_ID)) return;
       const next: BreakpointLayouts = { ...grid.layouts };
       let changed = false;
       for (const bp of BREAKPOINT_KEYS) {
@@ -206,6 +227,33 @@ function GridContainerImpl({ page }: { page: PageId }) {
       if (changed) commitLayouts(page, next);
     },
     [grid.layouts, page],
+  );
+
+  // Drag-to-add from the widget catalogue. The preview takes the dragged widget's default size;
+  // anything else dragged over the grid (files, text) is refused.
+  const notify = useToast();
+  const full = grid.itemIds.length >= MAX_WIDGETS_PER_PAGE;
+  const onDropDragOver = useCallback(() => {
+    const widget = widgetRegistry.getWidget(draggedCatalogueWidget() ?? '');
+    if (!widget || full) return false;
+    const size = convertSize(widget.defaultSize, DEFAULT_GRID_CONFIG, gridConfig);
+    return { w: Math.min(size.w, gridProps.cols[breakpoint]), h: size.h };
+  }, [full, gridConfig, gridProps.cols, breakpoint]);
+  const onDrop = useCallback(
+    (_layout: Layout[], item: Layout | undefined) => {
+      const widget = widgetRegistry.getWidget(draggedCatalogueWidget() ?? '');
+      endCatalogueDrag();
+      if (!widget || !item) return;
+      if (dropWidgetOnPage(page, widget.id, { x: item.x, y: item.y }, breakpoint)) {
+        notify({ message: `Added ${widget.name}`, tone: 'success' });
+      } else {
+        notify({
+          message: `This page already has the maximum of ${MAX_WIDGETS_PER_PAGE} widgets. Remove one first.`,
+          tone: 'error',
+        });
+      }
+    },
+    [page, breakpoint, notify],
   );
 
   // Children depend only on the ids, so a drag (which re-renders the grid) never re-renders
@@ -247,6 +295,10 @@ function GridContainerImpl({ page }: { page: PageId }) {
         onDragStop={onDragStop}
         onResizeStop={onResizeStop}
         onLayoutChange={onLayoutChange}
+        isDroppable={!locked}
+        droppingItem={DROPPING_ITEM}
+        onDropDragOver={onDropDragOver}
+        onDrop={onDrop}
       >
         {children}
       </ResponsiveGridLayout>
