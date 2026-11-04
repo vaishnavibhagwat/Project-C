@@ -177,3 +177,14 @@ makes requests fail with HTTP 503; unknown portfolios and paths answer 404; an o
 Numbers must be finite (NaN and Infinity are rejected, including NaN that JSON turned into
 `null`), prices strictly positive, weights must sum to 100% and every series must have one
 value per date.
+
+## 12. Simulated WebSocket (`src/data/wsSimulator.ts`)
+
+No socket is opened. Messages are produced in the browser on a timer from the same dataset and
+intraday tape the API uses, so a pushed price equals the polled price at that moment. Latency is
+a fixed delay (default 80 ms, configurable 0–5000 ms). Alert and news channels send only items
+not sent before (the first message after subscribing carries the current set), so an empty
+message is a heartbeat. A simulated disconnect lasts 20 s by default (until switched off from
+the Feed menu); reconnect attempts follow 1, 2, 4, 8, 16 s and then every 16 s. Pushes refresh
+the affected endpoints by refetching them, so the dashboard shows the same validated payloads
+whether data arrives by push or by polling.

@@ -2,6 +2,7 @@ import { onlineManager, QueryClient, QueryClientProvider } from '@tanstack/react
 import { MotionProvider } from '@/components/MotionProvider';
 import { ToastProvider } from '@/components/Toast';
 import { getConnectionState, subscribeConnection } from '@/data/connection';
+import { useRealtimeBridge } from '@/hooks/useRealtime';
 import { GlobalErrorBoundary } from '@/layout/GlobalErrorBoundary';
 import { AppRouter } from '@/layout/AppRoutes';
 
@@ -27,10 +28,17 @@ export function createQueryClient(): QueryClient {
 
 const queryClient = createQueryClient();
 
+/** Simulated WebSocket feed: pushes refresh the affected queries (see src/data/realtime.ts). */
+function RealtimeFeed() {
+  useRealtimeBridge();
+  return null;
+}
+
 export function App() {
   return (
     <GlobalErrorBoundary>
       <QueryClientProvider client={queryClient}>
+        <RealtimeFeed />
         <MotionProvider>
           <ToastProvider>
             <AppRouter />

@@ -2,9 +2,11 @@ import { IconPlug, IconWifiOff } from '@/components/Icons';
 import { Popover } from '@/components/Popover';
 import { Switch } from '@/components/FormControls';
 import { setSimulatedOutage } from '@/data/connection';
+import { wsSimulator } from '@/data/wsSimulator';
 import { useConnection } from '@/hooks/useConnection';
 import { useLastUpdated } from '@/hooks/useLastUpdated';
 import { useNow } from '@/hooks/useNow';
+import { useRealtimeStatus } from '@/hooks/useRealtime';
 import { cx } from '@/utils/cx';
 import { formatAge, formatIstTime } from '@/utils/time';
 
@@ -14,6 +16,7 @@ export function FeedControl() {
   const last = useLastUpdated();
   const now = useNow(5000);
   const connected = connection.connected;
+  const realtime = useRealtimeStatus();
   return (
     <Popover
       label="Data feed"
@@ -60,6 +63,22 @@ export function FeedControl() {
               <p className="mt-1 text-warn">Your browser reports it is offline.</p>
             ) : null}
           </div>
+          <p className="text-muted">
+            Real-time (simulated WebSocket):{' '}
+            <span className={realtime.state === 'connected' ? 'text-pos' : 'text-warn'}>
+              {realtime.state === 'connected' ? 'connected' : 'reconnecting'}
+            </span>
+            {realtime.state === 'connected' ? '' : '; widgets are polling instead'}.
+          </p>
+          <Switch
+            label="Drop real-time connection"
+            description="Simulates the socket server going away. Widgets fall back to polling; reconnects back off 1, 2, 4, 8, 16 s and succeed once this is off."
+            checked={wsSimulator.isServerDown()}
+            onCheckedChange={(down) => {
+              if (down) wsSimulator.simulateDisconnect(Number.POSITIVE_INFINITY);
+              else wsSimulator.restore();
+            }}
+          />
           <Switch
             label="Simulate feed outage"
             description="Stops all data requests so widgets show disconnected and stale states."

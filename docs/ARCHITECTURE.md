@@ -399,10 +399,10 @@ and `xs` are dropped and derived again.
 
 ## 4. Data flow: feed → React Query cache → widget
 
-There is no WebSocket in the current build. The "live feed" is a simulation that runs in the
-browser, and widgets receive it by polling through TanStack Query. The contract already carries
-a `wsChannel` per widget so a socket can be added without changing widgets; that planned path
-is described after the current one.
+The "live feed" is a simulation that runs in the browser. Widgets read it through TanStack
+Query. A simulated WebSocket (`src/data/wsSimulator.ts`) pushes on four channels; each message
+refreshes the queries it affects, and while it is connected those queries poll only as a slow
+heartbeat. When it drops, they fall back to polling. No real socket is opened.
 
 ### What runs today
 
@@ -461,24 +461,43 @@ with 503 at `failureRate`, builds the response, round-trips it through JSON and 
 with zod. Widgets do not use it yet; see docs/ASSUMPTIONS.md §11. Import it from
 `@/data/mockApi` (it is left out of the `@/data` barrel to keep it out of the main bundle).
 
-### Planned WebSocket path (not built)
+### Simulated WebSocket and polling fallback
 
 ```mermaid
 flowchart LR
-  ws["Socket client<br/>(planned, VITE_WS_URL)"] -->|"message on wsChannel"| parse["parseEndpoint<br/>zod"]
-  parse -->|"setQueryData(endpointKey)"| cache["TanStack Query cache"]
+  sim["wsSimulator<br/>4 channels, setInterval"] -->|"zod-validated message<br/>after latency"| bridge["realtime.ts bridge"]
+  bridge -->|"invalidateQueries(endpointKey)"| cache["TanStack Query cache"]
   cache --> frames["Every frame on that endpoint"]
-  ws -.->|"close or error"| conn["connection.ts<br/>disconnected"]
-  conn -.->|"onlineManager pauses queries"| cache
+  sim -.->|"disconnect"| status["status: disconnected<br/>backoff 1, 2, 4, 8, 16 s"]
+  status -.->|"endpoints no longer live"| poll["useEndpoint polls at refreshInterval"]
+  status -.-> banner["RealtimeBanner"]
 ```
 
-A socket client would subscribe to the `wsChannel`s of mounted widgets, validate each message
-with the same `parseEndpoint`, and write it into the cache with
-`queryClient.setQueryData(endpointKey(endpoint), data)`. Every frame on that endpoint would
-re-render exactly as it does after a poll, and polling would drop to a slow heartbeat. A closed
-socket would set the connection state to disconnected, which already pauses queries and shows
-the disconnected state. Widgets, the frame and the stores would not change. `VITE_WS_URL` and
-`wsChannel` are reserved for this; nothing opens a socket today.
+| Channel                          | Interval (default) | Refreshes                               |
+| -------------------------------- | ------------------ | --------------------------------------- |
+| `ws://mock/portfolio/:id/prices` | 1–10 s (5 s)       | holdings, summary, allocation           |
+| `ws://mock/market/ticker`        | 1–5 s (3 s)        | sector returns (heat map)               |
+| `ws://mock/alerts/stream`        | 2–60 s (10 s)      | alerts (messages carry only new alerts) |
+| `ws://mock/news/stream`          | 2–60 s (20 s)      | research feed (only new items)          |
+
+- **Simulator** (`WsSimulator`, singleton `wsSimulator`). `subscribe(url, handler, {intervalMs})`
+  returns an unsubscribe function; `MessageFor<url>` types each handler. Subscribers of one
+  channel share one `setInterval`. Messages are built from the shared dataset and intraday tape,
+  serialised, validated with zod (invalid ones are dropped and logged) and delivered after
+  `setLatency(ms)` (default 80 ms). `setFrequency(url, ms)` clamps to the channel's range. The
+  last unsubscribe clears the interval and any message still in flight; `timerCount()` exposes
+  what is running so tests can check for leaks, and `destroy()` clears everything.
+- **Disconnect.** `simulateDisconnect(ms)` (Feed menu → "Drop real-time connection") or the
+  global feed outage stops every channel. Reconnect attempts run after 1, 2, 4, 8 s and then
+  every 16 s; one succeeds once the server is back (`restore()`) and the feed is online.
+  `retryNow()` (banner button) skips the wait. Subscriptions survive and resume.
+- **Fallback.** `startRealtimeBridge` (mounted once in `App`) marks the routed endpoints live
+  while connected. `useEndpoint` then polls at `max(4 × refreshInterval, 60 s)` as a safety net;
+  when the socket drops they poll at `refreshInterval` again and `RealtimeBanner` shows "Real-time
+  data temporarily unavailable" with the countdown to the next attempt.
+- **Simplification.** A message triggers a refetch of the affected endpoints (validated as
+  usual) rather than patching the cache from the message body. `VITE_WS_URL` stays reserved for
+  a real socket.
 
 ## 5. Error boundary hierarchy: Global > Widget > Data
 

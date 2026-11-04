@@ -9,6 +9,7 @@ export * from './MarketStatus';
 export * from './NavRail';
 export * from './Notifications';
 export * from './PageToolbar';
+export * from './RealtimeBanner';
 export * from './searchIndex';
 export * from './ShareDialog';
 export * from './SharedLayoutBanner';

@@ -118,6 +118,9 @@ symbol detail, saved layouts with version history and restore, JSON export/impor
 share links (lz-string, validated on open), three themes plus a theme builder with computed WCAG
 contrast checks, NSE market status in IST, notifications from rule-based alerts, and a
 **simulated feed outage** switch (command bar → feed) to demonstrate disconnected and stale states.
+A **simulated WebSocket** pushes prices, the market ticker, alerts and research items; the same
+menu can drop it, which shows a "Real-time data temporarily unavailable" banner while widgets
+fall back to polling and reconnects back off 1, 2, 4, 8, 16 s.
 Each page holds up to `VITE_MAX_WIDGETS` widgets (default 20). Adding (button, catalogue click or
 drop), duplicating or loading a layout beyond that is refused with a message.
 
