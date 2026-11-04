@@ -39,6 +39,25 @@ export function simpleReturns(levels: readonly number[]): number[] {
   return out;
 }
 
+/** Continuously compounded returns ln(P_t / P_t-1). */
+export function logReturns(levels: readonly number[]): number[] {
+  const out: number[] = [];
+  for (let i = 1; i < levels.length; i += 1) {
+    const prev = levels[i - 1];
+    const curr = levels[i];
+    if (prev === undefined || curr === undefined || prev <= 0 || curr <= 0) continue;
+    out.push(Math.log(curr / prev));
+  }
+  return out;
+}
+
+/** Compounded total return of a sequence of simple returns: prod(1 + r) - 1. */
+export function cumulativeReturn(returns: readonly number[]): number {
+  let growth = 1;
+  for (const r of returns) growth *= 1 + r;
+  return growth - 1;
+}
+
 /** One geometric Brownian motion step: S * exp((mu - sigma^2 / 2) dt + sigma sqrt(dt) Z). */
 export function gbmStep(price: number, mu: number, sigma: number, dt: number, z: number): number {
   return price * Math.exp((mu - (sigma * sigma) / 2) * dt + sigma * Math.sqrt(dt) * z);
@@ -100,28 +119,50 @@ export interface MaxDrawdown {
   troughIndex: number;
   /** Index where the previous peak was regained, or null if not yet recovered. */
   recoveryIndex: number | null;
+  /** Periods from peak to trough (the fall). */
+  declinePeriods: number;
+  /** Periods from trough back to the old peak (the recovery period), or null if not recovered. */
+  recoveryPeriods: number | null;
+  /** Periods from peak to recovery (time under water), or null if not recovered. */
+  underwaterPeriods: number | null;
 }
 
+/**
+ * Deepest peak-to-trough fall and how long it took to recover. Periods are counted in the
+ * series' own steps (trading days for daily data).
+ */
 export function maxDrawdown(levels: readonly number[]): MaxDrawdown {
   let peak = levels[0] ?? 0;
   let peakIndex = 0;
-  let best: MaxDrawdown = { depth: 0, peakIndex: 0, troughIndex: 0, recoveryIndex: null };
+  let depth = 0;
+  let best = { peakIndex: 0, troughIndex: 0 };
   levels.forEach((level, i) => {
     if (level > peak) {
       peak = level;
       peakIndex = i;
     }
-    const depth = peak > 0 ? 1 - level / peak : 0;
-    if (depth > best.depth) best = { depth, peakIndex, troughIndex: i, recoveryIndex: null };
+    const fall = peak > 0 ? 1 - level / peak : 0;
+    if (fall > depth) {
+      depth = fall;
+      best = { peakIndex, troughIndex: i };
+    }
   });
   const peakLevel = levels[best.peakIndex] ?? 0;
+  let recoveryIndex: number | null = null;
   for (let i = best.troughIndex + 1; i < levels.length; i += 1) {
     if ((levels[i] ?? 0) >= peakLevel) {
-      best.recoveryIndex = i;
+      recoveryIndex = i;
       break;
     }
   }
-  return best;
+  return {
+    depth,
+    ...best,
+    recoveryIndex,
+    declinePeriods: best.troughIndex - best.peakIndex,
+    recoveryPeriods: recoveryIndex === null ? null : recoveryIndex - best.troughIndex,
+    underwaterPeriods: recoveryIndex === null ? null : recoveryIndex - best.peakIndex,
+  };
 }
 
 export function covariance(a: readonly number[], b: readonly number[]): number {
@@ -132,6 +173,31 @@ export function covariance(a: readonly number[], b: readonly number[]): number {
   let acc = 0;
   for (let i = 0; i < n; i += 1) acc += ((a[i] ?? 0) - ma) * ((b[i] ?? 0) - mb);
   return acc / (n - 1);
+}
+
+/** Pearson correlation of two series (over their common length); 0 when either is flat. */
+export function correlation(a: readonly number[], b: readonly number[]): number {
+  const n = Math.min(a.length, b.length);
+  const sa = stdev(a.slice(0, n));
+  const sb = stdev(b.slice(0, n));
+  if (sa === 0 || sb === 0) return 0;
+  // Clamp rounding noise so a perfect relationship reads exactly ±1.
+  return Math.max(-1, Math.min(1, covariance(a, b) / (sa * sb)));
+}
+
+/** Symmetric matrix of pairwise correlations with 1 on the diagonal. */
+export function correlationMatrix(series: readonly (readonly number[])[]): number[][] {
+  const out = series.map((_, i) => series.map((__, j): number => (i === j ? 1 : 0)));
+  for (let i = 0; i < series.length; i += 1) {
+    for (let j = i + 1; j < series.length; j += 1) {
+      const rho = correlation(series[i] ?? [], series[j] ?? []);
+      const rowI = out[i];
+      const rowJ = out[j];
+      if (rowI) rowI[j] = rho;
+      if (rowJ) rowJ[i] = rho;
+    }
+  }
+  return out;
 }
 
 export function beta(asset: readonly number[], benchmark: readonly number[]): number {
@@ -205,6 +271,96 @@ export function inverseNormalCdf(p: number): number {
 export function parametricVaR(dailyReturns: readonly number[], confidence: number): number {
   const z = inverseNormalCdf(confidence);
   return Math.max(0, -(mean(dailyReturns) - z * stdev(dailyReturns)));
+}
+
+export type VarMethod = 'historical' | 'parametric';
+
+export interface VarEstimate {
+  /** 1-day loss fractions at 95% and 99% confidence. */
+  var95: number;
+  var99: number;
+}
+
+/** Historical and parametric 1-day VaR at 95% and 99% from one return series. */
+export function valueAtRisk(dailyReturns: readonly number[]): Record<VarMethod, VarEstimate> {
+  return {
+    historical: {
+      var95: historicalVaR(dailyReturns, 0.95),
+      var99: historicalVaR(dailyReturns, 0.99),
+    },
+    parametric: {
+      var95: parametricVaR(dailyReturns, 0.95),
+      var99: parametricVaR(dailyReturns, 0.99),
+    },
+  };
+}
+
+/** One segment (sector, asset class …) of a Brinson attribution. Weights and returns as fractions. */
+export interface BrinsonSegment {
+  key: string;
+  portfolioWeight: number;
+  benchmarkWeight: number;
+  portfolioReturn: number;
+  benchmarkReturn: number;
+}
+
+export interface BrinsonEffects {
+  allocation: number;
+  selection: number;
+  interaction: number;
+  /** allocation + selection + interaction */
+  total: number;
+}
+
+export interface BrinsonResult extends BrinsonEffects {
+  segments: (BrinsonEffects & { key: string })[];
+  portfolioReturn: number;
+  benchmarkReturn: number;
+  /** portfolioReturn - benchmarkReturn; equals `total` when both weight sets sum to 1. */
+  activeReturn: number;
+}
+
+/**
+ * Single-period Brinson attribution, three effects per segment:
+ * - allocation  = (wp - wb) * (rb - Rb)   Brinson-Fachler (default), or (wp - wb) * rb for
+ *   Brinson-Hood-Beebower ('BHB'); both sum to the same total when weights sum to 1;
+ * - selection   = wb * (rp - rb);
+ * - interaction = (wp - wb) * (rp - rb).
+ * Rb is the total benchmark return. Single period, no cash flows or compounding across periods.
+ */
+export function brinsonAttribution(
+  segments: readonly BrinsonSegment[],
+  method: 'BF' | 'BHB' = 'BF',
+): BrinsonResult {
+  const portfolioReturn = sum(segments.map((s) => s.portfolioWeight * s.portfolioReturn));
+  const benchmarkReturn = sum(segments.map((s) => s.benchmarkWeight * s.benchmarkReturn));
+  const rows = segments.map((s) => {
+    const activeWeight = s.portfolioWeight - s.benchmarkWeight;
+    const allocation =
+      activeWeight * (method === 'BF' ? s.benchmarkReturn - benchmarkReturn : s.benchmarkReturn);
+    const selection = s.benchmarkWeight * (s.portfolioReturn - s.benchmarkReturn);
+    const interaction = activeWeight * (s.portfolioReturn - s.benchmarkReturn);
+    return {
+      key: s.key,
+      allocation,
+      selection,
+      interaction,
+      total: allocation + selection + interaction,
+    };
+  });
+  const allocation = sum(rows.map((r) => r.allocation));
+  const selection = sum(rows.map((r) => r.selection));
+  const interaction = sum(rows.map((r) => r.interaction));
+  return {
+    segments: rows,
+    allocation,
+    selection,
+    interaction,
+    total: allocation + selection + interaction,
+    portfolioReturn,
+    benchmarkReturn,
+    activeReturn: portfolioReturn - benchmarkReturn,
+  };
 }
 
 export interface HistogramBin {

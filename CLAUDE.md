@@ -31,7 +31,8 @@ src/
   grid/         index.ts      GridContainer, GridItem, GridToolbar, WidgetCatalogue, WidgetFrame, ConfigPanel
   layout/       index.ts      AppShell, NavRail, CommandBar, pages, dialogs
   theme/        index.ts      tokens, applyTheme, ThemeMenu (ThemeBuilder is lazy, not in barrel)
-  data/         index.ts      seeded dataset, market simulation, derive/, zod schemas, mock API
+  data/         index.ts      seeded dataset, market simulation, derive/, zod schemas, mock API,
+                              query hooks (queries.ts), transformers
   store/        index.ts      the four Zustand stores, cross-store actions, share links
   registry/     index.ts      WidgetRegistry + singleton, validators, default pages
   hooks/        index.ts

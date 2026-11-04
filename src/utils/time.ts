@@ -267,3 +267,11 @@ export function formatAge(ageMs: number): string {
   const h = Math.round(m / 60);
   return `${h}h ago`;
 }
+
+/** Data older than this multiple of its refresh interval is flagged as stale (amber border). */
+export const STALE_MULTIPLIER = 2;
+
+/** Whether data last updated at `updatedAt` (epoch ms, 0 = never) is past 2x its refresh interval. */
+export function isStale(updatedAt: number, refreshIntervalMs: number, now: number): boolean {
+  return updatedAt > 0 && now - updatedAt > refreshIntervalMs * STALE_MULTIPLIER;
+}

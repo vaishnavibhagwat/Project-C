@@ -121,6 +121,11 @@ contrast checks, NSE market status in IST, notifications from rule-based alerts,
 A **simulated WebSocket** pushes prices, the market ticker, alerts and research items; the same
 menu can drop it, which shows a "Real-time data temporarily unavailable" banner while widgets
 fall back to polling and reconnects back off 1, 2, 4, 8, 16 s.
+TanStack Query hooks over the mock API (`usePortfolio`, `useHoldings`, `usePerformance`,
+`useRiskMetrics`, `useMarketOverview`, `useNewsFeed`, `useAlerts`, plus `useRealTimeData` to
+merge socket messages into the cache) and the finance maths (returns, volatility, Sharpe, max
+drawdown with recovery period, historical and parametric VaR, correlation matrix, Brinson
+attribution) are covered by known-answer tests.
 Each page holds up to `VITE_MAX_WIDGETS` widgets (default 20). Adding (button, catalogue click or
 drop), duplicating or loading a layout beyond that is refused with a message.
 
@@ -169,7 +174,8 @@ src/
   grid/         GridContainer, GridItem, GridToolbar, WidgetCatalogue, PlaceholderCard, WidgetFrame, ConfigPanel
   layout/       AppRoutes, AppShell, NavRail, CommandBar, dialogs; pages/ (lazy routed pages)
   theme/        tokens (spacing, radii, type), themes, applyTheme, ThemeMenu, lazy ThemeBuilder
-  data/         seeded dataset, intraday simulation, derivations, zod schemas, mock API
+  data/         seeded dataset, intraday simulation, derivations, zod schemas, mock API,
+                query hooks (queries.ts), transformers (API response -> widget shape)
     mock/       generators for the REST-style mockApi.ts: book, benchmarks, news, alerts
   store/        DashboardStore, WidgetStore, ThemeStore, LayoutStore, cross-store actions, share
   registry/     WidgetRegistry + singleton, definition and config validators, defineWidget, pages

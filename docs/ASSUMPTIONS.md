@@ -188,3 +188,29 @@ message is a heartbeat. A simulated disconnect lasts 20 s by default (until swit
 the Feed menu); reconnect attempts follow 1, 2, 4, 8, 16 s and then every 16 s. Pushes refresh
 the affected endpoints by refetching them, so the dashboard shows the same validated payloads
 whether data arrives by push or by polling.
+
+## 13. Finance formulas, query hooks and transformers
+
+Formulas in `src/utils/finance.ts` (textbook definitions on simulated data; approximations):
+
+| Measure      | Definition                                                                                                                                                                                                |
+| ------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Returns      | simple r = P_t / P_t−1 − 1; log r = ln(P_t / P_t−1); cumulative = ∏(1 + r) − 1                                                                                                                            |
+| Volatility   | sample standard deviation (n − 1) of daily returns × √252                                                                                                                                                 |
+| Sharpe       | (mean daily return × 252 − risk-free rate) / annualised volatility; 0 if volatility is 0                                                                                                                  |
+| Max drawdown | largest fall from a running peak; decline = peak → trough, recovery period = trough → first close at or above the old peak, under water = peak → recovery (all in trading days; null while not recovered) |
+| VaR          | as §7: 1-day, historical (interpolated quantile) and parametric (normal, μ − zσ) at 95% and 99%                                                                                                           |
+| Correlation  | Pearson correlation of daily returns over the common length; 0 when a series is flat; matrix is symmetric with 1 on the diagonal                                                                          |
+| Brinson      | allocation (w_p − w_b)(r_b − R_b) (Brinson-Fachler; BHB uses (w_p − w_b) r_b), selection w_b (r_p − r_b), interaction (w_p − w_b)(r_p − r_b). Single period, no cash flows, no multi-period linking       |
+
+The sector-attribution widget (§8) still reports interaction inside selection; the general
+`brinsonAttribution` function reports it separately.
+
+`toPerformanceStats` recomputes statistics from the API's daily NAV (VaR over the last 252
+returns). Values can differ slightly from the API's own risk response, which is computed from
+the same data with rounding applied at different points.
+
+The query hooks treat data as stale for display after 2× the refresh interval, the same rule
+as the widget frame. Streamed alerts carry no volatility reading, so a merged alert takes the
+response's current volatility. The news stream carries in-house research notes; when merged
+into the market news response they get the source "Meridian Research" and no price move.

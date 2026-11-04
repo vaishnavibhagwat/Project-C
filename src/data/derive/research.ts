@@ -5,6 +5,9 @@ import { createRng, hashSeed, pick, uniform, type Rng } from '../random';
 import type { ResearchData } from '../schemas';
 import { asOfIso, type DeriveContext } from './context';
 
+/** Publisher of the in-house research notes (the analyst is added after a dot). */
+export const IN_HOUSE_NEWS_SOURCE = 'Meridian Research';
+
 export const RESEARCH_DISCLAIMER =
   'Sample research content generated for this demo. Not investment advice and not real news.';
 
@@ -138,7 +141,7 @@ function buildArticle(seed: number, slot: number): NewsArticle {
     articleId: `NEWS-${slot}`,
     headline: t.headline(subject),
     summary: t.summary(subject),
-    source: `Meridian Research · ${analyst} (sample)`,
+    source: `${IN_HOUSE_NEWS_SOURCE} · ${analyst} (sample)`,
     publishedAt: toIstIso(slot * SLOT_MS + jitter),
     sentiment: t.sentiment,
     sentimentScore: Math.round(uniform(rng, lo, hi) * 100) / 100,

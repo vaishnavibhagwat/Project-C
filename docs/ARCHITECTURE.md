@@ -461,6 +461,45 @@ with 503 at `failureRate`, builds the response, round-trips it through JSON and 
 with zod. Widgets do not use it yet; see docs/ASSUMPTIONS.md §11. Import it from
 `@/data/mockApi` (it is left out of the `@/data` barrel to keep it out of the main bundle).
 
+### Query hooks, transformers and finance maths
+
+```mermaid
+flowchart LR
+  api["mockApi.ts<br/>GET + zod"] --> hooks["queries.ts hooks<br/>usePortfolio … useAlerts"]
+  ws["wsSimulator"] -->|"useRealTimeData(channel)"| merge["transformers.ts merges<br/>+ zod re-check"]
+  merge -->|"setQueriesData"| hooks
+  hooks --> tx["transformers.ts<br/>raw response → widget shape"]
+  fin["utils/finance.ts"] --> tx
+```
+
+- **Hooks** (`src/data/queries.ts`, imported directly like `mockApi`): `usePortfolio(id)`,
+  `useHoldings(id)`, `usePerformance(id)`, `useRiskMetrics(id)`, `useMarketOverview()`,
+  `useNewsFeed()`, `useAlerts()`. `QUERY_POLICIES` sets each poll interval to the default
+  refresh of the widgets that read it (5 s portfolio and holdings, 15 s market overview and
+  alerts, `VITE_DATA_REFRESH_INTERVAL` for performance, risk and news; a test checks them against
+  the registry) and `staleTime` to half of it, so cached data renders at once and is revalidated
+  in the background. Transient failures retry 3 times after 1, 2 and 4 s (`queryRetryDelay`);
+  validation errors and 404s do not retry. `placeholderData: keepPreviousData` keeps the old
+  response on screen while a new key loads, and TanStack keeps it after a failed refresh; each
+  hook adds `isShowingLastGood` and `isStaleData` (older than 2× the refresh, the same
+  `isStale` rule the widget frame uses) so a widget can show the amber stale state.
+- **`useRealTimeData(channel)`** subscribes to one simulated channel and writes each message
+  into the cached responses: prices into `useHoldings`, the ticker into `useMarketOverview`,
+  alerts into every `useAlerts`, news into every `useNewsFeed`. The merged response is validated
+  with the response schema before it is written; an invalid merge, or a message for data that is
+  not cached, changes nothing. This is the cache-patching path; the dashboard's existing bridge
+  (below) still refreshes widget endpoints by refetching.
+- **Transformers** (`src/data/transformers.ts`, in the `@/data` barrel): pure functions from
+  responses to widget shapes (`toHoldingRows`, `toAllocationSlices`, `toNavHistory`,
+  `toDrawdownView`, `toPerformanceStats`, `toCorrelationMatrix`, `toRiskTiles`, `toSectorMoves`,
+  `toResearchArticles`, `toAlertItems`) and the message merges (`mergePrices`, `mergeTicker`,
+  `mergeAlerts`, `mergeNews`). They never mutate their input or read the clock.
+- **Finance** (`src/utils/finance.ts`): simple and log returns, cumulative return, volatility,
+  Sharpe and Sortino, max drawdown with decline, recovery and under-water periods, historical
+  and parametric VaR at 95/99% (`valueAtRisk`), correlation and `correlationMatrix`, and
+  `brinsonAttribution` (allocation, selection, interaction; Brinson-Fachler or BHB). Each
+  formula has a known-answer test in `src/__tests__/finance-known-answers.test.ts`.
+
 ### Simulated WebSocket and polling fallback
 
 ```mermaid

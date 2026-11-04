@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { IN_HOUSE_NEWS_SOURCE } from '../derive/research';
 import { dateKey, finite, istIso, nonNegative, price, SectorSchema } from '../schemas';
 import { BENCHMARK_IDS } from './benchmarks';
 import { ASSET_CLASSES, GEOGRAPHIES, INSTRUMENT_TYPES } from './instruments';
@@ -179,7 +180,8 @@ export const MockNewsSchema = z.object({
   articleId: z.string().min(1),
   headline: z.string().min(1),
   summary: z.string().min(1),
-  source: z.enum(NEWS_SOURCES),
+  /** One of the four outlets; in-house research notes arrive on the news stream. */
+  source: z.union([z.enum(NEWS_SOURCES), z.literal(IN_HOUSE_NEWS_SOURCE)]),
   publishedAt: istIso,
   sentiment: z.enum(['positive', 'neutral', 'negative']),
   sentimentScore: finite.min(-1).max(1),

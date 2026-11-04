@@ -32,7 +32,7 @@ import { useDashboardStore } from '@/store/dashboardStore';
 import { useWidgetStore } from '@/store/widgetStore';
 import type { PageId, WidgetConfig, WidgetInstance } from '@/types';
 import { recordWidgetRender } from '@/utils/perf';
-import { formatIstTime, toIstIso } from '@/utils/time';
+import { formatIstTime, isStale, STALE_MULTIPLIER, toIstIso } from '@/utils/time';
 
 // The grid's drag handle classes live with the shell that renders them.
 export { DRAG_HANDLE_CLASS, NO_DRAG_CLASS };
@@ -40,12 +40,8 @@ export { DRAG_HANDLE_CLASS, NO_DRAG_CLASS };
 /** Below this width (px) the header drops its plain timestamp so the title is not cut off. */
 const COMPACT_HEADER_PX = 380;
 
-/** Data older than this multiple of the refresh interval is flagged as stale. */
-export const STALE_MULTIPLIER = 2;
-
-export function isStale(updatedAt: number, refreshIntervalMs: number, now: number): boolean {
-  return updatedAt > 0 && now - updatedAt > refreshIntervalMs * STALE_MULTIPLIER;
-}
+// The stale rule is shared with the data hooks (src/data/queries.ts).
+export { isStale, STALE_MULTIPLIER };
 
 function errorMessage(error: Error | null): string {
   if (!error) return 'Unknown error.';
