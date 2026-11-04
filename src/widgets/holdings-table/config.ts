@@ -16,7 +16,7 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
   id: 'holdings-table',
   name: 'Holdings',
   description:
-    'Position-level table of the equity sleeve with live simulated prices. Virtualised for large books; sortable and filterable.',
+    'Every position of the book (stocks, receipts, bonds, derivatives, funds, cash) with live simulated prices. Totals match the summary strip. Sortable and filterable.',
   category: WidgetCategory.TABLE,
   defaultSize: { w: 8, h: 6 },
   minSize: { w: 4, h: 3 },

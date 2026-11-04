@@ -13,6 +13,7 @@ import type { LatencyProfile } from '@/types';
 import { env } from '@/utils/env';
 import { isStale } from '@/utils/time';
 import { ValidationError } from './api';
+import { getDataControls, isLiveUpdatesPaused, subscribeDataControls } from './controls';
 import {
   AlertsResponseSchema,
   HoldingsResponseSchema,
@@ -171,12 +172,13 @@ function useMockQuery<T>(
   const base = QUERY_POLICIES[resource];
   const refreshInterval = options.refetchInterval ?? base.refetchInterval;
   const retryLimit = options.retry ?? QUERY_RETRY_LIMIT;
+  const { paused } = useSyncExternalStore(subscribeDataControls, getDataControls, getDataControls);
   const query = useQuery<T, Error>({
     queryKey,
     queryFn: ({ signal }) =>
       fetch({ signal, latency: options.latency, failureRate: options.failureRate }),
     enabled: options.enabled ?? true,
-    refetchInterval: refreshInterval,
+    refetchInterval: paused ? false : refreshInterval,
     refetchIntervalInBackground: false,
     staleTime: Math.min(base.staleTime, refreshInterval / 2),
     retry: (count, error) => shouldRetryQuery(count, error, retryLimit),
@@ -353,6 +355,7 @@ export function useRealTimeData<U extends ChannelUrl>(
     if (!enabled) return undefined;
     setState({ lastMessage: null, messageCount: 0 });
     return simulator.subscribe(channel, (message) => {
+      if (isLiveUpdatesPaused()) return;
       applyRealtimeMessage(client, message);
       setState((s) => ({ lastMessage: message, messageCount: s.messageCount + 1 }));
     });

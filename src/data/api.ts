@@ -1,7 +1,8 @@
 import type { EndpointId, LatencyProfile } from '@/types';
 import { env } from '@/utils/env';
 import { isConnected } from './connection';
-import { getDataset } from './dataset';
+import { effectiveLatencyProfile, isFailureSimulated } from './controls';
+import { getPortfolioModel } from './model';
 import { createTradeSchedule } from './derive/trades';
 import { ENDPOINTS, type EndpointDataMap } from './endpoints';
 import { getMarketSnapshot, primeMarket } from './market';
@@ -63,7 +64,7 @@ export function endpointUrl(endpoint: EndpointId, base: string = env.VITE_API_BA
 }
 
 export function buildContext(nowMs: number): DeriveContext {
-  const dataset = getDataset(nowMs);
+  const dataset = getPortfolioModel(nowMs);
   const market = getMarketSnapshot(dataset, nowMs, createTradeSchedule(dataset));
   return { dataset, market, nowMs };
 }
@@ -104,7 +105,7 @@ export async function fetchEndpoint<E extends EndpointId>(
 ): Promise<EndpointDataMap[E]> {
   const latency = Math.round(
     (options.latencyMs ?? env.VITE_API_LATENCY_MS) *
-      LATENCY_MULTIPLIER[options.latencyProfile ?? 'normal'],
+      LATENCY_MULTIPLIER[effectiveLatencyProfile(options.latencyProfile)],
   );
   const errorRate = options.errorRate ?? env.VITE_MOCK_ERROR_RATE;
   const jitter = latency > 0 ? Math.round(latency * 0.5 * Math.random()) : 0;
@@ -113,12 +114,12 @@ export async function fetchEndpoint<E extends EndpointId>(
   if (!isConnected()) {
     throw new ConnectionError(`GET ${endpointUrl(endpoint)} failed: data feed disconnected`);
   }
-  if (errorRate > 0 && Math.random() < errorRate) {
+  if (isFailureSimulated() || (errorRate > 0 && Math.random() < errorRate)) {
     throw new ApiError(`GET ${endpointUrl(endpoint)} returned 503 (simulated upstream failure)`);
   }
 
   const nowMs = (options.now ?? Date.now)();
-  const dataset = getDataset(nowMs);
+  const dataset = getPortfolioModel(nowMs);
   await primeMarket(dataset, nowMs, createTradeSchedule(dataset));
   const payload = ENDPOINTS[endpoint].derive(buildContext(nowMs));
   const wire: unknown = JSON.parse(JSON.stringify(payload));

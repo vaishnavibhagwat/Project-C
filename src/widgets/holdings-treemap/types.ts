@@ -16,3 +16,8 @@ export interface TreeDatum {
   holding?: Holding;
   children?: TreeDatum[];
 }
+
+/** The treemap shows the equity asset class: stocks and depositary receipts. */
+export function equityHoldings(data: HoldingsTreemapData): Holding[] {
+  return data.holdings.filter((h) => h.assetClass === 'Equity');
+}

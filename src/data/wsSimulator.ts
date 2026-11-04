@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { getNseSession, toIstIso } from '@/utils/time';
 import { buildContext } from './api';
 import { isConnected, subscribeConnection } from './connection';
-import { getDataset, lastClose, previousClose } from './dataset';
+import { lastClose, previousClose } from './dataset';
+import { getPortfolioModel } from './model';
 import { liveHoldings } from './derive/context';
 import { PORTFOLIO_ID } from './derive/portfolio';
 import { createTradeSchedule } from './derive/trades';
@@ -172,7 +173,7 @@ const pctChange = (last: number, prev: number) => (prev > 0 ? (last / prev - 1) 
 
 /** Builds messages from the shared dataset and the intraday tape (the same prices as the API). */
 export const buildFromDataset: MessageBuilder = async ({ kind, portfolioId, nowMs, seen }) => {
-  const dataset = getDataset(nowMs);
+  const dataset = getPortfolioModel(nowMs);
   await primeMarket(dataset, nowMs, createTradeSchedule(dataset));
   const ctx = buildContext(nowMs);
   switch (kind) {

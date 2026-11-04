@@ -10,9 +10,21 @@ describe('AssetAllocation', () => {
   const data = fixtureData();
   const defaults = assetAllocationDefinition.defaultConfig;
 
-  it('lists five asset classes whose weights sum to 100%', () => {
+  it('lists four asset classes whose weights sum to 100%', () => {
     const slices = buildSlices(data, defaults);
-    expect(slices.map((s) => s.key)).toEqual(['equity', 'debt', 'gold', 'reits', 'cash']);
+    expect(slices.map((s) => s.key)).toEqual([
+      'equity',
+      'fixed-income',
+      'derivatives',
+      'alternatives',
+    ]);
+    expect(slices.reduce((s, x) => s + x.weightPct, 0)).toBeCloseTo(100, 6);
+  });
+
+  it('breaks the fund down by geography, India first, summing to 100%', () => {
+    const slices = buildSlices(data, { ...defaults, view: 'geography' });
+    expect(slices.map((s) => s.key)).toEqual(['India', 'US', 'UK', 'Singapore']);
+    expect(slices[0]?.weightPct).toBeGreaterThan(80);
     expect(slices.reduce((s, x) => s + x.weightPct, 0)).toBeCloseTo(100, 6);
   });
 
@@ -26,7 +38,7 @@ describe('AssetAllocation', () => {
   it('renders an accessible legend table', () => {
     render(<AssetAllocation {...widgetProps(defaults, data)} />);
     const table = screen.getByRole('table', { name: 'Allocation breakdown' });
-    expect(within(table).getAllByRole('row')).toHaveLength(6);
+    expect(within(table).getAllByRole('row')).toHaveLength(5);
     expect(within(table).getByText('Fixed Income')).toBeInTheDocument();
   });
 
@@ -38,6 +50,6 @@ describe('AssetAllocation', () => {
   });
 
   it('summarises weights', () => {
-    expect(summarizeAllocation(data, defaults)).toMatch(/Indian Equity \d+\.\d%/);
+    expect(summarizeAllocation(data, defaults)).toMatch(/Equity \d+\.\d%/);
   });
 });

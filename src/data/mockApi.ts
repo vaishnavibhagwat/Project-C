@@ -3,7 +3,8 @@ import type { LatencyProfile } from '@/types';
 import { env } from '@/utils/env';
 import { ApiError, ConnectionError, ValidationError } from './api';
 import { isConnected } from './connection';
-import { getDataset } from './dataset';
+import { effectiveLatencyProfile, isFailureSimulated } from './controls';
+import { getPortfolioModel } from './model';
 import {
   alertsResponse,
   holdingsResponse,
@@ -123,18 +124,18 @@ async function request<T>(
 ): Promise<T> {
   const random = options.random ?? Math.random;
   await wait(
-    latencyFor(options.latency ?? 'normal', options.jitter ?? true, random),
+    latencyFor(effectiveLatencyProfile(options.latency), options.jitter ?? true, random),
     options.signal,
   );
   if (!isConnected()) {
     throw new ConnectionError(`GET ${path} failed: data feed disconnected`);
   }
   const failureRate = options.failureRate ?? env.VITE_MOCK_ERROR_RATE;
-  if (failureRate > 0 && random() < failureRate) {
+  if (isFailureSimulated() || (failureRate > 0 && random() < failureRate)) {
     throw new MockHttpError(503, path, 'simulated upstream failure');
   }
   const nowMs = (options.now ?? Date.now)();
-  const world = mockWorld(getDataset(nowMs));
+  const world = mockWorld(getPortfolioModel(nowMs));
   // Serialise as a server would: NaN and Infinity become null, which validation rejects.
   const wire: unknown = JSON.parse(JSON.stringify(build(world, nowMs)));
   return validateMock(schema, path, wire);

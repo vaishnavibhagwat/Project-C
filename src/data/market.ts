@@ -7,7 +7,7 @@ import {
   NSE_CLOSE,
   NSE_OPEN,
 } from '@/utils/time';
-import { lastClose, type Dataset } from './dataset';
+import { lastClose, type MarketHistory } from './dataset';
 import { createRng, hashSeed, normal } from './random';
 
 /**
@@ -108,12 +108,12 @@ export function tradeWindow(clock: SessionClock, tickMs: number, maxTicks: numbe
   };
 }
 
-export function marketKey(dataset: Dataset, clock: SessionClock, tickMs: number): string {
+export function marketKey(dataset: MarketHistory, clock: SessionClock, tickMs: number): string {
   return `${dataset.seed}|${dataset.asOfDate}|${clock.sessionKey}|${tickMs}`;
 }
 
 export function getMarketSnapshot(
-  dataset: Dataset,
+  dataset: MarketHistory,
   nowMs: number,
   schedule: (key: string, window: TradeWindow) => readonly ScheduledTrade[],
   tickMs: number = env.VITE_TICK_INTERVAL_MS,
@@ -202,7 +202,7 @@ export const PRIME_SLICE_TICKS = 1200;
  * the first request after load (which may replay a whole day of ticks) never blocks input.
  */
 export async function primeMarket(
-  dataset: Dataset,
+  dataset: MarketHistory,
   nowMs: number,
   schedule: (key: string, window: TradeWindow) => readonly ScheduledTrade[],
   tickMs: number = env.VITE_TICK_INTERVAL_MS,

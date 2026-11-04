@@ -7,8 +7,8 @@ import { EmptyState } from '@/components/StateViews';
 import { useSymbolDetail } from '@/hooks/useSymbolDetail';
 import type { WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
-import { unrealisedPnLPercent } from '@/utils/holdings';
-import { formatInr, formatInrCompact, formatNumber } from '@/utils/format';
+import { formatLocalPrice, unrealisedPnLPercent } from '@/utils/holdings';
+import { formatInrCompact, formatNumber } from '@/utils/format';
 import { selectHoldings, totals } from './model';
 import type { Holding, HoldingSortKey, HoldingsTableConfig, HoldingsTableData } from './types';
 
@@ -25,7 +25,7 @@ interface Column {
 const COLUMNS: Column[] = [
   { key: 'ticker', label: 'Symbol', numeric: false, sortKey: 'ticker' },
   { key: 'quantity', label: 'Qty', numeric: true, minWidth: 720 },
-  { key: 'currentPrice', label: 'LTP ₹', numeric: true },
+  { key: 'currentPrice', label: 'LTP', numeric: true },
   { key: 'dailyPnLPercent', label: 'Day %', numeric: true, sortKey: 'dailyPnLPercent' },
   {
     key: 'marketValue',
@@ -61,13 +61,13 @@ function Cell({ col, h }: { col: Column; h: Holding }) {
       return (
         <span className="flex min-w-0 flex-col">
           <span className="font-medium text-fg">{h.ticker}</span>
-          <span className="truncate text-2xs text-subtle">{h.sector}</span>
+          <span className="truncate text-2xs text-subtle">{h.sector ?? h.instrumentType}</span>
         </span>
       );
     case 'quantity':
       return <>{formatNumber(h.quantity)}</>;
     case 'currentPrice':
-      return <>{formatInr(h.currentPrice, 2).slice(1)}</>;
+      return <>{formatLocalPrice(h)}</>;
     case 'dailyPnLPercent':
       return <Delta value={h.dailyPnLPercent / 100} />;
     case 'marketValue':

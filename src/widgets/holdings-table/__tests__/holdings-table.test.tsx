@@ -30,8 +30,13 @@ describe('HoldingsTable', () => {
     expect(fin.every((h) => h.sector === 'Financial Services')).toBe(true);
     const sorted = fin.map((h) => h.dailyPnLPercent);
     expect(sorted).toEqual([...sorted].sort((a, b) => a - b));
+    // The NSE stock and its London GDR both match by name.
     expect(selectHoldings(data.holdings, defaults, 'reliance').map((h) => h.ticker)).toEqual([
       'RELIANCE',
+      'RIGD LI',
+    ]);
+    expect(selectHoldings(data.holdings, defaults, 'gold').map((h) => h.ticker)).toEqual([
+      'GOLDBEES',
     ]);
   });
 
@@ -71,7 +76,7 @@ describe('HoldingsTable', () => {
 
   it('summarises value and P&L', () => {
     expect(summarizeHoldings(data, defaults)).toMatch(
-      /^42 holdings, value ₹[\d,]+ Cr, day P&L [+−]₹/,
+      /^62 holdings, value ₹[\d,]+ Cr, day P&L [+−]₹/,
     );
   });
 });

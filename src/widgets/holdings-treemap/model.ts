@@ -1,13 +1,22 @@
 import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3';
 import { unrealisedPnLPercent } from '@/utils/holdings';
 import type { Holding } from '@/types';
-import type { HoldingsTreemapConfig, HoldingsTreemapData, TreeDatum } from './types';
+import {
+  equityHoldings,
+  type HoldingsTreemapConfig,
+  type HoldingsTreemapData,
+  type TreeDatum,
+} from './types';
 
 export function buildTree(data: HoldingsTreemapData, config: HoldingsTreemapConfig): TreeDatum {
   const leaf = (h: Holding): TreeDatum => ({ name: h.ticker, holding: h });
-  if (config.groupBy === 'none') return { name: 'Portfolio', children: data.holdings.map(leaf) };
+  const holdings = equityHoldings(data);
+  if (config.groupBy === 'none') return { name: 'Portfolio', children: holdings.map(leaf) };
   const bySector = new Map<string, Holding[]>();
-  for (const h of data.holdings) bySector.set(h.sector, [...(bySector.get(h.sector) ?? []), h]);
+  for (const h of holdings) {
+    const group = h.sector ?? h.assetClass;
+    bySector.set(group, [...(bySector.get(group) ?? []), h]);
+  }
   return {
     name: 'Portfolio',
     children: [...bySector.entries()].map(([sector, list]) => ({

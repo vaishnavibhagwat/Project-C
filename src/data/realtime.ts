@@ -1,4 +1,5 @@
 import type { EndpointId } from '@/types';
+import { isLiveUpdatesPaused } from './controls';
 import { PORTFOLIO_ID } from './derive/portfolio';
 import {
   ALERTS_STREAM_URL,
@@ -74,7 +75,10 @@ export function startRealtimeBridge(
   simulator: WsSimulator = wsSimulator,
 ): () => void {
   const unsubscribers = REALTIME_ROUTES.map((route) =>
-    simulator.subscribe(route.url, () => onPush(route.endpoints)),
+    simulator.subscribe(route.url, () => {
+      // Paused live updates: pushes are ignored until resumed.
+      if (!isLiveUpdatesPaused()) onPush(route.endpoints);
+    }),
   );
   const all = new Set(REALTIME_ROUTES.flatMap((r) => r.endpoints));
   const sync = () => setLive(simulator.getStatus().state === 'connected' ? all : NO_ENDPOINTS);

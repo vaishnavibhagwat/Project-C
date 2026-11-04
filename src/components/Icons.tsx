@@ -211,3 +211,9 @@ export const IconExternal = createIcon('IconExternal', [
   'M20 4l-9 9',
   'M18 14v6H4V6h6',
 ]);
+export const IconPause = createIcon('IconPause', ['M8 5v14', 'M16 5v14']);
+export const IconPlay = createIcon('IconPlay', ['M7 4l13 8-13 8z']);
+export const IconWrench = createIcon('IconWrench', [
+  'M14.7 6.3a4 4 0 0 0 5 5L21 13l-8 8-3-3 8-8-1.3-1.3a4 4 0 0 0-5-5L14 5z',
+  'M3 21l5-5',
+]);

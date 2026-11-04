@@ -3,7 +3,7 @@ import { NIFTY50 } from '../nifty50';
 import { createRng, hashSeed, normal, type Rng } from '../random';
 import type { BenchmarkSeries } from './benchmarks';
 import { blackScholes, gbmPath } from './gbm';
-import { dailyReturns, windowCloses, type MockWindow } from './window';
+import { dailyReturns, windowCloses, type SeriesWindow } from './window';
 
 export const ASSET_CLASSES = ['Equity', 'Fixed Income', 'Derivatives', 'Alternatives'] as const;
 export type MockAssetClass = (typeof ASSET_CLASSES)[number];
@@ -23,6 +23,7 @@ export const INSTRUMENT_TYPES = [
   'REIT',
   'ETF',
   'Fund',
+  'Cash',
 ] as const;
 export type InstrumentType = (typeof INSTRUMENT_TYPES)[number];
 
@@ -34,6 +35,8 @@ export const NIFTY_LOT = 75;
 export const BANK_NIFTY_LOT = 35;
 /** Calendar days to expiry of the option positions on the as-of date. */
 export const OPTION_DAYS_TO_EXPIRY = 45;
+/** Share of AUM held as INR cash (margin and settlement buffer). */
+export const CASH_WEIGHT = 0.005;
 
 export interface Instrument {
   id: string;
@@ -159,35 +162,43 @@ function premiumPath(rng: Rng, length: number): number[] {
   return out;
 }
 
-function realisedVol(levels: readonly number[], days: number): number {
-  const r = dailyReturns(levels.slice(-days - 1));
-  const m = r.reduce((s, x) => s + x, 0) / Math.max(1, r.length);
-  const v = r.reduce((s, x) => s + (x - m) ** 2, 0) / Math.max(1, r.length - 1);
+/** Annualised realised volatility of the `days` returns ending at return index `t` (exclusive). */
+function realisedVolAt(returns: readonly number[], t: number, days: number): number {
+  const window = returns.slice(Math.max(0, t - days), t);
+  if (window.length < 2) return 0;
+  const m = window.reduce((s, x) => s + x, 0) / window.length;
+  const v = window.reduce((s, x) => s + (x - m) ** 2, 0) / (window.length - 1);
   return Math.sqrt(v * 252);
 }
 
+/**
+ * Option price history for a position rolled at constant moneyness and tenor: on each day the
+ * option is priced with the strike at the same distance from spot as today's strike, 45 days to
+ * expiry and that day's 20-day realised volatility (floored). The last close is today's option.
+ */
 function optionCloses(
   kind: 'call' | 'put',
   index: readonly number[],
   strike: number,
-  volatility: number,
+  volatilityFloor: number,
 ): { closes: number[]; delta: number } {
-  const n = index.length;
-  const points = [n - 2, n - 1].map((t) => {
-    const daysLeft = OPTION_DAYS_TO_EXPIRY + (n - 1 - t);
-    return blackScholes({
+  const spotLast = index[index.length - 1] ?? strike;
+  const moneyness = strike / spotLast;
+  const returns = dailyReturns(index);
+  let delta = 0;
+  const closes = index.map((spot, t) => {
+    const point = blackScholes({
       kind,
-      spot: index[t] ?? strike,
-      strike,
-      years: daysLeft / 365,
+      spot,
+      strike: moneyness * spot,
+      years: OPTION_DAYS_TO_EXPIRY / 365,
       rate: RISK_FREE_RATE_INR,
-      volatility,
+      volatility: Math.max(volatilityFloor, realisedVolAt(returns, t, 20)),
     });
+    delta = point.delta;
+    return Math.max(0.05, point.price);
   });
-  return {
-    closes: points.map((p) => Math.max(0.05, p.price)),
-    delta: points[points.length - 1]?.delta ?? 0,
-  };
+  return { closes, delta };
 }
 
 /**
@@ -196,7 +207,7 @@ function optionCloses(
  * 91-day T-bill takes what is left, so the book adds up to the fund's AUM.
  */
 export function buildInstruments(
-  w: MockWindow,
+  w: SeriesWindow,
   benchmarks: readonly BenchmarkSeries[],
 ): Instrument[] {
   const { dataset } = w;
@@ -248,6 +259,8 @@ export function buildInstruments(
     });
   }
 
+  // Bond and T-bill closes are total-return prices: the drift is the coupon or yield, so
+  // interest accrues in the price (no separate coupon cash flows).
   const bond = (drift: number, volatility: number, endPrice: number) =>
     gbmPath(rng, steps, { drift, volatility, endPrice });
   specs.push(
@@ -261,7 +274,7 @@ export function buildInstruments(
       exchange: 'NSE (RBI Retail Direct)',
       currency: 'INR',
       weight: 0.08,
-      closes: bond(0.012, 0.03, 101.2),
+      closes: bond(0.0718, 0.03, 101.2),
       costBias: -0.01,
       costSpread: 0.015,
     },
@@ -275,7 +288,7 @@ export function buildInstruments(
       exchange: 'NSE (RBI Retail Direct)',
       currency: 'INR',
       weight: 0.06,
-      closes: bond(0.01, 0.035, 100.6),
+      closes: bond(0.071, 0.035, 100.6),
       costBias: -0.008,
       costSpread: 0.015,
     },
@@ -290,7 +303,7 @@ export function buildInstruments(
       currency: 'INR',
       sector: 'Financial Services',
       weight: 0.025,
-      closes: bond(0.012, 0.025, 100.9),
+      closes: bond(0.078, 0.025, 100.9),
       costBias: -0.005,
       costSpread: 0.01,
     },
@@ -304,7 +317,7 @@ export function buildInstruments(
       exchange: 'OTC',
       currency: 'USD',
       weight: 0.02,
-      closes: bond(0.005, 0.06, 97.8),
+      closes: bond(0.0425, 0.06, 97.8),
       costBias: 0.01,
       costSpread: 0.02,
     },
@@ -318,7 +331,7 @@ export function buildInstruments(
       exchange: 'SGX',
       currency: 'USD',
       weight: 0.012,
-      closes: bond(0.004, 0.05, 92.4),
+      closes: bond(0.0225, 0.05, 92.4),
       costBias: 0.015,
       costSpread: 0.02,
     },
@@ -329,13 +342,11 @@ export function buildInstruments(
   const carry = Math.exp((RISK_FREE_RATE_INR * 30) / 365);
   const niftyLast = nifty[nifty.length - 1] ?? 1;
   const bankLast = bank[bank.length - 1] ?? 1;
-  const volNifty = Math.max(0.11, realisedVol(nifty, 20));
-  const volBank = Math.max(0.13, realisedVol(bank, 20));
   // A 5% out-of-the-money Nifty put (hedge) and a 3% out-of-the-money Nifty Bank call.
   const putStrike = Math.round((niftyLast * 0.95) / 50) * 50;
   const callStrike = Math.round((bankLast * 1.03) / 100) * 100;
-  const put = optionCloses('put', nifty, putStrike, volNifty);
-  const call = optionCloses('call', bank, callStrike, volBank);
+  const put = optionCloses('put', nifty, putStrike, 0.11);
+  const call = optionCloses('call', bank, callStrike, 0.13);
   const putLast = put.closes[put.closes.length - 1] ?? 1;
   const callLast = call.closes[call.closes.length - 1] ?? 1;
   specs.push(
@@ -487,10 +498,13 @@ export function buildInstruments(
     };
   });
 
-  // 91-day T-bill (price per 100 face): the remainder of AUM, so the book adds up.
-  const tbillCloses = gbmPath(rng, steps, { drift: 0.0, volatility: 0.002, endPrice: 98.42 });
+  // Cash buffer (margin and settlement) and a 91-day T-bill (price per 100 face) take the rest
+  // of AUM, so the book adds up to it to within one rupee.
+  const tbillCloses = gbmPath(rng, steps, { drift: 0.065, volatility: 0.002, endPrice: 98.42 });
   const tbillLast = tbillCloses[tbillCloses.length - 1] ?? 98.42;
   const used = [...equity, ...others].reduce((s, i) => s + valueInr(i, fx), 0);
+  const cashTarget = CASH_WEIGHT * dataset.aumInr;
+  const tbillQuantity = Math.max(1, Math.floor((dataset.aumInr - used - cashTarget) / tbillLast));
   const tbill: Instrument = {
     id: 'fi-tbill-91d',
     ticker: 'T-BILL 91D',
@@ -501,13 +515,30 @@ export function buildInstruments(
     exchange: 'NSE (RBI Retail Direct)',
     currency: 'INR',
     sector: null,
-    quantity: Math.max(1, Math.floor((dataset.aumInr - used) / tbillLast)),
+    quantity: tbillQuantity,
     averageCost: Math.round(tbillLast * 0.995 * 100) / 100,
     closes: tbillCloses,
     valueFactor: 1,
     exposurePerUnit: 1,
   };
-  return [...equity, ...others, tbill];
+  const cashQuantity = Math.max(1, Math.floor(dataset.aumInr - used - tbillQuantity * tbillLast));
+  const cash: Instrument = {
+    id: 'cash-inr',
+    ticker: 'CASH INR',
+    name: 'Cash and margin (INR)',
+    assetClass: 'Fixed Income',
+    instrumentType: 'Cash',
+    geography: 'India',
+    exchange: 'Custodian',
+    currency: 'INR',
+    sector: null,
+    quantity: cashQuantity,
+    averageCost: 1,
+    closes: w.dates.map(() => 1),
+    valueFactor: 1,
+    exposurePerUnit: 1,
+  };
+  return [...equity, ...others, tbill, cash];
 }
 
 /** Market value in INR at a close (default: the latest). */

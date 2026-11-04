@@ -18,6 +18,7 @@ import { CommandPalette } from './CommandPalette';
 import { LayoutManager } from './LayoutManager';
 import { NAV_ITEMS, NavRail } from './NavRail';
 import { PageToolbar } from './PageToolbar';
+import { LiveUpdatesPausedBanner } from './DevControls';
 import { RealtimeBanner } from './RealtimeBanner';
 import type { SearchResult } from './searchIndex';
 import { ShareDialog } from './ShareDialog';
@@ -218,6 +219,7 @@ export function AppShell() {
             tabIndex={-1}
             className="scroll-thin min-h-0 flex-1 overflow-y-auto p-3 outline-none"
           >
+            <LiveUpdatesPausedBanner />
             <RealtimeBanner />
             {shared && onDashboard ? (
               <SharedLayoutBanner encoded={shared} page={page} onDone={clearParams} />

@@ -21,7 +21,7 @@ function AssetAllocation({
   const slices = useMemo(() => buildSlices(data, config), [data, config]);
   const [hovered, setHovered] = useState<number | null>(null);
   const total =
-    config.view === 'asset-class' ? data.totalInr : slices.reduce((s, x) => s + x.valueInr, 0);
+    config.view === 'sector' ? slices.reduce((s, x) => s + x.valueInr, 0) : data.totalInr;
   const money = (inr: number) => formatMoneyCompact(inr, config.currency, env.VITE_USD_INR_RATE);
   const side = width > 420 && height < width * 0.9;
   const setView = useCallback((view: View) => onConfigChange({ view }), [onConfigChange]);
@@ -34,7 +34,8 @@ function AssetAllocation({
           label="Allocation breakdown"
           value={config.view}
           options={[
-            { value: 'asset-class', label: 'Asset class' },
+            { value: 'asset-class', label: 'Class' },
+            { value: 'geography', label: 'Region' },
             { value: 'sector', label: 'Sector' },
           ]}
           onValueChange={setView}

@@ -31,7 +31,7 @@ flowchart TB
   subgraph D["Data"]
     query["TanStack Query cache<br/>one query per endpoint"]
     api["fetchEndpoint (mock API)<br/>latency, outages, zod"]
-    sim["Seeded dataset<br/>+ intraday tick simulation"]
+    sim["Seeded portfolio model<br/>+ intraday tick simulation"]
   end
   subgraph S["Persistence"]
     stores["DashboardStore · WidgetStore<br/>ThemeStore · LayoutStore"]
@@ -58,7 +58,7 @@ flowchart TB
 | ---------------- | ------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
 | Presentation     | `src/layout`, `src/components`, `src/theme`            | App shell, pages, dialogs, the design system and theme tokens. No business data.                          |
 | Widget Framework | `src/registry`, `src/grid`, `src/widgets`, `src/types` | The `WidgetDefinition` contract, the registry, the grid, the frame around every widget, and the widgets.  |
-| Data             | `src/data`, `src/hooks/useEndpoint.ts`, TanStack Query | The seeded dataset, market simulation, mock API, response validation and the server-state cache.          |
+| Data             | `src/data`, `src/hooks/useEndpoint.ts`, TanStack Query | The seeded portfolio model, market simulation, mock API, response validation and the server-state cache.  |
 | Persistence      | `src/store`                                            | The four Zustand stores, their localStorage persistence and migrations, layout snapshots and share links. |
 
 Rules that keep the tiers apart:
@@ -427,14 +427,16 @@ sequenceDiagram
   F->>W: config (zod-parsed), data (type-guarded), isStale, lastUpdated
 ```
 
-1. **Feed.** `src/data/dataset.ts` builds one seeded dataset (five years of daily history).
+1. **Feed.** `src/data/dataset.ts` builds the seeded market (five years of daily prices) and
+   `src/data/model.ts` builds the one portfolio model on it (see "Portfolio model" below).
    `src/data/market.ts` advances intraday prices by geometric Brownian motion, one step per
    tick (`VITE_TICK_INTERVAL_MS`, default 5 s), each tick from its own seeded generator, so the
    price at a given moment is the same in every widget, tab and reload. `src/data/connection.ts`
    combines the browser's online flag with a "simulate outage" switch.
 2. **Mock API.** `fetchEndpoint` waits the simulated latency (`VITE_API_LATENCY_MS` ×
    `latencyProfile`: low ×0.4, normal ×1, high ×2.5, plus jitter). It throws `ConnectionError`
-   when the feed is down, and `ApiError` at `VITE_MOCK_ERROR_RATE`. Otherwise it derives the
+   when the feed is down, and `ApiError` at `VITE_MOCK_ERROR_RATE` or while "Simulate
+   failure" is on. The Developer menu's latency switch overrides `latencyProfile`. Otherwise it derives the
    response, serialises it to JSON and back as a network response would be, and validates it
    with zod (`ValidationError` on failure). Validated objects are recorded in a `WeakMap`, which
    is what the widget's `isData` guard checks.
@@ -448,14 +450,47 @@ sequenceDiagram
    state to show, and renders the registered component, which checks config and data before
    handing them to the widget.
 
+### Portfolio model: one source for every number
+
+```mermaid
+flowchart LR
+  mkt["dataset.ts<br/>seeded market"] --> book["model.ts<br/>62 positions"]
+  book --> val["valueBook<br/>market values, weights"]
+  val --> agg["aggregate<br/>class / geography / sector"]
+  book --> nav["bookValueSeries<br/>NAV, returns"]
+  nav --> stats["modelStats<br/>Sharpe, vol, VaR, drawdown, correlation"]
+  val --> ep["derive/ endpoints<br/>holdings, allocation, summary, heat map"]
+  agg --> ep
+  stats --> ep
+  ep --> strip["Summary strip + widgets"]
+  book --> api["mockApi.ts + wsSimulator"]
+```
+
+`buildPortfolioModel(seed, asOf, fx)` builds the book (42 NSE stocks, depositary receipts,
+bonds, derivatives, alternatives, T-bill, cash) to total AUM and derives NAV from it with today's
+positions held constant. It calibrates the market's crash depth and a selection alpha on held
+stocks (3–4 rebuilds, about 60–130 ms) so that the NAV has one ~35% drawdown and a Sharpe near 0.6.
+`getPortfolioModel(now)` caches one model per as-of day. `valueBook(model, tape)` marks
+every position (NSE stocks live, the rest at the last close) and computes weights; the
+holdings, allocation and summary endpoints sum the same rows, so the strip and the holdings
+table always agree (`src/__tests__/model-consistency.test.ts`). `modelStats(model)` computes
+the risk figures once per model. The mock world reuses the model's positions and benchmarks
+(sliced to three years) instead of building its own. Assumptions: docs/mock-data.md.
+
+**Demo controls** (`src/data/controls.ts`, module state like `connection.ts`, not persisted):
+Pause / Resume live updates (`useEndpoint` and the query hooks stop polling, the realtime bridge
+ignores pushes, resume invalidates every query), a latency override, and "Simulate failure".
+The command bar shows `LiveUpdatesToggle` and `DeveloperMenu`; `LiveUpdatesPausedBanner`
+appears above the grid while paused.
+
 ### REST-style mock API
 
-`src/data/mockApi.ts` exposes the same dataset as `GET` resources:
+`src/data/mockApi.ts` exposes the same portfolio model as `GET` resources:
 `getPortfolio(id)`, `getPortfolioHoldings(id)`, `getPortfolioPerformance(id)`,
 `getPortfolioRisk(id)` (`/api/portfolio/:id[/holdings|/performance|/risk]`), and
 `getMarketOverview()`, `getMarketNews()`, `getMarketAlerts()`
 (`/api/market/overview|news|alerts`). `mockGet(path)` routes a path string to them. The
-generators in `src/data/mock/` (book, benchmarks, news, alerts) run once per dataset and are
+book and benchmarks come from the model; news and alerts are generated once per model and
 cached in a `WeakMap`. Each request waits its latency profile (50 / 200 / 500 ms), may fail
 with 503 at `failureRate`, builds the response, round-trips it through JSON and validates it
 with zod. Widgets do not use it yet; see docs/ASSUMPTIONS.md §11. Import it from
@@ -521,7 +556,7 @@ flowchart LR
 
 - **Simulator** (`WsSimulator`, singleton `wsSimulator`). `subscribe(url, handler, {intervalMs})`
   returns an unsubscribe function; `MessageFor<url>` types each handler. Subscribers of one
-  channel share one `setInterval`. Messages are built from the shared dataset and intraday tape,
+  channel share one `setInterval`. Messages are built from the portfolio model and intraday tape,
   serialised, validated with zod (invalid ones are dropped and logged) and delivered after
   `setLatency(ms)` (default 80 ms). `setFrequency(url, ms)` clamps to the channel's range. The
   last unsubscribe clears the interval and any message still in flight; `timerCount()` exposes

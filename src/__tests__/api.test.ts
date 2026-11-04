@@ -10,7 +10,7 @@ import {
   ValidationError,
 } from '@/data';
 import { getMarketSnapshot, primeMarket, resetMarketSimulation } from '@/data/market';
-import { buildDataset } from '@/data/dataset';
+import { buildPortfolioModel } from '@/data/model';
 import { createTradeSchedule } from '@/data/derive/trades';
 import type { Holding } from '@/types';
 import { istTimeMs } from '@/utils/time';
@@ -92,9 +92,14 @@ describe('one dataset, consistent everywhere', () => {
   const risk = fixture('risk/var');
   const alerts = fixture('alerts/active');
 
-  it('equity value agrees between holdings and allocation', () => {
-    const equity = allocation.assetClasses.find((a) => a.id === 'equity');
-    expect(equity?.valueInr).toBeCloseTo(holdings.totalMarketValue, 0);
+  it('asset-class values agree between holdings and allocation', () => {
+    for (const a of allocation.assetClasses) {
+      const fromHoldings = holdings.holdings
+        .filter((h) => h.assetClass === a.label)
+        .reduce((s, h) => s + h.marketValue, 0);
+      expect(a.valueInr).toBeCloseTo(fromHoldings, -1);
+    }
+    expect(allocation.totalInr).toBeCloseTo(holdings.totalMarketValue, 0);
     expect(allocation.totalInr).toBeCloseTo(summary.marketValueInr, 0);
   });
 
@@ -149,7 +154,7 @@ describe('trades and the intraday tape', () => {
   });
 
   it('produces the same prices for the same time on every call', () => {
-    const ds = buildDataset(20240615, '2026-10-19', 83.5);
+    const ds = buildPortfolioModel(20240615, '2026-10-19', 83.5);
     const now = istTimeMs('2026-10-20', 13, 0);
     const a = getMarketSnapshot(ds, now, createTradeSchedule(ds), 5000, true).prices;
     const later = getMarketSnapshot(ds, now + 60_000, createTradeSchedule(ds), 5000, true).prices;
@@ -159,7 +164,7 @@ describe('trades and the intraday tape', () => {
   });
 
   it('primes a full day of ticks in slices with identical results', async () => {
-    const ds = buildDataset(20240615, '2026-10-20', 83.5);
+    const ds = buildPortfolioModel(20240615, '2026-10-20', 83.5);
     const now = istTimeMs('2026-10-21', 23, 0);
     resetMarketSimulation();
     const direct = getMarketSnapshot(ds, now, createTradeSchedule(ds), 5000, true).prices;
@@ -173,7 +178,7 @@ describe('trades and the intraday tape', () => {
   });
 
   it('freezes prices at the last close outside hours when simulation is off', () => {
-    const ds = buildDataset(20240615, '2026-10-19', 83.5);
+    const ds = buildPortfolioModel(20240615, '2026-10-19', 83.5);
     const snap = getMarketSnapshot(
       ds,
       istTimeMs('2026-10-18', 12, 0),

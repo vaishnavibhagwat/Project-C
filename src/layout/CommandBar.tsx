@@ -6,6 +6,7 @@ import { ThemeMenu } from '@/theme/ThemeMenu';
 import type { PageId } from '@/types';
 import { env } from '@/utils/env';
 import { formatInrCompact, formatUsdCompact } from '@/utils/format';
+import { DeveloperMenu, LiveUpdatesToggle } from './DevControls';
 import { FeedControl } from './FeedControl';
 import { MarketStatus } from './MarketStatus';
 import { Notifications } from './Notifications';
@@ -63,7 +64,9 @@ export function CommandBar({ page, onOpenSearch, onOpenLayouts }: CommandBarProp
         <div className="hidden lg:block">
           <MarketStatus />
         </div>
+        <LiveUpdatesToggle />
         <FeedControl />
+        <DeveloperMenu />
         <Badge tone="warning" className="shrink-0">
           Simulated data
         </Badge>

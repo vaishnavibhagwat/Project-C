@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { Delta } from '@/components/Delta';
 import { Modal } from '@/components/Overlay';
-import { getDataset } from '@/data/dataset';
+import { getPortfolioModel } from '@/data/model';
 import { findConstituent, NIFTY50 } from '@/data/nifty50';
 import { useEndpoint } from '@/hooks/useEndpoint';
 import { cssColor } from '@/theme/themes';
@@ -47,7 +47,7 @@ export function SymbolDetail({ symbol, onClose }: { symbol: string | null; onClo
   const constituent = symbol ? findConstituent(symbol) : undefined;
   const series = useMemo(() => {
     if (!constituent) return null;
-    const ds = getDataset();
+    const ds = getPortfolioModel();
     const index = NIFTY50.indexOf(constituent);
     const closes = (ds.stockCloses[index] ?? []).slice(-253);
     const dates = ds.dates.slice(-253);

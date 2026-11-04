@@ -31,7 +31,7 @@ src/
   grid/         index.ts      GridContainer, GridItem, GridToolbar, WidgetCatalogue, WidgetFrame, ConfigPanel
   layout/       index.ts      AppShell, NavRail, CommandBar, pages, dialogs
   theme/        index.ts      tokens, applyTheme, ThemeMenu (ThemeBuilder is lazy, not in barrel)
-  data/         index.ts      seeded dataset, market simulation, derive/, zod schemas, mock API,
+  data/         index.ts      seeded market, portfolio model, derive/, zod schemas, mock API,
                               query hooks (queries.ts), transformers
   store/        index.ts      the four Zustand stores, cross-store actions, share links
   registry/     index.ts      WidgetRegistry + singleton, validators, default pages
@@ -62,9 +62,10 @@ Every folder has an `index.ts` barrel (widget folders use `index.tsx`). New fold
 - **Every widget**: shaped shimmer skeleton, error + Retry, "No data available", stale amber border
   - timestamp past 2× refresh, disconnected state, `role="region"` + `aria-label` + throttled
     `aria-live="polite"` summary, 2 stories (Default, Configured), at least one meaningful test.
-- **Data**: one shared seeded dataset (`src/data/dataset.ts`); never randomise per widget. INR (USD
-  where relevant), IST, Nifty 50, T+1, NSE 09:15–15:30 IST. Document assumptions in
-  `docs/ASSUMPTIONS.md`.
+- **Data**: one seeded portfolio model (`src/data/model.ts`) on one seeded market
+  (`src/data/dataset.ts`); everything derives from it; never randomise per widget. INR (USD
+  where relevant), IST, Nifty 50, T+1, NSE 09:15–15:30 IST. Document data assumptions in
+  `docs/mock-data.md`, calculations in `docs/ASSUMPTIONS.md`.
 - **CSP**: `index.html` allows `script-src 'self'` only. No inline scripts.
 - **Honesty**: never claim a Lighthouse score, FPS, coverage % or WCAG compliance that was not
   measured; label simplified calculations as approximations.

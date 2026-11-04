@@ -6,6 +6,7 @@ import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatPct } from '@/utils/format';
 import {
+  equityHoldings,
   HoldingsTreemapConfigSchema,
   type HoldingsTreemapConfig,
   type HoldingsTreemapData,
@@ -60,19 +61,20 @@ export const holdingsTreemapDefinition: WidgetDefinition<
 };
 
 export function summarizeTreemap(data: HoldingsTreemapData, config: HoldingsTreemapConfig): string {
-  const top = [...data.holdings].sort((a, b) => b.weight - a.weight).slice(0, 3);
+  const equity = equityHoldings(data);
+  const top = [...equity].sort((a, b) => b.weight - a.weight).slice(0, 3);
   const metric = config.colorBy === 'dayChange' ? 'day change' : 'unrealised P&L';
   const parts = top.map(
     (h) =>
       `${h.ticker} ${h.weight.toFixed(1)}% (${metric} ${formatPct((config.colorBy === 'dayChange' ? h.dailyPnLPercent : unrealisedPnLPercent(h)) / 100)})`,
   );
-  return `${data.holdings.length} holdings. Largest: ${parts.join(', ')}.`;
+  return `${equity.length} equity holdings. Largest: ${parts.join(', ')} (weights of the whole book).`;
 }
 
 export const holdingsTreemapWidget = defineWidget(holdingsTreemapDefinition, {
   configParser: HoldingsTreemapConfigSchema,
   isData: isEndpointData('portfolio/holdings'),
-  isEmpty: (d) => d.holdings.length === 0,
+  isEmpty: (d) => equityHoldings(d).length === 0,
   summarize: summarizeTreemap,
   skeleton: 'treemap',
   preload: () => import('./index'),

@@ -195,7 +195,7 @@ function DataSection() {
       'Outside NSE hours',
       env.VITE_SIMULATE_MARKET_OPEN ? 'simulated ticks continue' : 'prices hold at the close',
     ],
-    ['Dataset seed', String(env.VITE_DATA_SEED)],
+    ['PortfolioModel seed', String(env.VITE_DATA_SEED)],
   ];
   return (
     <div className="flex flex-col gap-3">

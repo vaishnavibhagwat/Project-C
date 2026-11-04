@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Alert, Holding, NewsArticle, Portfolio } from '@/types';
+import { ASSET_CLASSES, GEOGRAPHIES, INSTRUMENT_TYPES } from './mock/instruments';
 
 /**
  * Runtime validation for every mock API response. z.number() already rejects NaN; `.finite()`
@@ -43,7 +44,8 @@ const sumsTo100 = (values: number[]) => Math.abs(values.reduce((s, v) => s + v, 
 
 const CurrencySchema = z.enum(['INR', 'USD']);
 
-const AssetClassSchema = z.enum(['Equity', 'Fixed Income', 'Gold', 'REITs & InvITs', 'Cash']);
+const AssetClassSchema = z.enum(ASSET_CLASSES);
+const GeographySchema = z.enum(GEOGRAPHIES);
 
 export const PortfolioSchema = z.object({
   portfolioId: z.string().min(1),
@@ -71,7 +73,9 @@ export const SummarySchema = PortfolioSchema.extend({
   benchmarkDayChangePct: pct,
   oneYearReturnPct: finite,
   holdingsCount: z.number().int().positive(),
+  /** Equity asset class (stocks and depositary receipts), percent of market value. */
   equityWeightPct: pct,
+  /** T-bill and cash, percent of market value. */
   cashWeightPct: pct,
 });
 
@@ -87,13 +91,17 @@ export const AllocationSchema = z.object({
   assetClasses: z
     .array(
       z.object({
-        id: z.enum(['equity', 'debt', 'gold', 'reits', 'cash']),
-        label: z.string(),
+        id: z.enum(['equity', 'fixed-income', 'derivatives', 'alternatives']),
+        label: AssetClassSchema,
         valueInr: nonNegative,
         weightPct: pct,
       }),
     )
     .refine((rows) => sumsTo100(rows.map((r) => r.weightPct)), 'Asset classes must sum to 100%'),
+  geographies: z
+    .array(z.object({ geography: GeographySchema, valueInr: nonNegative, weightPct: pct }))
+    .refine((rows) => sumsTo100(rows.map((r) => r.weightPct)), 'Geographies must sum to 100%'),
+  /** Equity asset class by sector: weightPct within equity, portfolioWeightPct of the book. */
   sectors: z
     .array(
       z.object({
@@ -110,14 +118,18 @@ export const HoldingSchema = z.object({
   holdingId: z.string().min(1),
   ticker: z.string().min(1),
   name: z.string().min(1),
-  sector: SectorSchema,
+  sector: SectorSchema.nullable(),
   assetClass: AssetClassSchema,
+  instrumentType: z.enum(INSTRUMENT_TYPES),
+  geography: GeographySchema,
   quantity: z.number().int().positive(),
   averageCost: price,
   currentPrice: price,
   marketValue: price,
   dailyPnL: finite,
   dailyPnLPercent: pct,
+  unrealisedPnL: finite,
+  costBasis: price,
   weight: pct,
   currency: CurrencySchema,
 }) satisfies z.ZodType<Holding>;

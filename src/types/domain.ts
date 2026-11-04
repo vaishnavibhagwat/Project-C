@@ -8,7 +8,9 @@ import type { Sector } from './data';
 
 export type CurrencyCode = 'INR' | 'USD';
 
-export type AssetClass = 'Equity' | 'Fixed Income' | 'Gold' | 'REITs & InvITs' | 'Cash';
+export type AssetClass = 'Equity' | 'Fixed Income' | 'Derivatives' | 'Alternatives';
+
+export type Geography = 'India' | 'US' | 'UK' | 'Singapore';
 
 export interface Portfolio {
   portfolioId: string;
@@ -33,24 +35,33 @@ export interface Portfolio {
 
 export interface Holding {
   holdingId: string;
-  /** NSE ticker, e.g. RELIANCE. */
+  /** Ticker, e.g. RELIANCE (NSE), INFY US (ADR), GOI 7.18% 2033 (bond). */
   ticker: string;
   name: string;
-  sector: Sector;
+  /** Sector for stocks, depositary receipts and corporate bonds; null for the rest. */
+  sector: Sector | null;
   assetClass: AssetClass;
+  /** Stock, ADR, Government Bond, Index Future, ETF, Cash … */
+  instrumentType: string;
+  geography: Geography;
   quantity: number;
-  /** Average purchase price per share, in `currency`. */
+  /** Average purchase price per unit, in `currency`. */
   averageCost: number;
-  /** Latest (simulated) price per share, in `currency`. */
+  /** Latest (simulated) price per unit, in `currency`. */
   currentPrice: number;
-  /** quantity x currentPrice, in `currency`. */
+  /** Value in the book's base currency (INR). Futures: margin plus today's variation margin. */
   marketValue: number;
-  /** Today's P&L, in `currency`. */
+  /** Today's P&L, INR. */
   dailyPnL: number;
   /** Today's price change, percent. */
   dailyPnLPercent: number;
-  /** Share of the equity sleeve, percent (holdings sum to 100). */
+  /** Unrealised P&L against average cost, INR (futures on full notional). */
+  unrealisedPnL: number;
+  /** quantity x average cost, INR. */
+  costBasis: number;
+  /** Share of the whole book's market value, percent (all holdings sum to 100). */
   weight: number;
+  /** Currency of the prices. */
   currency: CurrencyCode;
 }
 

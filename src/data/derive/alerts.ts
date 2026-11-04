@@ -63,14 +63,18 @@ export function deriveAlerts(ctx: DeriveContext): AlertsData {
   }
 
   const { holdings } = deriveHoldings(ctx);
+  const equityValue = holdings
+    .filter((h) => h.assetClass === 'Equity')
+    .reduce((s, h) => s + h.marketValue, 0);
   for (const h of holdings) {
-    // rebalance_signal: single-name concentration above guideline.
-    if (h.weight >= LIMITS.singleNameWeightPct) {
+    // rebalance_signal: single-name concentration above guideline (share of the equity class).
+    const equityWeight = h.assetClass === 'Equity' ? (h.marketValue / equityValue) * 100 : 0;
+    if (equityWeight >= LIMITS.singleNameWeightPct) {
       add({
         alertId: `conc-${h.ticker}`,
         type: 'rebalance_signal',
         severity: 'warning',
-        message: `${h.ticker} is ${h.weight.toFixed(1)}% of the equity sleeve (single-name guideline ${LIMITS.singleNameWeightPct}%). Consider trimming.`,
+        message: `${h.ticker} is ${equityWeight.toFixed(1)}% of the equity holdings (single-name guideline ${LIMITS.singleNameWeightPct}%). Consider trimming.`,
         relatedWidget: 'holdings-table',
         relatedEntity: h.ticker,
       });

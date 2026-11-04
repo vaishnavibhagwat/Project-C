@@ -12,6 +12,14 @@ export function buildSlices(data: AssetAllocationData, config: AssetAllocationCo
       weightPct: a.weightPct,
     }));
   }
+  if (config.view === 'geography') {
+    return data.geographies.map((g) => ({
+      key: g.geography,
+      label: g.geography,
+      valueInr: g.valueInr,
+      weightPct: g.weightPct,
+    }));
+  }
   const sorted = [...data.sectors].sort((a, b) => b.valueInr - a.valueInr);
   const head = sorted.slice(0, MAX_SECTOR_SLICES - 1);
   const tail = sorted.slice(MAX_SECTOR_SLICES - 1);

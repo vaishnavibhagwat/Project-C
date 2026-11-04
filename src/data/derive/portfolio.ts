@@ -1,5 +1,6 @@
-import { sharpeRatio } from '@/utils/finance';
 import type { Sector } from '@/types';
+import { ASSET_CLASSES, GEOGRAPHIES } from '../mock/instruments';
+import { aggregate, bookTotals, modelStats } from '../model';
 import { SECTORS } from '../nifty50';
 import type {
   AllocationData,
@@ -8,76 +9,81 @@ import type {
   SectorReturnsData,
   SummaryData,
 } from '../schemas';
-import { asOfIso, liveHoldings, nonEquityValueInr, round, type DeriveContext } from './context';
+import { asOfIso, liveBook, liveHoldings, round, type DeriveContext } from './context';
 
 /** Identity of the simulated fund (fictional). */
 export const PORTFOLIO_ID = 'MER-IMAF-01';
 export const PORTFOLIO_NAME = 'Meridian India Multi-Asset Fund';
 export const BENCHMARK_NAME = 'Nifty 50 TRI';
 
+const ASSET_CLASS_IDS = {
+  Equity: 'equity',
+  'Fixed Income': 'fixed-income',
+  Derivatives: 'derivatives',
+  Alternatives: 'alternatives',
+} as const;
+
+/** Every position of the book at live marks; weights are shares of the whole book. */
 export function deriveHoldings(ctx: DeriveContext): HoldingsData {
-  const live = liveHoldings(ctx);
-  const total = live.reduce((s, h) => s + h.marketValueInr, 0);
+  const rows = liveBook(ctx);
+  const totals = bookTotals(rows);
   return {
     asOf: asOfIso(ctx),
     simulated: true,
-    totalMarketValue: round(total, 2),
-    holdings: live.map(({ holding, ltp, prevClose, marketValueInr }) => ({
-      holdingId: `HLD-${holding.symbol}`,
-      ticker: holding.symbol,
-      name: holding.name,
-      sector: holding.sector,
-      assetClass: 'Equity',
-      quantity: holding.quantity,
-      averageCost: holding.avgCost,
-      currentPrice: ltp,
-      marketValue: round(marketValueInr, 2),
-      dailyPnL: round(holding.quantity * (ltp - prevClose), 2),
-      dailyPnLPercent: round((ltp / prevClose - 1) * 100, 4),
-      weight: (marketValueInr / total) * 100,
-      currency: 'INR',
+    totalMarketValue: round(totals.marketValueInr, 2),
+    holdings: rows.map((r) => ({
+      holdingId: `HLD-${r.position.id.toUpperCase()}`,
+      ticker: r.position.ticker,
+      name: r.position.name,
+      sector: r.position.sector,
+      assetClass: r.position.assetClass,
+      instrumentType: r.position.instrumentType,
+      geography: r.position.geography,
+      quantity: r.position.quantity,
+      averageCost: r.position.averageCost,
+      currentPrice: r.price,
+      marketValue: round(r.marketValueInr, 2),
+      dailyPnL: round(r.dailyPnlInr, 2),
+      dailyPnLPercent: round(r.previousClose > 0 ? (r.price / r.previousClose - 1) * 100 : 0, 4),
+      unrealisedPnL: round(r.unrealisedPnlInr, 2),
+      costBasis: round(r.costBasisInr, 2),
+      weight: r.weightPct,
+      currency: r.position.currency,
     })),
   };
 }
 
+/** Asset classes, geographies and equity sectors: aggregates of the same valued book. */
 export function deriveAllocation(ctx: DeriveContext): AllocationData {
-  const live = liveHoldings(ctx);
-  const equity = live.reduce((s, h) => s + h.marketValueInr, 0);
-  const others = ctx.dataset.assetClasses.filter((a) => a.id !== 'equity');
-  const total = equity + nonEquityValueInr(ctx.dataset);
-
-  const bySector = new Map<Sector, number>();
-  for (const h of live) {
-    bySector.set(h.holding.sector, (bySector.get(h.holding.sector) ?? 0) + h.marketValueInr);
-  }
-  const sectors = [...bySector.entries()]
-    .map(([sector, valueInr]) => ({
-      sector,
-      valueInr: round(valueInr, 2),
-      weightPct: (valueInr / equity) * 100,
-      portfolioWeightPct: (valueInr / total) * 100,
+  const rows = liveBook(ctx);
+  const total = bookTotals(rows).marketValueInr;
+  const equityRows = rows.filter((r) => r.position.assetClass === 'Equity');
+  const equity = equityRows.reduce((s, r) => s + r.marketValueInr, 0);
+  const presentSectors = SECTORS.filter((s) => equityRows.some((r) => r.position.sector === s));
+  const sectors = aggregate<Sector>(equityRows, presentSectors, (r) => r.position.sector)
+    .map((a) => ({
+      sector: a.key,
+      valueInr: round(a.valueInr, 2),
+      weightPct: a.weightPct,
+      portfolioWeightPct: (a.valueInr / total) * 100,
     }))
     .sort((a, b) => b.valueInr - a.valueInr);
-
   return {
     asOf: asOfIso(ctx),
     simulated: true,
     totalInr: round(total, 2),
-    assetClasses: [
-      {
-        id: 'equity',
-        label: 'Indian Equity',
-        valueInr: round(equity, 2),
-        weightPct: (equity / total) * 100,
-      },
-      ...others.map((a) => ({
-        id: a.id,
-        label: a.label,
-        valueInr: round(a.valueInr, 2),
-        weightPct: (a.valueInr / total) * 100,
-      })),
-    ],
-    sectors,
+    assetClasses: aggregate(rows, ASSET_CLASSES, (r) => r.position.assetClass).map((a) => ({
+      id: ASSET_CLASS_IDS[a.key],
+      label: a.key,
+      valueInr: round(a.valueInr, 2),
+      weightPct: a.weightPct,
+    })),
+    geographies: aggregate(rows, GEOGRAPHIES, (r) => r.position.geography).map((a) => ({
+      geography: a.key,
+      valueInr: round(a.valueInr, 2),
+      weightPct: a.weightPct,
+    })),
+    sectors: equity > 0 ? sectors : [],
   };
 }
 
@@ -102,13 +108,10 @@ function returnSinceDate(
 
 export function deriveSummary(ctx: DeriveContext): SummaryData {
   const { dataset, market } = ctx;
-  const live = liveHoldings(ctx);
-  const equity = live.reduce((s, h) => s + h.marketValueInr, 0);
-  const equityPrev = live.reduce((s, h) => s + h.prevValueInr, 0);
-  const others = nonEquityValueInr(dataset);
-  const marketValue = equity + others;
-  const dayPnl = equity - equityPrev;
-  const cash = dataset.assetClasses.find((a) => a.id === 'cash')?.valueInr ?? 0;
+  const rows = liveBook(ctx);
+  const totals = bookTotals(rows);
+  const weightOf = (pick: (r: (typeof rows)[number]) => boolean) =>
+    rows.filter(pick).reduce((s, r) => s + r.weightPct, 0);
   const asOfDate = dataset.asOfDate;
   const navs = dataset.fundNav;
   const lastReturn = dataset.fundReturns[dataset.fundReturns.length - 1] ?? 0;
@@ -118,11 +121,11 @@ export function deriveSummary(ctx: DeriveContext): SummaryData {
     portfolioId: PORTFOLIO_ID,
     name: PORTFOLIO_NAME,
     aum: dataset.aumInr,
-    dailyPnL: round(dayPnl, 2),
-    dailyPnLPercent: round((dayPnl / (equityPrev + others)) * 100, 4),
+    dailyPnL: round(totals.dailyPnlInr, 2),
+    dailyPnLPercent: round(totals.dailyPnlPct, 4),
     mtdReturn: round(returnSinceDate(dataset.dates, navs, asOfDate.slice(0, 7)), 4),
     ytdReturn: round(returnSinceDate(dataset.dates, navs, asOfDate.slice(0, 4)), 4),
-    sharpeRatio: round(sharpeRatio(dataset.fundReturns, dataset.riskFreeRate), 4),
+    sharpeRatio: round(modelStats(dataset).sharpe, 4),
     benchmark: BENCHMARK_NAME,
     lastUpdated: asOf,
     asOf,
@@ -132,7 +135,7 @@ export function deriveSummary(ctx: DeriveContext): SummaryData {
     fxUsdInr: dataset.fxUsdInr,
     navPerUnit: round(navs[navs.length - 1] ?? 0, 4),
     navDayChangePct: round(lastReturn * 100, 4),
-    marketValueInr: round(marketValue, 2),
+    marketValueInr: round(totals.marketValueInr, 2),
     benchmarkDayChangePct: round(
       (market.mode === 'frozen'
         ? (dataset.benchmarkReturns[dataset.benchmarkReturns.length - 1] ?? 0)
@@ -140,9 +143,11 @@ export function deriveSummary(ctx: DeriveContext): SummaryData {
       4,
     ),
     oneYearReturnPct: round(returnSince(navs, 252), 4),
-    holdingsCount: dataset.holdings.length,
-    equityWeightPct: (equity / marketValue) * 100,
-    cashWeightPct: (cash / marketValue) * 100,
+    holdingsCount: rows.length,
+    equityWeightPct: weightOf((r) => r.position.assetClass === 'Equity'),
+    cashWeightPct: weightOf(
+      (r) => r.position.instrumentType === 'Cash' || r.position.instrumentType === 'Treasury Bill',
+    ),
   };
 }
 

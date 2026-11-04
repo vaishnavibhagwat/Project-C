@@ -2,6 +2,7 @@ import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { createContext, useCallback, useContext, useSyncExternalStore } from 'react';
 import { fetchEndpoint, type EndpointDataMap, type FetchOptions } from '@/data';
 import { isEndpointLive, pollInterval, subscribeLiveEndpoints } from '@/data/realtime';
+import { useDataControls } from './useDataControls';
 import type { DataSourceConfig, EndpointId, LatencyProfile } from '@/types';
 
 export const endpointKey = (endpoint: EndpointId) => ['endpoint', endpoint] as const;
@@ -37,10 +38,12 @@ export function useEndpoint<E extends EndpointId>(
 ): UseQueryResult<EndpointDataMap[E], Error> {
   const fetcher = useContext(EndpointFetcherContext);
   const live = useLiveEndpoint(endpoint);
+  const { paused } = useDataControls();
   return useQuery({
     queryKey: endpointKey(endpoint),
     queryFn: ({ signal }) => fetcher(endpoint, { signal, latencyProfile }),
-    refetchInterval: pollInterval(refreshInterval, live),
+    // Paused: no polling; the data ages until it shows as stale.
+    refetchInterval: paused ? false : pollInterval(refreshInterval, live),
     refetchIntervalInBackground: false,
     staleTime: refreshInterval / 2,
     // Keep the validated object identity; validation tags objects by identity.

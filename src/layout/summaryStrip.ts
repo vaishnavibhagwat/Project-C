@@ -125,7 +125,7 @@ export function buildSummaryTiles(d: SummaryStripData): SummaryTile[] {
         change: { amount: d.dailyPnlChange, text: formatPct(d.dailyPnlChange), goodWhen: 'up' },
       },
       tooltip:
-        "Today's profit or loss on the whole book: equities at simulated live prices against the last close. Bonds, gold, REITs and cash are held at their closing values.",
+        "Today's profit or loss on the whole book (the same total as the holdings table): NSE stocks at simulated live prices against the last close. Bonds, derivatives, funds and overseas listings are held at their last close during the session.",
     },
     {
       id: 'mtd',

@@ -3,7 +3,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ValidationError } from '@/data/api';
-import { getDataset } from '@/data/dataset';
+import { getPortfolioModel } from '@/data/model';
 import { holdingsResponse, HoldingsResponseSchema, mockWorld } from '@/data/mock';
 import { MOCK_PORTFOLIO_ID, MockHttpError } from '@/data/mockApi';
 import {
@@ -111,7 +111,7 @@ describe('data hooks', () => {
 
 describe('useRealTimeData', () => {
   const holdings = HoldingsResponseSchema.parse(
-    JSON.parse(JSON.stringify(holdingsResponse(mockWorld(getDataset(FIXTURE_TIME))))),
+    JSON.parse(JSON.stringify(holdingsResponse(mockWorld(getPortfolioModel(FIXTURE_TIME))))),
   );
   const stock = holdings.holdings.find((h) => h.currency === 'INR' && h.assetClass === 'Equity');
   const newPrice = (stock?.price ?? 100) * 1.05;

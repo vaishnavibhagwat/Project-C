@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ConnectionError, setSimulatedOutage, ValidationError } from '@/data';
-import { getDataset } from '@/data/dataset';
+import { getPortfolioModel } from '@/data/model';
 import {
   AlertsResponseSchema,
   HoldingsResponseSchema,
@@ -164,7 +164,7 @@ describe('error states', () => {
 
 describe('response validation', () => {
   const valid: unknown = JSON.parse(
-    JSON.stringify(holdingsResponse(mockWorld(getDataset(FIXTURE_TIME)))),
+    JSON.stringify(holdingsResponse(mockWorld(getPortfolioModel(FIXTURE_TIME)))),
   );
   const withFirstHolding = (patch: Record<string, unknown>): unknown => {
     const parsed = HoldingsResponseSchema.parse(valid);

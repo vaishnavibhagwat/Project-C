@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getDataset } from '@/data/dataset';
+import { getPortfolioModel } from '@/data/model';
 import {
   alertsResponse,
   AlertsResponseSchema,
@@ -39,7 +39,7 @@ import { maxDrawdown } from '@/utils/finance';
 import { FIXTURE_TIME } from './fixtures';
 
 /** Validated responses, exactly as the mock API returns them at the fixture time. */
-const world = mockWorld(getDataset(FIXTURE_TIME));
+const world = mockWorld(getPortfolioModel(FIXTURE_TIME));
 const wire = (value: unknown): unknown => JSON.parse(JSON.stringify(value));
 const portfolio = PortfolioResponseSchema.parse(wire(portfolioResponse(world)));
 const holdings = HoldingsResponseSchema.parse(wire(holdingsResponse(world)));

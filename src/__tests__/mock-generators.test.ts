@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDataset, getDataset } from '@/data/dataset';
+import { buildPortfolioModel, getPortfolioModel } from '@/data/model';
 import {
   ASSET_CLASSES,
   BENCHMARK_IDS,
@@ -23,7 +23,7 @@ import { createRng } from '@/data/random';
 import { mean, stdev } from '@/utils/finance';
 import { FIXTURE_TIME } from './fixtures';
 
-const dataset = getDataset(FIXTURE_TIME);
+const dataset = getPortfolioModel(FIXTURE_TIME);
 const world = mockWorld(dataset);
 const fx = dataset.fxUsdInr;
 
@@ -213,7 +213,7 @@ describe('news and alerts', () => {
 
 describe('determinism', () => {
   it('rebuilds the same book, series, news and alerts from the same seed and day', () => {
-    const again = mockWorld(buildDataset(dataset.seed, dataset.asOfDate, dataset.fxUsdInr));
+    const again = mockWorld(buildPortfolioModel(dataset.seed, dataset.asOfDate, dataset.fxUsdInr));
     expect(again).not.toBe(world);
     expect(JSON.stringify(holdingsResponse(again))).toBe(JSON.stringify(holdingsResponse(world)));
     expect(again.benchmarks).toEqual(world.benchmarks);
@@ -222,7 +222,9 @@ describe('determinism', () => {
   });
 
   it('changes with the seed', () => {
-    const other = mockWorld(buildDataset(dataset.seed + 1, dataset.asOfDate, dataset.fxUsdInr));
+    const other = mockWorld(
+      buildPortfolioModel(dataset.seed + 1, dataset.asOfDate, dataset.fxUsdInr),
+    );
     expect(other.benchmarks[2]?.levels).not.toEqual(world.benchmarks[2]?.levels);
   });
 });

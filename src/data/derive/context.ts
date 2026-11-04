@@ -1,12 +1,35 @@
 import { toIstIso } from '@/utils/time';
-import { lastClose, previousClose, type Dataset, type HoldingStatic } from '../dataset';
 import type { MarketSnapshot } from '../market';
+import {
+  valueBook,
+  type HoldingStatic,
+  type PortfolioModel,
+  type PositionValuation,
+} from '../model';
 
-/** Everything a derivation needs: the shared dataset plus the current simulated tape. */
+/** Everything a derivation needs: the portfolio model plus the current simulated tape. */
 export interface DeriveContext {
-  dataset: Dataset;
+  dataset: PortfolioModel;
   market: MarketSnapshot;
   nowMs: number;
+}
+
+const bookCache = new WeakMap<
+  MarketSnapshot,
+  { model: PortfolioModel; rows: PositionValuation[] }
+>();
+
+/**
+ * Every position of the model valued at the current marks, with weights. Shared by holdings,
+ * allocation, summary, heat map and alerts, so their totals are the same numbers. Cached per
+ * market snapshot (one tape tick), so endpoints read in the same tick share one valuation.
+ */
+export function liveBook(ctx: DeriveContext): PositionValuation[] {
+  const hit = bookCache.get(ctx.market);
+  if (hit?.model === ctx.dataset) return hit.rows;
+  const rows = valueBook(ctx.dataset, ctx.market);
+  bookCache.set(ctx.market, { model: ctx.dataset, rows });
+  return rows;
 }
 
 export interface LiveHolding {
@@ -17,26 +40,24 @@ export interface LiveHolding {
   prevValueInr: number;
 }
 
-/** Live marks for every holding. Shared by holdings, allocation, summary and heat map. */
+/** The NSE-listed stocks of the book at live marks (the equities that tick intraday). */
 export function liveHoldings(ctx: DeriveContext): LiveHolding[] {
-  const { dataset, market } = ctx;
-  return dataset.holdings.map((holding) => {
-    const i = holding.constituentIndex;
-    const frozen = market.mode === 'frozen';
-    const ltp = frozen ? lastClose(dataset, i) : (market.prices[i] ?? lastClose(dataset, i));
-    const prevClose = frozen ? previousClose(dataset, i) : (market.referenceCloses[i] ?? ltp);
-    return {
-      holding,
-      ltp,
-      prevClose,
-      marketValueInr: holding.quantity * ltp,
-      prevValueInr: holding.quantity * prevClose,
-    };
+  const byIndex = new Map(
+    liveBook(ctx).flatMap((r) => (r.constituentIndex === null ? [] : [[r.constituentIndex, r]])),
+  );
+  return ctx.dataset.holdings.flatMap((holding) => {
+    const row = byIndex.get(holding.constituentIndex);
+    if (!row) return [];
+    return [
+      {
+        holding,
+        ltp: row.price,
+        prevClose: row.previousClose,
+        marketValueInr: row.marketValueInr,
+        prevValueInr: row.marketValueInr - row.dailyPnlInr,
+      },
+    ];
   });
-}
-
-export function nonEquityValueInr(dataset: Dataset): number {
-  return dataset.assetClasses.filter((a) => a.id !== 'equity').reduce((s, a) => s + a.valueInr, 0);
 }
 
 export function asOfIso(ctx: DeriveContext): string {

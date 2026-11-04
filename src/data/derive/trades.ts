@@ -8,7 +8,7 @@ import {
   settlementDate,
   toIstIso,
 } from '@/utils/time';
-import type { Dataset } from '../dataset';
+import type { PortfolioModel } from '../model';
 import type { ScheduledTrade, TradeWindow } from '../market';
 import { createRng, hashSeed, normal } from '../random';
 import type { Trade, TradesData } from '../schemas';
@@ -32,7 +32,7 @@ function lotSize(price: number, rngValue: number): number {
 const scheduleCache = new Map<string, PlannedTrade[]>();
 
 /** Deterministic order schedule for a session; the market sim prints fills at these ticks. */
-export function createTradeSchedule(dataset: Dataset) {
+export function createTradeSchedule(dataset: PortfolioModel) {
   return (key: string, window: TradeWindow): PlannedTrade[] => {
     const cacheKey = `${key}|${window.from}|${window.to}`;
     const hit = scheduleCache.get(cacheKey);
@@ -67,7 +67,7 @@ function statusFor(settleDate: string, today: string): Trade['status'] {
 }
 
 /** Trades from the previous session, priced off that day's close. */
-function previousSessionTrades(dataset: Dataset, tradeDate: string, today: string): Trade[] {
+function previousSessionTrades(dataset: PortfolioModel, tradeDate: string, today: string): Trade[] {
   const dayIndex = dataset.dates.indexOf(tradeDate);
   if (dayIndex < 0) return [];
   const rng = createRng(hashSeed(dataset.seed, tradeDate, 'prev-orders'));

@@ -1,7 +1,7 @@
 import { NIFTY50 } from '../nifty50';
 import { createRng, hashSeed, normal } from '../random';
 import { gbmPath } from './gbm';
-import { windowCloses, type MockWindow } from './window';
+import { windowCloses, type SeriesWindow } from './window';
 
 export const BENCHMARK_IDS = [
   'NIFTY50',
@@ -59,7 +59,7 @@ function scaleTo(levels: readonly number[], end: number): number[] {
 }
 
 /** Index-weighted basket of constituent closes, normalised to 1 on the last day. */
-function basket(w: MockWindow, symbols: readonly string[]): number[] {
+function basket(w: SeriesWindow, symbols: readonly string[]): number[] {
   const members = symbols.flatMap((symbol) => {
     const index = NIFTY50.findIndex((c) => c.symbol === symbol);
     const c = NIFTY50[index];
@@ -82,7 +82,7 @@ function basket(w: MockWindow, symbols: readonly string[]): number[] {
  * - S&P 500: its own GBM (USD) with a 0.35 beta to the Nifty factor, so global sell-offs
  *   partly line up.
  */
-export function buildBenchmarks(w: MockWindow): BenchmarkSeries[] {
+export function buildBenchmarks(w: SeriesWindow): BenchmarkSeries[] {
   const rng = createRng(hashSeed(w.dataset.seed, w.dataset.asOfDate, 'mock-benchmarks'));
   const nifty = w.dataset.benchmarkLevels.slice(w.offset);
 

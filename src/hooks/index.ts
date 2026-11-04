@@ -11,3 +11,4 @@ export * from './useAlertAcknowledgements';
 export * from './useViewportWidth';
 export * from './useUndoRedo';
 export * from './useRealtime';
+export * from './useDataControls';

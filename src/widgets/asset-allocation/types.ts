@@ -2,7 +2,7 @@ import { z } from 'zod';
 import type { AllocationData } from '@/data/schemas';
 
 export const AssetAllocationConfigSchema = z.object({
-  view: z.enum(['asset-class', 'sector']),
+  view: z.enum(['asset-class', 'geography', 'sector']),
   currency: z.enum(['INR', 'USD']),
   showLegend: z.boolean(),
 });

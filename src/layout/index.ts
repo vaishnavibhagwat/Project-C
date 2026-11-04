@@ -3,6 +3,7 @@ export * from './AppRoutes';
 export * from './AppShell';
 export * from './CommandBar';
 export * from './CommandPalette';
+export * from './DevControls';
 export * from './FeedControl';
 export * from './LayoutManager';
 export * from './MarketStatus';

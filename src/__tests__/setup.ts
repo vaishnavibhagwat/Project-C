@@ -2,6 +2,7 @@ import '@testing-library/jest-dom/vitest';
 import { cleanup } from '@testing-library/react';
 import { afterEach, beforeEach } from 'vitest';
 import { setSimulatedOutage } from '@/data/connection';
+import { resetDataControls } from '@/data/controls';
 import { layoutHistory } from '@/store/history';
 
 /** jsdom has no layout engine; report a fixed size so measured widgets render. */
@@ -46,6 +47,7 @@ if (!window.matchMedia) {
 beforeEach(() => {
   localStorage.clear();
   setSimulatedOutage(false);
+  resetDataControls();
   // Undo history is a module singleton; every test starts with none.
   layoutHistory.clear();
 });

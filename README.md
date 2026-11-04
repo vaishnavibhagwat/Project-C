@@ -174,7 +174,8 @@ src/
   grid/         GridContainer, GridItem, GridToolbar, WidgetCatalogue, PlaceholderCard, WidgetFrame, ConfigPanel
   layout/       AppRoutes, AppShell, NavRail, CommandBar, dialogs; pages/ (lazy routed pages)
   theme/        tokens (spacing, radii, type), themes, applyTheme, ThemeMenu, lazy ThemeBuilder
-  data/         seeded dataset, intraday simulation, derivations, zod schemas, mock API,
+  data/         seeded market (dataset.ts), portfolio model (model.ts), intraday simulation,
+                derivations, zod schemas, mock API, demo controls (controls.ts),
                 query hooks (queries.ts), transformers (API response -> widget shape)
     mock/       generators for the REST-style mockApi.ts: book, benchmarks, news, alerts
   store/        DashboardStore, WidgetStore, ThemeStore, LayoutStore, cross-store actions, share
@@ -228,8 +229,8 @@ have not been re-measured since.
 
 | Target (brief)                  | Result                                                                                                                                                                                                     |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Main bundle < 150 KB gzip       | **114.5 KB** gzip (`npm run analyze`, 22 Oct)                                                                                                                                                              |
-| Widget chunk < 50 KB gzip       | Widget chunks **0.7–2.1 KB**; largest lazy chunk 31.0 KB (dashboard page: grid, react-grid-layout, summary strip). Shared Recharts vendor chunk is **137.3 KB** gzip, loaded on first chart                |
+| Main bundle < 150 KB gzip       | **127.2 KB** gzip (`npm run build` then `npm run analyze`, 5 Nov)                                                                                                                                          |
+| Widget chunk < 50 KB gzip       | Widget chunks **0.7–2.1 KB**; largest lazy chunk 35.2 KB (dashboard page: grid, react-grid-layout, summary strip). Shared Recharts vendor chunk is **137.3 KB** gzip, loaded on first chart                |
 | Initial load < 2 s              | **1.07–1.22 s** until all 10 widgets showed data (median 1.12 s over 5 runs, local preview server; 21 Oct, previous Workstation layout)                                                                    |
 | Drag > 55 FPS                   | **~60 FPS** during a widget drag (p95 frame 16.8 ms)                                                                                                                                                       |
 | Theme change < 100 ms, no flash | **37–96 ms** click to next paint (first switch on 5 fresh loads); transitions are suspended for the switch                                                                                                 |
@@ -248,7 +249,8 @@ All assumptions (GBM parameters, calendar, VaR methods, Sharpe, attribution simp
 AUM and FX) are in [docs/ASSUMPTIONS.md](docs/ASSUMPTIONS.md). In short:
 
 - Prices follow geometric Brownian motion (a market factor plus idiosyncratic noise per stock).
-  Fund NAV daily moves are kept within 0.1–2%, and the history contains one calibrated ~35% drawdown.
+  Fund NAV is derived from the 62 holdings (positions held constant); the model is calibrated so the
+  history contains one ~35% drawdown that recovers and a Sharpe near 0.6. Data assumptions: docs/mock-data.md.
 - Full-period Sharpe is calibrated into the 0.3–2.5 band; risk-free rate is 6.75%.
 - VaR: historical simulation (252-day lookback) and parametric (normal), 1-day, with expected shortfall.
 - Attribution is a **simplified** single-period Brinson-Fachler model and is labelled as such.

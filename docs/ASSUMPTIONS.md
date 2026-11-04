@@ -4,30 +4,31 @@ Everything in this workstation runs on **simulated data**. This document lists h
 generated and which simplifications the risk and performance figures make, so nobody mistakes
 an approximation for an institutional calculation.
 
-Source files: `src/data/dataset.ts`, `src/data/market.ts`, `src/data/derive/*.ts`, `src/data/mock/*.ts`,
+**Data assumptions** (the market, the book, valuation, NAV derivation and calibration) are in
+[mock-data.md](mock-data.md). This document keeps the calculation and feed details.
+
+Source files: `src/data/dataset.ts`, `src/data/model.ts`, `src/data/market.ts`, `src/data/derive/*.ts`, `src/data/mock/*.ts`,
 `src/utils/finance.ts`, `src/utils/time.ts`.
 
-## 1. One shared dataset
+## 1. One portfolio model
 
-- Built once per (seed, as-of trading day, FX rate) by `buildDataset`. The seed comes from
-  `VITE_DATA_SEED` (default `20240615`). The same inputs always produce the same numbers on every
-  machine.
-- Every endpoint, and therefore every widget, derives from this one object plus the intraday
-  tape (§3). Holdings, allocation, sector weights, heat map, treemap, attribution, alerts and the
-  overview all agree. The test suite checks this.
+- `buildPortfolioModel` (`src/data/model.ts`) builds one book of 62 positions on one seeded
+  market (`src/data/dataset.ts`) per (seed, as-of trading day, FX rate). Every endpoint,
+  widget, the summary strip, the mock API and the WebSocket simulator read it. Same inputs, same
+  numbers on every machine. Details: [mock-data.md](mock-data.md) §1–§2.
 - **As-of date**: the most recent NSE trading day whose 15:30 IST close has happened.
 - **History**: 1,261 trading days (5 years plus the starting level).
 
 ## 2. Prices, NAV and benchmark
 
-| Item                      | Assumption                                                                                                                                                                                                                                                                                                  |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Universe                  | The 50 Nifty 50 constituents. Index weights, anchor prices, betas and idiosyncratic volatilities are approximate and illustrative, not market data.                                                                                                                                                         |
-| Market factor (benchmark) | Daily return = drift + 0.92% × N(0,1), clipped to ±6%. Drift on normal days is calibrated so the benchmark compounds at about 10.5% a year.                                                                                                                                                                 |
-| Drawdown event            | A 46-trading-day window starting 42% of the way through the history has drift −0.98%/day (vol 0.75%). The fund's negative returns in that window are scaled so its peak-to-trough drawdown lands at about **35%** (tests require 30–40% for several seeds).                                                 |
-| Stock prices              | Geometric Brownian motion in log space: `β × log(1 + market) − ½σ²dt + σ√dt × Z`, with σ = the stock's annual idiosyncratic volatility and dt = 1/252. Each path is rescaled so the latest close equals the anchor price (a constant scale factor does not change the returns). Prices are always positive. |
-| Fund NAV                  | Daily return = 0.9 × market + 0.32% × N(0,1) + α, **clamped so each day's absolute move is between 0.1% and 2%** (sign preserved). α is calibrated so the full-period Sharpe is about 0.75 (inside the 0.3–2.5 band). NAV starts at ₹100 per unit five years ago.                                           |
-| Note                      | Fund NAV is a fund-level series. It is related to, but not reconstructed from, the equity holdings' prices. Intraday P&L and allocation use the holdings.                                                                                                                                                   |
+- Market factor, stock GBM and crash window: [mock-data.md](mock-data.md) §3.
+- **NAV is derived from the holdings**: the book's value on each past day with today's
+  positions held constant, scaled to ₹100 at the start ([mock-data.md](mock-data.md) §6).
+  The model calibrates the crash depth and a selection alpha on held stocks so that NAV has one
+  drawdown of about 35% and a Sharpe ratio of about 0.6. Tests require a 30–40% drawdown that
+  recovers, and a Sharpe inside 0.3–2.5, for five seeds.
+- Daily NAV moves are not clamped. Tests require at least 85% of days to move between 0.1% and
+  2%, and no day beyond 5%.
 
 ## 3. Intraday tape and sessions
 
@@ -44,21 +45,20 @@ Source files: `src/data/dataset.ts`, `src/data/market.ts`, `src/data/derive/*.ts
 
 ## 4. AUM, allocation and holdings
 
-- **AUM is exactly USD 45,000,000,000 at the last close**, converted at a fixed
-  `VITE_USD_INR_RATE` (default 83.5, an assumption rather than a live rate), i.e. ₹3,75,750 Cr.
-- Asset classes: Indian equity ≈ 62%, fixed income 24%, gold 5%, REITs & InvITs 3%, and cash
-  as the remainder (≈ 6%). Cash absorbs share-rounding so the classes sum to AUM exactly.
-- Equity sleeve: 42 of the 50 constituents (the 6 largest index names always included; 8 others
-  dropped at random by seed). Weights are index weights tilted by `exp(0.35 × Z)` and capped at
-  **9.5% per name** (excess redistributed pro rata). Quantities are whole shares; cost basis is
-  `close × exp(−0.10 + 0.18 × Z)`.
-- `Holding.weight` is the share of the equity sleeve (holdings sum to 100%). `averageCost` is the
-  cost basis above; unrealised P&L is `quantity × (currentPrice − averageCost)`, derived on read.
-- `Portfolio.aum` is the last-close AUM; `dailyPnL` is the intraday change in market value.
-  `mtdReturn` and `ytdReturn` use NAV per unit against the last close before the month or year
-  began. `sharpeRatio` is the full-period annualised Sharpe from §6 (an approximation).
-- Intraday market value = holdings at live prices + non-equity classes at their close values.
-  All displayed weights are recomputed from these values and sum to 100% (schema-enforced).
+- **AUM is USD 45,000,000,000 at the last close** (₹3,75,750 Cr at the fixed
+  `VITE_USD_INR_RATE` of 83.5, an assumption rather than a live rate). The 62 positions add up
+  to it to within ₹1.
+- Asset classes are Equity, Fixed Income, Derivatives and Alternatives. Geographies are India,
+  US, UK and Singapore. The book and its measured mix: [mock-data.md](mock-data.md) §4.
+- `Holding.weight` is the share of the **whole book** (all holdings sum to 100%).
+  `marketValue`, `dailyPnL`, `unrealisedPnL` and `costBasis` are in INR; `currentPrice` and
+  `averageCost` are in the holding's own currency.
+- `Portfolio.aum` is the last-close AUM. `dailyPnL` is the sum of the holdings' day P&L, so the
+  summary strip and the holdings table always agree. `mtdReturn` and `ytdReturn` use NAV per unit
+  against the last close before the month or year began. `sharpeRatio` is the full-period
+  annualised Sharpe of the derived NAV (an approximation).
+- Intraday, NSE stocks tick and everything else is held at its last close. All displayed
+  weights are recomputed from these values and sum to 100% (schema-enforced).
 
 ## 5. Trades and settlement
 
@@ -72,7 +72,7 @@ Source files: `src/data/dataset.ts`, `src/data/market.ts`, `src/data/derive/*.ts
 
 ## 6. Risk metrics
 
-All metrics use simple daily returns of the simulated fund NAV and a 252-day year.
+All metrics use simple daily returns of the NAV derived from the holdings and a 252-day year.
 
 | Metric            | Formula / assumption                                                                                          |
 | ----------------- | ------------------------------------------------------------------------------------------------------------- |
@@ -143,30 +143,30 @@ index weight) in the article's sector; a news alert is raised only when one of t
 
 ## 11. REST-style mock API and generators (`src/data/mockApi.ts`, `src/data/mock/`)
 
-A second, REST-shaped view of the **same** shared dataset (§1), for consumers that want
-`GET /api/...` resources. The dashboard widgets still use `fetchEndpoint`; nothing here is
+A second, REST-shaped view of the **same** portfolio model (§1), for consumers that want
+`GET /api/...` resources. It serves the model's positions, NAV and benchmarks at the last close
+(no intraday marks). The dashboard widgets still use `fetchEndpoint`; nothing here is
 live data. Every response carries `simulated: true` and an `asOf` stamped at the as-of day's
 NSE close (15:30 IST).
 
 **Window.** The last 756 trading days (three years, 757 daily points) of the shared history.
-With the default seed and an as-of day of 19 Oct 2026 (the test fixture) this runs from
-25 Sep 2023 and contains the dataset's one large
-drawdown: **35.3%** from 26 Oct 2023 to 6 Feb 2024, recovered on 28 Oct 2025 (dates move with
+It contains the model's one large drawdown (with the default seed and an as-of day of
+4 Nov 2026: **34.7%** from 16 Nov 2023 to 31 Jan 2024, recovered on 19 Feb 2026; dates move with
 the as-of day; tests require 30–40% and a recovery).
 
-| Item                            | Assumption                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Indian equity                   | The dataset's 42 Nifty 50 holdings (same quantities, costs and GBM prices as the widgets).                                                                                                                                                                                                                                                                                                                                                                                |
-| ADR / GDR (USD)                 | Infosys, HDFC Bank (1 ADR = 3 shares), ICICI Bank (1 = 2), Wipro and Dr. Reddy's ADRs (NYSE, US); Reliance GDR (1 = 2, LSE, UK). Price = underlying close × ratio ÷ USD/INR × (1 + premium); the premium is an AR(1) around 3%, kept between −5% and +12%. Ratios are illustrative.                                                                                                                                                                                       |
-| Fixed income                    | Two Government of India bonds, an HDFC Bank bond, a US Treasury and a Temasek USD note, priced per 100 face as low-volatility GBM (σ 2.5–6% a year). This is an approximation: real bond prices follow yields, coupons and pull-to-par. A 91-day T-bill takes whatever AUM is left, so the book adds up to USD 45.0B.                                                                                                                                                     |
-| Derivatives                     | Nifty 50 near-month futures sized at 5% of AUM notional and **carried at 12% initial margin** (market value = margin; exposure = full notional); price = Nifty × e^(6.5% × 30/365). A 5% out-of-the-money Nifty put (hedge) and a 3% out-of-the-money Nifty Bank call, priced with Black–Scholes (45 days to expiry, 6.5% rate, volatility = 20-day realised, floored at 11–13%). Lots: Nifty 75, Nifty Bank 35. Option exposure is delta-adjusted.                       |
-| Alternatives                    | Gold ETF, two Indian REITs (0.3 beta to the market factor) and a USD Singapore fund, each its own GBM.                                                                                                                                                                                                                                                                                                                                                                    |
-| Mix (default seed, 19 Oct 2026) | Equity 66.7%, Fixed Income 24.2%, Derivatives 1.1%, Alternatives 8.0%; India 90.6%, US 5.9%, Singapore 2.7%, UK 0.8%.                                                                                                                                                                                                                                                                                                                                                     |
-| FX                              | One USD/INR rate (`VITE_USD_INR_RATE`) for the whole window.                                                                                                                                                                                                                                                                                                                                                                                                              |
-| Benchmarks                      | Nifty 50 = the dataset's market factor. Sensex = Nifty plus a 2%-a-year tracking difference. Nifty Bank / IT / Pharma = index-weighted baskets of the simulated constituents (6 banks, 5 IT, 3 pharma names). S&P 500 = its own USD GBM (μ 10%, σ 14%) with a 0.35 beta to the Nifty factor. Each ends at a round, illustrative level (e.g. Nifty 24,350); none are market quotes.                                                                                        |
-| News                            | 4–7 items per trading day for the last 30 days, from Reuters, Bloomberg, Economic Times or Moneycontrol (the outlet name is a label only: these are **templated, simulated stories**, each summary says so). Each item reports a move that happened in the simulation (a holding, a sector index or the Nifty 50). Sentiment score = tanh(move ÷ 1.5%) + N(0, 0.3), clipped to ±1; positive above 0.15, negative below −0.15. News published after "now" is not returned. |
-| Alerts                          | For each day, Poisson count with rate 0.4 × (fund 20-day volatility ÷ its median)^4, capped at 8. With the default seed the most volatile quarter of days averages 0.79 alerts and the calmest 0.24. Severity rises with the same ratio; alerts older than five trading days are marked acknowledged.                                                                                                                                                                     |
-| Risk                            | Historical 1-day VaR / CVaR on the window's fund returns, annualised volatility, beta and tracking error vs the Nifty 50, Sharpe and Sortino (6.75% risk-free). Volatility regime compares the 20-day volatility with its median: calm < 0.8×, normal < 1.25×, elevated < 1.8×, otherwise stressed.                                                                                                                                                                       |
+| Item                           | Assumption                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Book                           | The portfolio model's 62 positions, unchanged (same ids, quantities, costs and prices as the widgets); see mock-data.md §4.                                                                                                                                                                                                                                                                                                                                                               |
+| ADR / GDR (USD)                | Infosys, HDFC Bank (1 ADR = 3 shares), ICICI Bank (1 = 2), Wipro and Dr. Reddy's ADRs (NYSE, US); Reliance GDR (1 = 2, LSE, UK). Price = underlying close × ratio ÷ USD/INR × (1 + premium); the premium is an AR(1) around 3%, kept between −5% and +12%. Ratios are illustrative.                                                                                                                                                                                                       |
+| Fixed income                   | Two Government of India bonds, an HDFC Bank bond, a US Treasury and a Temasek USD note as total-return prices per 100 face (drift = coupon, σ 2.5–6% a year). An approximation: real bond prices follow yields and pull to par. A T-bill and 0.5% cash take the rest of AUM.                                                                                                                                                                                                              |
+| Derivatives                    | Nifty 50 near-month futures sized at 5% of AUM notional and **carried at 12% initial margin** (market value = margin; exposure = full notional); price = Nifty × e^(6.5% × 30/365). A 5% out-of-the-money Nifty put (hedge) and a 3% out-of-the-money Nifty Bank call, priced with Black–Scholes (45 days to expiry, 6.5% rate, volatility = 20-day realised, floored at 11–13%; history rolled at constant moneyness). Lots: Nifty 75, Nifty Bank 35. Option exposure is delta-adjusted. |
+| Alternatives                   | Gold ETF, two Indian REITs (0.3 beta to the market factor) and a USD Singapore fund, each its own GBM.                                                                                                                                                                                                                                                                                                                                                                                    |
+| Mix (default seed, 4 Nov 2026) | Equity ≈ 66.7%, Fixed Income ≈ 24.2%, Derivatives ≈ 1.1%, Alternatives ≈ 8.0%; India ≈ 90.6%, US ≈ 5.9%, Singapore ≈ 2.7%, UK ≈ 0.8%.                                                                                                                                                                                                                                                                                                                                                     |
+| FX                             | One USD/INR rate (`VITE_USD_INR_RATE`) for the whole window.                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| Benchmarks                     | Nifty 50 = the dataset's market factor. Sensex = Nifty plus a 2%-a-year tracking difference. Nifty Bank / IT / Pharma = index-weighted baskets of the simulated constituents (6 banks, 5 IT, 3 pharma names). S&P 500 = its own USD GBM (μ 10%, σ 14%) with a 0.35 beta to the Nifty factor. Each ends at a round, illustrative level (e.g. Nifty 24,350); none are market quotes.                                                                                                        |
+| News                           | 4–7 items per trading day for the last 30 days, from Reuters, Bloomberg, Economic Times or Moneycontrol (the outlet name is a label only: these are **templated, simulated stories**, each summary says so). Each item reports a move that happened in the simulation (a holding, a sector index or the Nifty 50). Sentiment score = tanh(move ÷ 1.5%) + N(0, 0.3), clipped to ±1; positive above 0.15, negative below −0.15. News published after "now" is not returned.                 |
+| Alerts                         | For each day, Poisson count with rate 0.4 × (fund 20-day volatility ÷ its median)^4, capped at 8. With the default seed the most volatile quarter of days averages 0.79 alerts and the calmest 0.24. Severity rises with the same ratio; alerts older than five trading days are marked acknowledged.                                                                                                                                                                                     |
+| Risk                           | Historical 1-day VaR / CVaR on the window's fund returns, annualised volatility, beta and tracking error vs the Nifty 50, Sharpe and Sortino (6.75% risk-free). Volatility regime compares the 20-day volatility with its median: calm < 0.8×, normal < 1.25×, elevated < 1.8×, otherwise stressed.                                                                                                                                                                                       |
 
 **Latency and failures.** Profiles are low 50 ms, normal 200 ms and high 500 ms, each varied by
 up to ±20% (switch off with `jitter: false`). `failureRate` (default `VITE_MOCK_ERROR_RATE`)

@@ -17,7 +17,7 @@ export const assetAllocationDefinition: WidgetDefinition<
   id: 'asset-allocation',
   name: 'Asset Allocation',
   description:
-    'Allocation by asset class (whole fund) or by sector (equity sleeve). Weights always sum to 100%.',
+    'Allocation by asset class or geography (whole fund) or by sector (equity). Weights always sum to 100%.',
   category: WidgetCategory.CHART,
   defaultSize: { w: 3, h: 5 },
   minSize: { w: 3, h: 4 },
@@ -28,7 +28,8 @@ export const assetAllocationDefinition: WidgetDefinition<
         title: 'Breakdown',
         oneOf: [
           { const: 'asset-class', title: 'Asset class (whole fund)' },
-          { const: 'sector', title: 'Sector (equity sleeve)' },
+          { const: 'geography', title: 'Geography (whole fund)' },
+          { const: 'sector', title: 'Sector (equity)' },
         ],
       },
       currency: {
