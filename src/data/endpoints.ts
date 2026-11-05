@@ -11,6 +11,7 @@ import {
   deriveSectorReturns,
   deriveSummary,
 } from './derive/portfolio';
+import { deriveMarketNews } from './derive/news';
 import { deriveResearch } from './derive/research';
 import { deriveMetrics, deriveVar } from './derive/risk';
 import { deriveTrades } from './derive/trades';
@@ -19,6 +20,7 @@ import {
   AllocationSchema,
   AttributionSchema,
   HoldingsSchema,
+  MarketNewsSchema,
   MetricsSchema,
   NavHistorySchema,
   PerformanceSeriesSchema,
@@ -31,6 +33,7 @@ import {
   type AllocationData,
   type AttributionData,
   type HoldingsData,
+  type MarketNewsData,
   type MetricsData,
   type NavHistoryData,
   type PerformanceSeriesData,
@@ -53,6 +56,7 @@ export interface EndpointDataMap {
   'performance/benchmarks': PerformanceSeriesData;
   'trades/blotter': TradesData;
   'research/feed': ResearchData;
+  'market/news': MarketNewsData;
   'alerts/active': AlertsData;
 }
 
@@ -109,6 +113,11 @@ export const ENDPOINTS: EndpointRegistry = {
     derive: deriveResearch,
     isEmpty: (d) => d.articles.length === 0,
   },
+  'market/news': {
+    schema: MarketNewsSchema,
+    derive: deriveMarketNews,
+    isEmpty: (d) => d.articles.length === 0,
+  },
   'alerts/active': {
     schema: AlertsSchema,
     derive: deriveAlerts,
@@ -128,5 +137,6 @@ export const ENDPOINT_IDS: readonly EndpointId[] = [
   'performance/benchmarks',
   'trades/blotter',
   'research/feed',
+  'market/news',
   'alerts/active',
 ];

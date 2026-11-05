@@ -26,7 +26,7 @@ flowchart TB
     registry["widgetRegistry<br/>contract + runtime validation"]
     grid["GridContainer + GridItem<br/>react-grid-layout"]
     frame["WidgetFrame<br/>states, header, error boundary"]
-    widgets["16 widgets<br/>one lazy chunk each"]
+    widgets["17 widgets<br/>one lazy chunk each"]
   end
   subgraph D["Data"]
     query["TanStack Query cache<br/>one query per endpoint"]
@@ -743,8 +743,9 @@ widgets; `useWidgetEvent(type, handler)` (`src/hooks`) subscribes and unsubscrib
 Events so far:
 
 - `SYMBOL_SELECTED { symbol, sourceInstanceId? }`: the Holdings table publishes it when a row
-  is clicked (or Enter / Space on a focused row); the Portfolio Pie Chart listens and
-  highlights the slice holding that symbol.
+  is clicked (or Enter / Space on a focused row). The Portfolio Pie Chart listens and
+  highlights the slice holding that symbol; the News Feed narrows to stories that mention it
+  (a chip clears the filter).
 - `DATE_RANGE_CHANGED { from, to, sourceInstanceId? }`: Performance vs Benchmarks publishes
   it 250 ms after its visible range settles (preset, zoom, pan or brush; not on first render).
   Nothing listens yet.

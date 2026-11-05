@@ -56,29 +56,30 @@ deep-linkable on static hosting; each page is a lazy chunk):
 | Holdings Explorer (`G 3`)         | Holdings table, treemap, allocation, trade blotter                                                                 |
 | Performance & Attribution (`G 4`) | Overview, NAV vs Nifty 50, metrics, sector attribution, drawdown                                                   |
 | Research & Alerts (`G 5`)         | Sample research feed, alerts, trade blotter                                                                        |
-| Widget Marketplace (`G 6`)        | Browse all 16 widgets by category and add them to any page                                                         |
+| Widget Marketplace (`G 6`)        | Browse all 17 widgets by category and add them to any page                                                         |
 | Settings (`G 7`)                  | Grid (columns, row height, gap, compaction), theme, display currency, data feed, workspace, shortcuts              |
 
-**16 widgets**, each lazy-loaded as its own chunk:
+**17 widgets**, each lazy-loaded as its own chunk:
 
-| Widget                    | Category | Rendering                    | Data source               | Refresh     |
-| ------------------------- | -------- | ---------------------------- | ------------------------- | ----------- |
-| Portfolio Overview        | ANALYSIS | HTML tiles                   | `portfolio/summary`       | 5 s         |
-| NAV vs Nifty 50           | CHART    | Recharts line                | `portfolio/nav-history`   | 30 s¹       |
-| Asset Allocation          | CHART    | Recharts donut               | `portfolio/allocation`    | 15 s        |
-| Portfolio Pie Chart       | CHART    | Recharts pie / donut, drill  | `portfolio/holdings`      | 30 s        |
-| Drawdown                  | CHART    | Recharts area                | `portfolio/nav-history`   | 30 s¹       |
-| Sector Attribution        | CHART    | Recharts bars                | `performance/attribution` | 30 s¹       |
-| Performance vs Benchmarks | CHART    | Recharts lines, zoom, brush  | `performance/benchmarks`  | 60 s        |
-| Holdings                  | TABLE    | DataTable (react-virtuoso)   | `portfolio/holdings`      | 10 s + live |
-| Trade Blotter             | TABLE    | react-virtuoso table         | `trades/blotter`          | 5 s         |
-| Research Feed             | FEED     | react-virtuoso list          | `research/feed`           | 30 s¹       |
-| Alerts                    | FEED     | HTML list                    | `alerts/active`           | 15 s        |
-| Value at Risk             | GAUGE    | D3 arc gauge + SVG histogram | `risk/var`                | 30 s¹       |
-| Risk-Adjusted Metrics     | ANALYSIS | HTML tiles                   | `risk/metrics`            | 30 s¹       |
-| Sector Returns Heat Map   | ANALYSIS | D3 scales + SVG              | `market/sector-returns`   | 15 s        |
-| Holdings Treemap          | ANALYSIS | D3 squarified treemap        | `portfolio/holdings`      | 5 s         |
-| Sector Heat Map           | CHART    | D3 treemap, sector drill-in  | `portfolio/holdings`      | 15 s        |
+| Widget                    | Category | Rendering                    | Data source                 | Refresh     |
+| ------------------------- | -------- | ---------------------------- | --------------------------- | ----------- |
+| Portfolio Overview        | ANALYSIS | HTML tiles                   | `portfolio/summary`         | 5 s         |
+| NAV vs Nifty 50           | CHART    | Recharts line                | `portfolio/nav-history`     | 30 s¹       |
+| Asset Allocation          | CHART    | Recharts donut               | `portfolio/allocation`      | 15 s        |
+| Portfolio Pie Chart       | CHART    | Recharts pie / donut, drill  | `portfolio/holdings`        | 30 s        |
+| Drawdown                  | CHART    | Recharts area                | `portfolio/nav-history`     | 30 s¹       |
+| Sector Attribution        | CHART    | Recharts bars                | `performance/attribution`   | 30 s¹       |
+| Performance vs Benchmarks | CHART    | Recharts lines, zoom, brush  | `performance/benchmarks`    | 60 s        |
+| Holdings                  | TABLE    | DataTable (react-virtuoso)   | `portfolio/holdings`        | 10 s + live |
+| Trade Blotter             | TABLE    | react-virtuoso table         | `trades/blotter`            | 5 s         |
+| Research Feed             | FEED     | react-virtuoso list          | `research/feed`             | 30 s¹       |
+| News Feed                 | FEED     | HTML list, Framer Motion     | `market/news` + news stream | 20 s + live |
+| Alerts                    | FEED     | HTML list                    | `alerts/active`             | 15 s        |
+| Value at Risk             | GAUGE    | D3 arc gauge + SVG histogram | `risk/var`                  | 30 s¹       |
+| Risk-Adjusted Metrics     | ANALYSIS | HTML tiles                   | `risk/metrics`              | 30 s¹       |
+| Sector Returns Heat Map   | ANALYSIS | D3 scales + SVG              | `market/sector-returns`     | 15 s        |
+| Holdings Treemap          | ANALYSIS | D3 squarified treemap        | `portfolio/holdings`        | 5 s         |
+| Sector Heat Map           | CHART    | D3 treemap, sector drill-in  | `portfolio/holdings`        | 15 s        |
 
 ¹ `VITE_DATA_REFRESH_INTERVAL` (default 30 s): widgets backed by end-of-day data. Widgets driven
 by the intraday tape keep their own 5–15 s intervals.

@@ -237,3 +237,19 @@ into the market news response they get the source "Meridian Research" and no pri
 - Colour strength grows linearly with |P&L %| and is full at the configured cap (default 2%).
   Green / red uses the theme's positive and negative colours; blue / orange uses Series 5 and
   Series 3, which are blue and amber in every built-in theme. Every cell also shows ▲, ▼ or ■.
+
+## 16. Market news and the News Feed widget
+
+- `market/news` serves up to 80 stories published up to "now", newest first: the model's
+  daily post-close stories (§11) plus a **simulated intraday wire**. The wire publishes one
+  story every 60–240 s (seeded per IST day, around the clock), so new items keep arriving in a
+  demo. Each wire story is templated from the previous session's closes (a stock in focus, an
+  illustrative broker note, sector flows, or a macro topic), so it never changes once
+  published. Every summary starts with "Simulated story:".
+- Reuters, Bloomberg, Economic Times and Moneycontrol are **labels only**: no story comes from
+  or represents those outlets. The widget says so in its footer, and the response carries a
+  disclaimer.
+- `ws://mock/news/stream` now pushes new market stories as well as in-house research notes;
+  the News Feed keeps only the four outlet labels, the Research Feed its own notes.
+- Sentiment for wire stories uses the same rule as the daily stories (tanh of the move plus
+  noise; positive above 0.15, negative below −0.15).

@@ -6,6 +6,7 @@ export * from './drawdown/config';
 export * from './holdings-table/config';
 export * from './holdings-treemap/config';
 export * from './nav-performance/config';
+export * from './news-feed/config';
 export * from './performance-line-chart/config';
 export * from './portfolio-overview/config';
 export * from './portfolio-pie-chart/config';

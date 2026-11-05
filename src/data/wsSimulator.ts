@@ -210,9 +210,10 @@ export const buildFromDataset: MessageBuilder = async ({ kind, portfolioId, nowM
     case 'news':
       return {
         type: 'news',
-        articles: ENDPOINTS['research/feed']
-          .derive(ctx)
-          .articles.filter((a) => !seen.has(a.articleId)),
+        articles: [
+          ...ENDPOINTS['market/news'].derive(ctx).articles,
+          ...ENDPOINTS['research/feed'].derive(ctx).articles,
+        ].filter((a) => !seen.has(a.articleId)),
       };
   }
 };

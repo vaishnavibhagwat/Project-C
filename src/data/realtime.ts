@@ -33,7 +33,7 @@ export const REALTIME_ROUTES: readonly RealtimeRoute[] = [
   },
   { url: MARKET_TICKER_URL, endpoints: ['market/sector-returns'] },
   { url: ALERTS_STREAM_URL, endpoints: ['alerts/active'] },
-  { url: NEWS_STREAM_URL, endpoints: ['research/feed'] },
+  { url: NEWS_STREAM_URL, endpoints: ['market/news', 'research/feed'] },
 ];
 
 /** Polling of live endpoints while the socket is up: a safety net, not the update path. */

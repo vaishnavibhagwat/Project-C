@@ -296,6 +296,15 @@ export const NewsArticleSchema = z.object({
   category: z.enum(['earnings', 'macro', 'sector', 'rating', 'flows']),
 }) satisfies z.ZodType<NewsArticle>;
 
+/** market/news: simulated outlet-labelled stories (daily post-close plus the intraday wire). */
+export const MarketNewsSchema = z.object({
+  ...meta,
+  disclaimer: z.string(),
+  /** Outlet labels the feed uses (for the source filter). */
+  sources: z.array(z.string().min(1)),
+  articles: z.array(NewsArticleSchema),
+});
+
 export const ResearchSchema = z.object({
   ...meta,
   disclaimer: z.string(),
@@ -332,4 +341,5 @@ export type AttributionData = z.infer<typeof AttributionSchema>;
 export type Trade = z.infer<typeof TradeSchema>;
 export type TradesData = z.infer<typeof TradesSchema>;
 export type ResearchData = z.infer<typeof ResearchSchema>;
+export type MarketNewsData = z.infer<typeof MarketNewsSchema>;
 export type AlertsData = z.infer<typeof AlertsSchema>;

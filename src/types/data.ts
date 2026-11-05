@@ -11,6 +11,7 @@ export type EndpointId =
   | 'performance/benchmarks'
   | 'trades/blotter'
   | 'research/feed'
+  | 'market/news'
   | 'alerts/active';
 
 export type Sector =
