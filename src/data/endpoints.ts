@@ -3,6 +3,7 @@ import type { EndpointId } from '@/types';
 import type { DeriveContext } from './derive/context';
 import { deriveAlertPanel, deriveAlerts } from './derive/alerts';
 import { deriveAttribution } from './derive/attribution';
+import { deriveAttributionInputs } from './derive/attributionInputs';
 import {
   deriveAllocation,
   deriveHoldings,
@@ -20,6 +21,7 @@ import {
   AlertPanelSchema,
   AlertsSchema,
   AllocationSchema,
+  AttributionInputsSchema,
   AttributionSchema,
   HoldingsSchema,
   MarketNewsSchema,
@@ -36,6 +38,7 @@ import {
   type AlertsData,
   type AllocationData,
   type AttributionData,
+  type AttributionInputsData,
   type HoldingsData,
   type MarketNewsData,
   type MetricsData,
@@ -59,6 +62,7 @@ export interface EndpointDataMap {
   'risk/metrics': MetricsData;
   'risk/returns': ReturnSeriesData;
   'performance/attribution': AttributionData;
+  'performance/attribution-inputs': AttributionInputsData;
   'performance/benchmarks': PerformanceSeriesData;
   'trades/blotter': TradesData;
   'research/feed': ResearchData;
@@ -110,6 +114,11 @@ export const ENDPOINTS: EndpointRegistry = {
     derive: deriveAttribution,
     isEmpty: (d) => d.periods.length === 0,
   },
+  'performance/attribution-inputs': {
+    schema: AttributionInputsSchema,
+    derive: deriveAttributionInputs,
+    isEmpty: (d) => d.dates.length < 2,
+  },
   'performance/benchmarks': {
     schema: PerformanceSeriesSchema,
     derive: derivePerformanceSeries,
@@ -153,6 +162,7 @@ export const ENDPOINT_IDS: readonly EndpointId[] = [
   'risk/metrics',
   'risk/returns',
   'performance/attribution',
+  'performance/attribution-inputs',
   'performance/benchmarks',
   'trades/blotter',
   'research/feed',

@@ -2,6 +2,7 @@ import { WidgetCategory } from '@/types';
 import { alertPanelWidget } from '@/widgets/alert-panel/config';
 import { alertsMonitorWidget } from '@/widgets/alerts-monitor/config';
 import { assetAllocationWidget } from '@/widgets/asset-allocation/config';
+import { attributionBarChartWidget } from '@/widgets/attribution-bar-chart/config';
 import { correlationMatrixWidget } from '@/widgets/correlation-matrix/config';
 import { drawdownWidget } from '@/widgets/drawdown/config';
 import { holdingsTableWidget } from '@/widgets/holdings-table/config';
@@ -30,6 +31,7 @@ const BUILT_IN_WIDGETS: readonly RegisteredWidget[] = [
   portfolioPieChartWidget,
   drawdownWidget,
   sectorAttributionWidget,
+  attributionBarChartWidget,
   holdingsTableWidget,
   tradeBlotterWidget,
   researchFeedWidget,

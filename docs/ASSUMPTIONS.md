@@ -295,3 +295,28 @@ into the market news response they get the source "Meridian Research" and no pri
   asks, in every theme: the one place colours are not theme tokens.
 - The scatter plot's beta is the least-squares slope of the second asset's returns on the
   first's (r × σ₂ / σ₁).
+
+## 19. Attribution Bars widget (Brinson by period)
+
+- `performance/attribution-inputs` serves about 300 trading days of daily inputs: each
+  position's INR value at today's quantity (futures at margin), the Nifty 50 constituents'
+  closes with their (approximate) index weights, and the levels of an illustrative policy
+  benchmark. The widget computes Brinson-Fachler (`brinsonAttribution` in
+  `src/utils/finance.ts`) for any window in the browser.
+- Weights are buy-and-hold weights at the start of the window; returns are start-to-end value
+  changes (no cash flows, no daily re-linking). Effects add up exactly to the active return.
+- **Sector and factor views:** the equity sleeve against the Nifty 50. The factor is a simple
+  beta bucket (β ≥ 1.1, 0.9–1.1, < 0.9) from the simulation's betas; NSE-listed stocks only
+  (ADRs and GDRs carry no beta). An approximation of a factor model, not a Barra-style one.
+- **Asset-class view:** the whole book against an illustrative policy benchmark of 65% Nifty
+  50, 25% government bonds (the book's two GOI bonds, equally weighted) and 10% gold (the gold
+  ETF). Derivatives have no policy weight: they are measured against the total benchmark, so
+  their allocation effect is zero.
+- **Periods:** this month (from the last close of the previous month), last month, and the same
+  calendar month a year earlier. A DATE_RANGE_CHANGED window (e.g. from Performance vs
+  Benchmarks) adds a "Selected range" period when the inputs cover it.
+- **Holding contributions:** sleeve weight × (holding return − the segment's benchmark
+  return); for a segment they sum to its selection plus interaction.
+- **Relative (%)** shows each effect as a share of the period's active return; below 5 bps of
+  active return it falls back to basis points.
+- On demand: refreshed only by the Refresh button (stale after an hour without one).

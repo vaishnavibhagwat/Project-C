@@ -139,6 +139,57 @@ export const ReturnSeriesSchema = z
     'Every series needs one return per date',
   );
 
+const levelSeries = z.array(z.number().finite().nonnegative());
+
+/** performance/attribution-inputs: daily inputs for in-browser Brinson attribution. */
+export const AttributionInputsSchema = z
+  .object({
+    ...meta,
+    dates: z.array(dateKey),
+    positions: z.array(
+      z.object({
+        key: z.string().min(1),
+        ticker: z.string().min(1),
+        name: z.string().min(1),
+        assetClass: AssetClassSchema,
+        sector: SectorSchema.nullable(),
+        /** Beta to the market factor (NSE-listed stocks only). */
+        beta: z.number().finite().nullable(),
+        /** Value in INR on each date at today's quantity. */
+        values: levelSeries,
+      }),
+    ),
+    benchmark: z.array(
+      z.object({
+        symbol: z.string().min(1),
+        sector: SectorSchema,
+        beta: z.number().finite(),
+        weightPct: pct,
+        closes: levelSeries,
+      }),
+    ),
+    policy: z.object({
+      weightsPct: z.object({ Equity: pct, 'Fixed Income': pct, Alternatives: pct }),
+      levels: z.object({
+        Equity: levelSeries,
+        'Fixed Income': levelSeries,
+        Alternatives: levelSeries,
+      }),
+    }),
+    note: z.string(),
+  })
+  .refine(
+    (d) =>
+      [
+        ...d.positions.map((p) => p.values),
+        ...d.benchmark.map((b) => b.closes),
+        d.policy.levels.Equity,
+        d.policy.levels['Fixed Income'],
+        d.policy.levels.Alternatives,
+      ].every((s) => s.length === d.dates.length),
+    'Every series needs one value per date',
+  );
+
 export const AllocationSchema = z.object({
   ...meta,
   totalInr: price,
@@ -389,6 +440,7 @@ export const AlertsSchema = z.object({
 
 export type SummaryData = z.infer<typeof SummarySchema>;
 export type NavHistoryData = z.infer<typeof NavHistorySchema>;
+export type AttributionInputsData = z.infer<typeof AttributionInputsSchema>;
 export type ReturnSeriesData = z.infer<typeof ReturnSeriesSchema>;
 export type PerformanceSeriesData = z.infer<typeof PerformanceSeriesSchema>;
 export type AllocationData = z.infer<typeof AllocationSchema>;

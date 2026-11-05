@@ -26,7 +26,7 @@ flowchart TB
     registry["widgetRegistry<br/>contract + runtime validation"]
     grid["GridContainer + GridItem<br/>react-grid-layout"]
     frame["WidgetFrame<br/>states, header, error boundary"]
-    widgets["19 widgets<br/>one lazy chunk each"]
+    widgets["20 widgets<br/>one lazy chunk each"]
   end
   subgraph D["Data"]
     query["TanStack Query cache<br/>one query per endpoint"]
@@ -766,7 +766,7 @@ Events so far:
   listens yet.
 - `DATE_RANGE_CHANGED { from, to, sourceInstanceId? }`: Performance vs Benchmarks publishes
   it 250 ms after its visible range settles (preset, zoom, pan or brush; not on first render).
-  Nothing listens yet.
+  Attribution Bars listens and adds a "Selected range" period for that window.
   Events are transient module state, like the connection state, not a fifth store.
 
 ### Sharing and import

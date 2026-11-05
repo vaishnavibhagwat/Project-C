@@ -9,6 +9,7 @@ export type EndpointId =
   | 'risk/metrics'
   | 'risk/returns'
   | 'performance/attribution'
+  | 'performance/attribution-inputs'
   | 'performance/benchmarks'
   | 'trades/blotter'
   | 'research/feed'
