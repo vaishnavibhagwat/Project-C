@@ -12,6 +12,7 @@ export * from './portfolio-pie-chart/config';
 export * from './research-feed/config';
 export * from './risk-metrics/config';
 export * from './sector-attribution/config';
+export * from './sector-heat-map/config';
 export * from './sector-heatmap/config';
 export * from './trade-blotter/config';
 export * from './var-gauge/config';

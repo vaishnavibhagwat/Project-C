@@ -225,3 +225,15 @@ into the market news response they get the source "Meridian Research" and no pri
 - Log scale plots the same rebased values on a logarithmic axis: equal heights are equal
   percentage moves.
 - The custom benchmark is an approximation of a daily-rebalanced blend (no costs, fixed FX).
+
+## 15. Sector Heat Map widget
+
+- Cells are sized by market value (INR) and coloured by day P&L %, where P&L % = day P&L ÷
+  (market value − day P&L), i.e. against the previous close value. A sector's figure sums its
+  holdings' values and P&L before dividing, so it is value-weighted.
+- Default scope is the equity asset class; "whole book" groups non-equity holdings by asset
+  class. Intraday, only NSE stocks tick, so ADRs, GDRs and non-equity holdings show 0.00%
+  (held at the last close) during the session.
+- Colour strength grows linearly with |P&L %| and is full at the configured cap (default 2%).
+  Green / red uses the theme's positive and negative colours; blue / orange uses Series 5 and
+  Series 3, which are blue and amber in every built-in theme. Every cell also shows ▲, ▼ or ■.

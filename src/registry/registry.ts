@@ -11,6 +11,7 @@ import { portfolioPieChartWidget } from '@/widgets/portfolio-pie-chart/config';
 import { researchFeedWidget } from '@/widgets/research-feed/config';
 import { riskMetricsWidget } from '@/widgets/risk-metrics/config';
 import { sectorAttributionWidget } from '@/widgets/sector-attribution/config';
+import { sectorHeatMapWidget } from '@/widgets/sector-heat-map/config';
 import { sectorHeatmapWidget } from '@/widgets/sector-heatmap/config';
 import { tradeBlotterWidget } from '@/widgets/trade-blotter/config';
 import { varGaugeWidget } from '@/widgets/var-gauge/config';
@@ -33,6 +34,7 @@ const BUILT_IN_WIDGETS: readonly RegisteredWidget[] = [
   varGaugeWidget,
   riskMetricsWidget,
   sectorHeatmapWidget,
+  sectorHeatMapWidget,
   holdingsTreemapWidget,
 ];
 
