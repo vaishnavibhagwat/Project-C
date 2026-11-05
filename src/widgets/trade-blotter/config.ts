@@ -44,7 +44,6 @@ export const tradeBlotterDefinition: WidgetDefinition<TradeBlotterConfig, TradeB
   icon: IconHistory,
   dataSource: {
     endpoint: 'trades/blotter',
-    wsChannel: 'trades.executions',
     refreshInterval: 5000,
     latencyProfile: 'low',
   },

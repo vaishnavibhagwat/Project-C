@@ -55,7 +55,7 @@ export const sectorHeatmapDefinition: WidgetDefinition<SectorHeatmapConfig, Sect
   icon: IconHeatmap,
   dataSource: {
     endpoint: 'market/sector-returns',
-    wsChannel: 'market.sectors',
+    wsChannel: 'ws://mock/market/ticker',
     refreshInterval: 15_000,
     latencyProfile: 'normal',
   },

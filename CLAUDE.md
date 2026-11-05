@@ -63,6 +63,8 @@ Every folder has an `index.ts` barrel (widget folders use `index.tsx`). New fold
 - **Every widget**: shaped shimmer skeleton, error + Retry, "No data available", stale amber border
   - timestamp past 2× refresh, disconnected state, `role="region"` + `aria-label` + throttled
     `aria-live="polite"` summary, 2 stories (Default, Configured), at least one meaningful test.
+- **Widget contract test**: `src/__tests__/contract.test.ts` covers every registered widget
+  (fields, sizes, schema, lazy component, data source, renders with mock and empty data).
 - **Widget folder** (checked by `src/__tests__/widget-conventions.test.ts`): `index.tsx`
   (`React.memo` default export, rendered inside `WidgetShell` by WidgetFrame), `config.ts`
   (`WidgetDefinition` with `maxSize` and `component: lazy(() => import('./index'))`, registered

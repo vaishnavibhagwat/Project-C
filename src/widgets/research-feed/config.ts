@@ -41,7 +41,7 @@ export const researchFeedDefinition: WidgetDefinition<ResearchFeedConfig, Resear
   icon: IconNews,
   dataSource: {
     endpoint: 'research/feed',
-    wsChannel: 'research.notes',
+    wsChannel: 'ws://mock/news/stream',
     refreshInterval: env.VITE_DATA_REFRESH_INTERVAL,
     latencyProfile: 'normal',
   },

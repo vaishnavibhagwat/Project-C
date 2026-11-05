@@ -129,11 +129,18 @@ describe('AppShell', () => {
       timeout: 5000,
     });
     goTo('#/marketplace');
+    // Lazy routes: compiling their chunks can take over a second when the suite runs in parallel.
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Widget Marketplace' }),
+      await screen.findByRole(
+        'heading',
+        { level: 1, name: 'Widget Marketplace' },
+        { timeout: 5000 },
+      ),
     ).toBeInTheDocument();
     goTo('#/settings');
-    expect(await screen.findByRole('heading', { level: 1, name: 'Settings' })).toBeInTheDocument();
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'Settings' }, { timeout: 5000 }),
+    ).toBeInTheDocument();
   });
 
   it('shows the widget catalogue beside the grid in edit mode only', async () => {

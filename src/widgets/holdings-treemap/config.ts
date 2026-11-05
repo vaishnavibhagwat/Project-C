@@ -55,7 +55,7 @@ export const holdingsTreemapDefinition: WidgetDefinition<
   icon: IconTreemap,
   dataSource: {
     endpoint: 'portfolio/holdings',
-    wsChannel: 'portfolio.positions',
+    wsChannel: 'ws://mock/portfolio/MER-IMAF-01/prices',
     refreshInterval: 5000,
     latencyProfile: 'low',
   },

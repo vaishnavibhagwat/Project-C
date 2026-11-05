@@ -46,7 +46,7 @@ export const alertsMonitorDefinition: WidgetDefinition<AlertsMonitorConfig, Aler
   icon: IconAlert,
   dataSource: {
     endpoint: 'alerts/active',
-    wsChannel: 'alerts',
+    wsChannel: 'ws://mock/alerts/stream',
     refreshInterval: 15_000,
     latencyProfile: 'normal',
   },
@@ -62,6 +62,8 @@ export function summarizeAlerts(data: AlertsMonitorData, config: AlertsMonitorCo
 export const alertsMonitorWidget = defineWidget(alertsMonitorDefinition, {
   configParser: AlertsMonitorConfigSchema,
   isData: isEndpointData('alerts/active'),
+  isEmpty: (d) => d.alerts.length === 0,
+  emptyMessage: 'No active alerts: nothing needs attention right now.',
   summarize: summarizeAlerts,
   badge: (data, config) => filterAlerts(data.alerts, config).length,
   skeleton: 'feed',

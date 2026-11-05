@@ -82,6 +82,9 @@ export function summarizeAlertPanel(data: AlertPanelWidgetData, config: AlertPan
 export const alertPanelWidget = defineWidget(alertPanelDefinition, {
   configParser: AlertPanelConfigSchema,
   isData: isEndpointData('alerts/panel'),
+  // Nothing to show or check: no alerts and no prices for the rules to watch.
+  isEmpty: (d) => d.alerts.length === 0 && d.inputs.quotes.length === 0,
+  emptyMessage: 'No alerts and no prices to check rules against.',
   summarize: summarizeAlertPanel,
   // Header badge: alerts still needing attention (not dismissed or snoozed).
   badge: (data, config) => visibleAlerts(data, config, Date.now()).length,

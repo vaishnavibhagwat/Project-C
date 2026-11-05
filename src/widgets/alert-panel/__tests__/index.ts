@@ -17,8 +17,18 @@ export const configuredConfig: AlertPanelConfig = {
   pulseCritical: false,
 };
 
-/** A valid response with no alerts and calm inputs: no default rule fires. */
+/** A valid response with no alerts and no prices to check rules against. */
 export const emptyData = () => {
+  const base = fixture('alerts/panel');
+  return parseEndpoint('alerts/panel', {
+    ...base,
+    alerts: [],
+    inputs: { quotes: [], var95: 0.001, var99: 0.002, currentDrawdown: 0 },
+  });
+};
+
+/** Alerts and prices present, but nothing currently firing: the panel's own all-clear view. */
+export const calmData = () => {
   const base = fixture('alerts/panel');
   return parseEndpoint('alerts/panel', {
     ...base,

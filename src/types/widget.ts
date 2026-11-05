@@ -33,8 +33,9 @@ export interface DataSourceConfig {
   /** Mock API endpoint served from the shared dataset. */
   endpoint: EndpointId;
   /**
-   * Channel the widget would subscribe to on a live WebSocket feed (VITE_WS_URL). Reserved: the
-   * simulated feed is polled, so no socket is opened in mock mode.
+   * Simulated WebSocket channel that pushes updates for `endpoint` (e.g. ws://mock/alerts/stream).
+   * The realtime bridge refreshes the endpoint on each message; the contract test checks the
+   * URL is a real channel that routes to this endpoint.
    */
   wsChannel?: string;
   /** Poll interval in milliseconds. Data older than 2x this value is flagged as stale. */

@@ -145,7 +145,7 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
         errorMessage={errorMessage(error)}
         onRetry={onRefresh}
         retrying={isFetching}
-        emptyMessage="The data source returned no rows for this widget."
+        emptyMessage={entry.emptyMessage ?? 'The data source returned no rows for this widget.'}
         disconnectedSince={formatIstTime(connection.changedAt, false)}
         onReconnect={() => {
           setSimulatedOutage(false);

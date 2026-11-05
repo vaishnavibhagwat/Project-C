@@ -80,7 +80,7 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
   icon: IconTable,
   dataSource: {
     endpoint: 'portfolio/holdings',
-    wsChannel: 'portfolio.positions',
+    wsChannel: 'ws://mock/portfolio/MER-IMAF-01/prices',
     refreshInterval: HOLDINGS_TABLE_REFRESH_MS,
     latencyProfile: 'low',
   },

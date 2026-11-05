@@ -48,7 +48,7 @@ export const assetAllocationDefinition: WidgetDefinition<
   icon: IconPie,
   dataSource: {
     endpoint: 'portfolio/allocation',
-    wsChannel: 'portfolio.positions',
+    wsChannel: 'ws://mock/portfolio/MER-IMAF-01/prices',
     refreshInterval: 15_000,
     latencyProfile: 'normal',
   },

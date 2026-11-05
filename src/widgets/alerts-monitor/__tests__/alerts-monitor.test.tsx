@@ -71,8 +71,4 @@ describe('AlertsMonitor', () => {
   });
 });
 
-describeWidgetStates('alerts-monitor', {
-  data: fixtureData,
-  emptyData,
-  emptyText: 'No active alerts',
-});
+describeWidgetStates('alerts-monitor', { data: fixtureData, emptyData });

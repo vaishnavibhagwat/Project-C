@@ -43,7 +43,7 @@ export const portfolioOverviewDefinition: WidgetDefinition<
   icon: IconTiles,
   dataSource: {
     endpoint: 'portfolio/summary',
-    wsChannel: 'portfolio.summary',
+    wsChannel: 'ws://mock/portfolio/MER-IMAF-01/prices',
     refreshInterval: 5000,
     latencyProfile: 'low',
   },

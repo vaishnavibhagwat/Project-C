@@ -31,6 +31,8 @@ export interface RegisteredWidget extends WidgetDefinition {
   /** Merge stored settings over defaults; invalid values fall back to defaults. */
   resolveConfig: (stored: WidgetConfig) => WidgetConfig;
   isEmpty: (data: unknown) => boolean;
+  /** Explanation under "No data available" when isEmpty is true (a default is used if absent). */
+  emptyMessage?: string;
   summarize: (data: unknown, config: WidgetConfig) => string;
   /** Count shown as a badge in the widget header (e.g. active alerts), or null for none. */
   badge: (data: unknown, config: WidgetConfig) => number | null;
@@ -76,6 +78,8 @@ export interface DefineWidgetOptions<TConfig extends WidgetConfig, TData> {
   configParser: ZodType<TConfig>;
   isData: (value: unknown) => value is TData;
   isEmpty?: (data: TData) => boolean;
+  /** Shown under "No data available" for an empty response. */
+  emptyMessage?: string;
   summarize: (data: TData, config: TConfig) => string;
   /** Optional header badge count, e.g. how many alerts match the widget's filters. */
   badge?: (data: TData, config: TConfig) => number | null;
@@ -155,6 +159,7 @@ export function defineWidget<TConfig extends WidgetConfig, TData>(
     skeleton: options.skeleton,
     resolveConfig: resolve,
     isEmpty: (data) => isData(data) && isEmpty(data),
+    emptyMessage: options.emptyMessage,
     summarize: (data, config) => (isData(data) ? summarize(data, resolve(config)) : ''),
     badge: (data, config) =>
       options.badge && isData(data) ? options.badge(data, resolve(config)) : null,

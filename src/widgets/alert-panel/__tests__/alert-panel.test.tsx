@@ -16,7 +16,7 @@ import {
   visibleAlerts,
 } from '../model';
 import type { Alert, AlertPanelConfig, AlertPanelWidgetData } from '../types';
-import { configuredConfig, emptyData, fixtureData } from './index';
+import { calmData, configuredConfig, emptyData, fixtureData } from './index';
 
 const data = fixtureData();
 const defaults = alertPanelDefinition.defaultConfig;
@@ -260,8 +260,13 @@ describe('AlertPanel', () => {
   });
 });
 
-describeWidgetStates('alert-panel', {
-  data: fixtureData,
-  emptyData,
-  emptyText: 'No active alerts',
+describe('AlertPanel all-clear', () => {
+  it('shows its own all-clear view when prices exist but nothing fires', () => {
+    renderWithProviders(<AlertPanel {...widgetProps(defaults, calmData())} />);
+    expect(screen.getByText('No active alerts')).toBeInTheDocument();
+    expect(alertPanelWidget.isEmpty(calmData())).toBe(false);
+    expect(alertPanelWidget.isEmpty(emptyData())).toBe(true);
+  });
 });
+
+describeWidgetStates('alert-panel', { data: fixtureData, emptyData });
