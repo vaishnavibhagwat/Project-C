@@ -10,3 +10,4 @@ export * from './jsonSchema';
 export * from './perf';
 export * from './holdings';
 export * from './gridLayout';
+export * from './widgetEvents';

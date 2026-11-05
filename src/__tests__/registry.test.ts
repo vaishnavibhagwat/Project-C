@@ -9,8 +9,8 @@ import { NavPerformanceConfigSchema } from '@/widgets/nav-performance/types';
 describe('built-in widget registry', () => {
   const widgets = widgetRegistry.getAllWidgets();
 
-  it('registers all 13 widgets with unique ids and every category represented', () => {
-    expect(widgetRegistry.size).toBe(13);
+  it('registers all 14 widgets with unique ids and every category represented', () => {
+    expect(widgetRegistry.size).toBe(14);
     expect(new Set(widgets.map((w) => w.id)).size).toBe(widgets.length);
     for (const c of Object.values(WidgetCategory)) {
       expect(widgetRegistry.getWidgetsByCategory(c).length).toBeGreaterThan(0);

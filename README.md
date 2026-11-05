@@ -56,16 +56,17 @@ deep-linkable on static hosting; each page is a lazy chunk):
 | Holdings Explorer (`G 3`)         | Holdings table, treemap, allocation, trade blotter                                                                 |
 | Performance & Attribution (`G 4`) | Overview, NAV vs Nifty 50, metrics, sector attribution, drawdown                                                   |
 | Research & Alerts (`G 5`)         | Sample research feed, alerts, trade blotter                                                                        |
-| Widget Marketplace (`G 6`)        | Browse all 13 widgets by category and add them to any page                                                         |
+| Widget Marketplace (`G 6`)        | Browse all 14 widgets by category and add them to any page                                                         |
 | Settings (`G 7`)                  | Grid (columns, row height, gap, compaction), theme, display currency, data feed, workspace, shortcuts              |
 
-**13 widgets**, each lazy-loaded as its own chunk:
+**14 widgets**, each lazy-loaded as its own chunk:
 
 | Widget                  | Category | Rendering                    | Data source               | Refresh |
 | ----------------------- | -------- | ---------------------------- | ------------------------- | ------- |
 | Portfolio Overview      | ANALYSIS | HTML tiles                   | `portfolio/summary`       | 5 s     |
 | NAV vs Nifty 50         | CHART    | Recharts line                | `portfolio/nav-history`   | 30 s¹   |
 | Asset Allocation        | CHART    | Recharts donut               | `portfolio/allocation`    | 15 s    |
+| Portfolio Pie Chart     | CHART    | Recharts pie / donut, drill  | `portfolio/holdings`      | 30 s    |
 | Drawdown                | CHART    | Recharts area                | `portfolio/nav-history`   | 30 s¹   |
 | Sector Attribution      | CHART    | Recharts bars                | `performance/attribution` | 30 s¹   |
 | Holdings                | TABLE    | react-virtuoso table         | `portfolio/holdings`      | 5 s     |

@@ -12,3 +12,4 @@ export * from './useViewportWidth';
 export * from './useUndoRedo';
 export * from './useRealtime';
 export * from './useDataControls';
+export * from './useWidgetEvent';

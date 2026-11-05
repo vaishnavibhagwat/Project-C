@@ -26,7 +26,7 @@ flowchart TB
     registry["widgetRegistry<br/>contract + runtime validation"]
     grid["GridContainer + GridItem<br/>react-grid-layout"]
     frame["WidgetFrame<br/>states, header, error boundary"]
-    widgets["13 widgets<br/>one lazy chunk each"]
+    widgets["14 widgets<br/>one lazy chunk each"]
   end
   subgraph D["Data"]
     query["TanStack Query cache<br/>one query per endpoint"]
@@ -718,6 +718,14 @@ Money is INR, percentages are in percent units (1.25 means 1.25%) and timestamps
 strings. Unrealised P&L and previous close are derived from a `Holding` in
 `src/utils/holdings.ts` rather than stored. `Layout`, `ShareRecord` and `GridConfig` are in
 `src/types/layout.ts`; `Theme` is in `src/types/theme.ts`.
+
+### Cross-widget events
+
+`src/utils/widgetEvents.ts` is a small typed publish/subscribe channel for events between
+widgets; `useWidgetEvent(type, handler)` (`src/hooks`) subscribes and unsubscribes on unmount.
+The only event so far is `SYMBOL_SELECTED { symbol, sourceInstanceId? }`. The Portfolio Pie
+Chart listens for it and highlights the slice holding that symbol; nothing publishes it yet.
+Events are transient module state, like the connection state, not a fifth store.
 
 ### Sharing and import
 

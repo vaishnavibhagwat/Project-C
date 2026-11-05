@@ -7,6 +7,7 @@ export * from './holdings-table/config';
 export * from './holdings-treemap/config';
 export * from './nav-performance/config';
 export * from './portfolio-overview/config';
+export * from './portfolio-pie-chart/config';
 export * from './research-feed/config';
 export * from './risk-metrics/config';
 export * from './sector-attribution/config';
