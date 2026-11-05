@@ -72,6 +72,22 @@ Notes on method:
   run if the page was hidden.
 - This is one laptop with a 60 Hz display; slower machines or larger layouts may differ.
 
+## Holdings table at 1,000 rows (Playwright, 5 Nov 2026)
+
+Production build (`vite preview`), headless Chrome on the development laptop, Holdings page,
+table set to "1,000 generated rows". The script scrolled the virtual list 120 times by 220 px
+(26,400 px in all), one step per animation frame, and recorded the time between frames:
+
+| Measure                         | Value   |
+| ------------------------------- | ------- |
+| Frame interval, median          | 16.6 ms |
+| Frame interval, 95th percentile | 17.0 ms |
+| Frame interval, worst           | 17.0 ms |
+| Table rows in the DOM           | 31      |
+
+Headless Chrome on one machine, not a user device; a slower CPU or a non-headless browser will
+differ. The jsdom test only checks that the DOM holds a window of rows (fewer than 80 of 1,000).
+
 ## Bundle sizes (`npm run analyze`, gzip level 9, 22 Oct 2026)
 
 | Chunk                         | gzip                            | Notes                                                                                       |

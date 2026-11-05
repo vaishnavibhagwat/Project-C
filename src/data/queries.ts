@@ -81,7 +81,7 @@ const policy = (refreshMs: number): QueryPolicy => ({
 export const QUERY_POLICIES = {
   /** portfolio-overview */
   portfolio: policy(5000),
-  /** holdings-table, holdings-treemap */
+  /** holdings-table (10 s + live prices), holdings-treemap (5 s): the faster rate */
   holdings: policy(5000),
   /** nav-performance, drawdown (daily NAV) */
   performance: policy(env.VITE_DATA_REFRESH_INTERVAL),

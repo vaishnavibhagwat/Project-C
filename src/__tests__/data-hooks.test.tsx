@@ -43,8 +43,10 @@ describe('query policies', () => {
   it('poll at the default refresh rate of the widgets that read each resource', () => {
     const refresh = (id: string) => widgetRegistry.getWidget(id)?.dataSource.refreshInterval;
     expect(QUERY_POLICIES.portfolio.refetchInterval).toBe(refresh('portfolio-overview'));
-    expect(QUERY_POLICIES.holdings.refetchInterval).toBe(refresh('holdings-table'));
-    expect(QUERY_POLICIES.holdings.refetchInterval).toBe(refresh('holdings-treemap'));
+    // A resource read by several widgets polls at the fastest of their rates.
+    expect(QUERY_POLICIES.holdings.refetchInterval).toBe(
+      Math.min(refresh('holdings-table') ?? Infinity, refresh('holdings-treemap') ?? Infinity),
+    );
     expect(QUERY_POLICIES.performance.refetchInterval).toBe(refresh('nav-performance'));
     expect(QUERY_POLICIES.risk.refetchInterval).toBe(refresh('var-gauge'));
     expect(QUERY_POLICIES.marketOverview.refetchInterval).toBe(refresh('sector-heatmap'));

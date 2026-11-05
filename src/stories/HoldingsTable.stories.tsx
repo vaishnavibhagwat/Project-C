@@ -36,3 +36,8 @@ export const Default: Story = {};
 
 /** A non-default configuration (see the widget's settings panel for every option). */
 export const Configured: Story = { args: { config: configuredConfig } };
+
+/** Performance demo: 1,000 generated rows in one virtual-scrolling list. */
+export const ThousandRows: Story = {
+  args: { config: { ...holdingsTableDefinition.defaultConfig, mockRows: '1000' } },
+};

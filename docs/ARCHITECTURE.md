@@ -719,14 +719,32 @@ strings. Unrealised P&L and previous close are derived from a `Holding` in
 `src/utils/holdings.ts` rather than stored. `Layout`, `ShareRecord` and `GridConfig` are in
 `src/types/layout.ts`; `Theme` is in `src/types/theme.ts`.
 
+### DataTable (`src/components/DataTable/`)
+
+A generic table any widget can use: `DataTable<T>` with `DataTableColumn<T>` definitions
+(`value` drives sort, search and CSV; `render` draws the cell). It provides virtual scrolling
+(react-virtuoso) or pages, multi-column sort (click a header; shift-click adds the next key,
+a third shift-click removes it), search across every column (every word must match), drag a
+header onto another to reorder, a Columns menu (show / hide, move earlier / later from the
+keyboard), CSV export of the filtered and sorted rows in the visible columns (Blob +
+`URL.createObjectURL`, formula-injection guard), a footer and row activation. Sort, order,
+visibility and page size are controlled props so a widget can persist them; search and the
+current page are local. The pure parts (`tableModel.ts`) are unit-tested on their own. It is
+not in the `src/components` barrel, so react-virtuoso stays out of the main bundle.
+
+Settings a widget sets from its own UI (the Holdings table's sort, column order and hidden
+columns) are declared in `configSchema` with `readOnly: true`: they are validated like any
+setting but not shown in the settings form.
+
 ### Cross-widget events
 
 `src/utils/widgetEvents.ts` is a small typed publish/subscribe channel for events between
 widgets; `useWidgetEvent(type, handler)` (`src/hooks`) subscribes and unsubscribes on unmount.
 Events so far:
 
-- `SYMBOL_SELECTED { symbol, sourceInstanceId? }`: the Portfolio Pie Chart listens and
-  highlights the slice holding that symbol. Nothing publishes it yet.
+- `SYMBOL_SELECTED { symbol, sourceInstanceId? }`: the Holdings table publishes it when a row
+  is clicked (or Enter / Space on a focused row); the Portfolio Pie Chart listens and
+  highlights the slice holding that symbol.
 - `DATE_RANGE_CHANGED { from, to, sourceInstanceId? }`: Performance vs Benchmarks publishes
   it 250 ms after its visible range settles (preset, zoom, pan or brush; not on first render).
   Nothing listens yet.

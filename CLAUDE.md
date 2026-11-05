@@ -22,7 +22,8 @@ The husky pre-commit hook runs lint-staged (eslint --fix, prettier --write). Nev
 
 ```
 src/
-  components/   index.ts      design-system primitives (charts/ helpers are NOT in this barrel)
+  components/   index.ts      design-system primitives (charts/ and DataTable/ are NOT in this
+                              barrel: they pull chart / virtuoso code into the main bundle)
   widgets/      index.ts      one folder per widget:
     <name>/     index.tsx     default-exported, memoised component (lazy chunk)
                 config.ts     WidgetDefinition + defineWidget(...)

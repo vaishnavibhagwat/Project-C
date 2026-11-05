@@ -2,38 +2,42 @@ import { z } from 'zod';
 import type { HoldingsData } from '@/data/schemas';
 import type { Holding } from '@/types';
 
-export const HOLDING_SORT_KEYS = [
+export const HOLDING_COLUMN_IDS = [
   'ticker',
-  'weight',
-  'dailyPnLPercent',
+  'name',
+  'quantity',
+  'price',
   'marketValue',
   'dailyPnL',
-  'unrealisedPnLPercent',
+  'dailyPnLPercent',
+  'weight',
+  'sector',
+  'assetClass',
 ] as const;
-export type HoldingSortKey = (typeof HOLDING_SORT_KEYS)[number];
+export type HoldingColumnId = (typeof HOLDING_COLUMN_IDS)[number];
 
-export const SECTOR_FILTERS = [
-  'All',
-  'Financial Services',
-  'Information Technology',
-  'Oil, Gas & Fuels',
-  'FMCG',
-  'Automobile',
-  'Metals & Mining',
-  'Construction Materials',
-  'Capital Goods',
-  'Healthcare',
-  'Telecommunication',
-  'Power',
-  'Consumer Services',
-  'Consumer Durables',
-] as const;
+export const PAGE_SIZES = ['all', '25', '50', '100'] as const;
+export const MOCK_ROW_OPTIONS = ['off', '1000', '5000'] as const;
+
+const idList = z
+  .string()
+  .max(300)
+  .regex(/^[a-zA-Z,]*$/);
 
 export const HoldingsTableConfigSchema = z.object({
-  sortBy: z.enum(HOLDING_SORT_KEYS),
-  sortDir: z.enum(['asc', 'desc']),
-  sector: z.enum(SECTOR_FILTERS),
-  showPnl: z.boolean(),
+  /** Sort keys in priority order, e.g. "weight:desc,ticker:asc" (set from the headers). */
+  sort: z
+    .string()
+    .max(300)
+    .regex(/^([a-zA-Z]+:(asc|desc))?(,[a-zA-Z]+:(asc|desc))*$/),
+  /** Column order (ids, comma-separated; set by dragging headers). Empty = default order. */
+  columnOrder: idList,
+  /** Hidden column ids, comma-separated (set from the Columns menu). */
+  hiddenColumns: idList,
+  /** "all" = one virtual-scrolling list; otherwise rows per page. */
+  pageSize: z.enum(PAGE_SIZES),
+  /** Performance demo: replace the book with this many generated rows. */
+  mockRows: z.enum(MOCK_ROW_OPTIONS),
 });
 
 export type HoldingsTableConfig = z.infer<typeof HoldingsTableConfigSchema>;

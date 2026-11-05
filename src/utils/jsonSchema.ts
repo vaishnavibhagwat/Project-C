@@ -46,7 +46,8 @@ export function schemaFields(schema: JSONSchema7): SchemaField[] {
   const fields: SchemaField[] = [];
   for (const [key, def] of Object.entries(schema.properties ?? {})) {
     const s = asSchema(def);
-    if (!s) continue;
+    // readOnly: the widget sets this value itself (e.g. from its table headers); not a form field.
+    if (!s || s.readOnly === true) continue;
     const title = s.title ?? key;
     const description = s.description;
     const options = enumOptions(s);

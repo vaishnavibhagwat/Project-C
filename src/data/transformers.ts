@@ -26,6 +26,7 @@ import type {
   RiskResponse,
 } from './mock/schemas';
 import { NIFTY50 } from './nifty50';
+import type { Holding } from '@/types';
 import type { AlertsData, NavHistoryData, ResearchData } from './schemas';
 import type { AlertsMessage, NewsMessage, PricesMessage, TickerMessage } from './wsSimulator';
 
@@ -396,6 +397,37 @@ export function mergePrices(holdings: HoldingsResponse, message: PricesMessage):
     totalValueInr: round(total, 2),
     holdings: rows.map((h) => ({ ...h, weightPct: round(pct(h.marketValueInr / total), 4) })),
   };
+}
+
+/**
+ * Apply a portfolio prices message to the dashboard's holdings (the `portfolio/holdings`
+ * endpoint shape). Only INR equities move (the channel quotes NSE stocks); their value, day
+ * P&L and unrealised P&L are recomputed, and every weight is rescaled so they still sum to 100.
+ * Returns the same array when nothing changed.
+ */
+export function applyPricesToHoldings(
+  holdings: readonly Holding[],
+  message: PricesMessage,
+): readonly Holding[] {
+  const quotes = new Map(message.prices.map((p) => [p.ticker, p]));
+  let changed = false;
+  const rows = holdings.map((h) => {
+    const quote = quotes.get(h.ticker);
+    if (!quote || h.currency !== 'INR' || h.assetClass !== 'Equity') return h;
+    if (quote.price === h.currentPrice) return h;
+    changed = true;
+    return {
+      ...h,
+      currentPrice: round(quote.price, 4),
+      marketValue: round(h.quantity * quote.price, 2),
+      dailyPnL: round(h.quantity * (quote.price - quote.previousClose), 2),
+      dailyPnLPercent: round(quote.changePct, 4),
+      unrealisedPnL: round(h.quantity * (quote.price - h.averageCost), 2),
+    };
+  });
+  if (!changed) return holdings;
+  const total = rows.reduce((s, h) => s + h.marketValue, 0);
+  return rows.map((h) => ({ ...h, weight: total > 0 ? round(pct(h.marketValue / total), 4) : 0 }));
 }
 
 /** Breadth band used by the overview response: moves within ±0.005% count as unchanged. */

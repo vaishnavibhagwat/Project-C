@@ -7,10 +7,12 @@ export const fixtureData = () => fixture('portfolio/holdings');
 
 /** A non-default configuration used by the "configured" story and tests. */
 export const configuredConfig: HoldingsTableConfig = {
-  sortBy: 'dailyPnLPercent',
-  sortDir: 'asc',
-  sector: 'Financial Services',
-  showPnl: false,
+  sort: 'sector:asc,dailyPnLPercent:desc',
+  columnOrder:
+    'ticker,sector,dailyPnLPercent,dailyPnL,marketValue,weight,name,quantity,price,assetClass',
+  hiddenColumns: 'name,quantity,assetClass',
+  pageSize: '25',
+  mockRows: 'off',
 };
 
 /** A valid response with nothing to show: the widget renders its empty state. */
