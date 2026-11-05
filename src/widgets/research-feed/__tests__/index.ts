@@ -1,3 +1,4 @@
+import { parseEndpoint } from '@/data/api';
 import { fixture } from '@/__tests__/fixtures';
 import type { ResearchFeedConfig } from '../types';
 
@@ -9,4 +10,10 @@ export const configuredConfig: ResearchFeedConfig = {
   sentiment: 'positive',
   category: 'all',
   showSummary: false,
+};
+
+/** A valid response with nothing to show: the widget renders its empty state. */
+export const emptyData = () => {
+  const base = fixture('research/feed');
+  return parseEndpoint('research/feed', { ...base, articles: [] });
 };

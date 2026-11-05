@@ -82,6 +82,7 @@ export function deriveMetrics(ctx: DeriveContext): MetricsData {
     simulated: true,
     riskFreeRate: rf,
     periodStart: dataset.dates[0] ?? dataset.asOfDate,
+    observations: r.length,
     cagr: round(stats.cagr, 6),
     annualVolatility: round(stats.volatility, 6),
     sharpe: round(stats.sharpe, 4),

@@ -2,11 +2,12 @@ import { render, screen } from '@testing-library/react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 import { describe, expect, it } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { NIFTY50 } from '@/data/nifty50';
 import { researchFeedDefinition, summarizeResearch } from '../config';
 import ResearchFeed from '../index';
 import { filterArticles } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('ResearchFeed', () => {
   const data = fixtureData();
@@ -49,3 +50,5 @@ describe('ResearchFeed', () => {
     expect(summarizeResearch(data, defaults)).toMatch(/sample research articles/);
   });
 });
+
+describeWidgetStates('research-feed', { data: fixtureData, emptyData });

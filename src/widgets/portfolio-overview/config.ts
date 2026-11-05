@@ -60,6 +60,7 @@ export function summarizePortfolioOverview(d: PortfolioOverviewData): string {
 export const portfolioOverviewWidget = defineWidget(portfolioOverviewDefinition, {
   configParser: PortfolioOverviewConfigSchema,
   isData: isEndpointData('portfolio/summary'),
+  isEmpty: (d) => d.holdingsCount === 0,
   summarize: summarizePortfolioOverview,
   skeleton: 'tiles',
   preload: () => import('./index'),

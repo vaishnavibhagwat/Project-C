@@ -1,3 +1,4 @@
+import { parseEndpoint } from '@/data/api';
 import { fixture } from '@/__tests__/fixtures';
 import type { SectorAttributionConfig } from '../types';
 
@@ -9,4 +10,10 @@ export const configuredConfig: SectorAttributionConfig = {
   period: '1Y',
   effect: 'total',
   showTable: true,
+};
+
+/** A valid response with nothing to show: the widget renders its empty state. */
+export const emptyData = () => {
+  const base = fixture('performance/attribution');
+  return parseEndpoint('performance/attribution', { ...base, periods: [] });
 };

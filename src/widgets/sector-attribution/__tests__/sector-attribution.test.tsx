@@ -1,9 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { sectorAttributionDefinition, summarizeAttribution } from '../config';
 import SectorAttribution from '../index';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('SectorAttribution', () => {
   const data = fixtureData();
@@ -48,3 +49,5 @@ describe('SectorAttribution', () => {
     );
   });
 });
+
+describeWidgetStates('sector-attribution', { data: fixtureData, emptyData });

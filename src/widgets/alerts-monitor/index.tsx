@@ -29,8 +29,14 @@ function AlertsMonitor({
     return (
       <div className="flex h-full flex-col items-center justify-center gap-1 text-center">
         <IconCheck size={20} className="text-pos" />
-        <p className="text-sm font-medium text-fg">No alerts match</p>
-        <p className="text-xs text-muted">Nothing at this severity and type needs attention.</p>
+        <p className="text-sm font-medium text-fg">
+          {alerts.length === 0 ? 'No active alerts' : 'No alerts match'}
+        </p>
+        <p className="text-xs text-muted">
+          {alerts.length === 0
+            ? 'Nothing needs attention right now.'
+            : 'Nothing at this severity and type needs attention.'}
+        </p>
       </div>
     );
   }

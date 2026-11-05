@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { summarizeVar, varGaugeDefinition } from '../config';
 import VarGauge from '../index';
 import { selectVar } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('VarGauge', () => {
   const data = fixtureData();
@@ -35,3 +36,5 @@ describe('VarGauge', () => {
     expect(summarizeVar(data, defaults)).toMatch(/99% 1-day historical VaR is \d+\.\d{2}% of AUM/);
   });
 });
+
+describeWidgetStates('var-gauge', { data: fixtureData, emptyData });

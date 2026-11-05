@@ -1,10 +1,11 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { assetAllocationDefinition, summarizeAllocation } from '../config';
 import AssetAllocation from '../index';
 import { buildSlices, MAX_SECTOR_SLICES } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('AssetAllocation', () => {
   const data = fixtureData();
@@ -53,3 +54,5 @@ describe('AssetAllocation', () => {
     expect(summarizeAllocation(data, defaults)).toMatch(/Equity \d+\.\d%/);
   });
 });
+
+describeWidgetStates('asset-allocation', { data: fixtureData, emptyData });

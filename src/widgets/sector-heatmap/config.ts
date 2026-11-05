@@ -19,6 +19,7 @@ export const sectorHeatmapDefinition: WidgetDefinition<SectorHeatmapConfig, Sect
   category: WidgetCategory.ANALYSIS,
   defaultSize: { w: 6, h: 5 },
   minSize: { w: 4, h: 4 },
+  maxSize: { w: 12, h: 10 },
   configSchema: {
     type: 'object',
     properties: {

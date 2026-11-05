@@ -1,10 +1,11 @@
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { sectorHeatmapDefinition, summarizeHeatmap } from '../config';
 import SectorHeatmap from '../index';
 import { buildHeatModel } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('SectorHeatmap', () => {
   const data = fixtureData();
@@ -33,3 +34,5 @@ describe('SectorHeatmap', () => {
     expect(summarizeHeatmap(data, defaults)).toMatch(/best sector .+ weakest .+/);
   });
 });
+
+describeWidgetStates('sector-heatmap', { data: fixtureData, emptyData });

@@ -39,7 +39,21 @@ export default tseslint.config(
           message: 'Render text nodes instead of raw HTML.',
         },
       ],
-      'no-restricted-imports': ['error', { paths: ['redux', 'react-redux', '@reduxjs/toolkit'] }],
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            'redux',
+            'react-redux',
+            '@reduxjs/toolkit',
+            {
+              name: 'd3',
+              message:
+                'Import the D3 sub-module you need (d3-scale, d3-shape, d3-hierarchy) to keep widget chunks small.',
+            },
+          ],
+        },
+      ],
     },
   },
   {

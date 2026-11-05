@@ -22,6 +22,7 @@ export const navPerformanceDefinition: WidgetDefinition<NavPerformanceConfig, Na
     category: WidgetCategory.CHART,
     defaultSize: { w: 6, h: 5 },
     minSize: { w: 3, h: 3 },
+    maxSize: { w: 12, h: 8 },
     configSchema: {
       type: 'object',
       properties: {

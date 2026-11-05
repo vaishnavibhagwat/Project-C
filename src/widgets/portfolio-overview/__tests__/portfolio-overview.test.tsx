@@ -1,9 +1,10 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { portfolioOverviewDefinition, summarizePortfolioOverview } from '../config';
 import PortfolioOverview from '../index';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('PortfolioOverview', () => {
   const data = fixtureData();
@@ -31,3 +32,5 @@ describe('PortfolioOverview', () => {
     expect(summarizePortfolioOverview(data)).toMatch(/AUM \$45\.0B \(₹3,75,750 Cr\) at last close/);
   });
 });
+
+describeWidgetStates('portfolio-overview', { data: fixtureData, emptyData });

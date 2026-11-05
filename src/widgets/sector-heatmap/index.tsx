@@ -1,4 +1,4 @@
-import { scaleBand, scaleLinear } from 'd3';
+import { scaleBand, scaleLinear } from 'd3-scale';
 import { memo, useMemo, useState } from 'react';
 import { HoverCard } from '@/components/charts';
 import { cssColor } from '@/theme/themes';

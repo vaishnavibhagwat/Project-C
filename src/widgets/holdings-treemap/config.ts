@@ -23,6 +23,7 @@ export const holdingsTreemapDefinition: WidgetDefinition<
   category: WidgetCategory.ANALYSIS,
   defaultSize: { w: 6, h: 5 },
   minSize: { w: 3, h: 3 },
+  maxSize: { w: 12, h: 10 },
   configSchema: {
     type: 'object',
     properties: {

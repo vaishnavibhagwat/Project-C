@@ -15,6 +15,7 @@ export const riskMetricsDefinition: WidgetDefinition<RiskMetricsConfig, RiskMetr
   category: WidgetCategory.ANALYSIS,
   defaultSize: { w: 12, h: 2 },
   minSize: { w: 3, h: 2 },
+  maxSize: { w: 12, h: 8 },
   configSchema: {
     type: 'object',
     properties: {
@@ -49,6 +50,8 @@ export function summarizeMetrics(data: RiskMetricsData, config: RiskMetricsConfi
 export const riskMetricsWidget = defineWidget(riskMetricsDefinition, {
   configParser: RiskMetricsConfigSchema,
   isData: isEndpointData('risk/metrics'),
+  // Ratios need at least two daily returns.
+  isEmpty: (d) => d.observations < 2,
   summarize: summarizeMetrics,
   skeleton: 'tiles',
   preload: () => import('./index'),

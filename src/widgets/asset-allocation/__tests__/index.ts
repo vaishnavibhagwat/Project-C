@@ -1,3 +1,4 @@
+import { parseEndpoint } from '@/data/api';
 import { fixture } from '@/__tests__/fixtures';
 import type { AssetAllocationConfig } from '../types';
 
@@ -9,4 +10,15 @@ export const configuredConfig: AssetAllocationConfig = {
   view: 'sector',
   currency: 'USD',
   showLegend: true,
+};
+
+/** A valid response with nothing to show: the widget renders its empty state. */
+export const emptyData = () => {
+  const base = fixture('portfolio/allocation');
+  return parseEndpoint('portfolio/allocation', {
+    ...base,
+    assetClasses: [],
+    geographies: [],
+    sectors: [],
+  });
 };

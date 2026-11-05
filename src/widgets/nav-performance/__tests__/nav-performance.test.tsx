@@ -1,10 +1,11 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { navPerformanceDefinition, summarizeNav } from '../config';
 import NavPerformance from '../index';
 import { buildNavSeries } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('NavPerformance', () => {
   const data = fixtureData();
@@ -41,3 +42,5 @@ describe('NavPerformance', () => {
     expect(summarizeNav(data, defaults)).toMatch(/Active return [+−]\d/);
   });
 });
+
+describeWidgetStates('nav-performance', { data: fixtureData, emptyData });

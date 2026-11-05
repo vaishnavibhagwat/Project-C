@@ -20,6 +20,7 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
   category: WidgetCategory.TABLE,
   defaultSize: { w: 8, h: 6 },
   minSize: { w: 4, h: 3 },
+  maxSize: { w: 12, h: 12 },
   configSchema: {
     type: 'object',
     properties: {

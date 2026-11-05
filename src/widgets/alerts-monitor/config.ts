@@ -19,6 +19,7 @@ export const alertsMonitorDefinition: WidgetDefinition<AlertsMonitorConfig, Aler
   category: WidgetCategory.FEED,
   defaultSize: { w: 4, h: 5 },
   minSize: { w: 3, h: 3 },
+  maxSize: { w: 6, h: 10 },
   configSchema: {
     type: 'object',
     properties: {

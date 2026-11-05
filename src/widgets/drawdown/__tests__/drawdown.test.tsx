@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { drawdownDefinition, summarizeDrawdown } from '../config';
 import Drawdown from '../index';
 import { buildDrawdown } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('Drawdown', () => {
   const data = fixtureData();
@@ -35,3 +36,5 @@ describe('Drawdown', () => {
     );
   });
 });
+
+describeWidgetStates('drawdown', { data: fixtureData, emptyData });

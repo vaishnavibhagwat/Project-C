@@ -62,6 +62,14 @@ Every folder has an `index.ts` barrel (widget folders use `index.tsx`). New fold
 - **Every widget**: shaped shimmer skeleton, error + Retry, "No data available", stale amber border
   - timestamp past 2× refresh, disconnected state, `role="region"` + `aria-label` + throttled
     `aria-live="polite"` summary, 2 stories (Default, Configured), at least one meaningful test.
+- **Widget folder** (checked by `src/__tests__/widget-conventions.test.ts`): `index.tsx`
+  (`React.memo` default export, rendered inside `WidgetShell` by WidgetFrame), `config.ts`
+  (`WidgetDefinition` with `maxSize` and `component: lazy(() => import('./index'))`, registered
+  in `src/registry/registry.ts` and the widgets barrel), `types.ts` (config and data types),
+  `__tests__/index.ts` (`fixtureData`, `emptyData`, `configuredConfig`) and
+  `__tests__/<name>.test.tsx` calling `describeWidgetStates` (ready, empty, error). Theme
+  colours only (`cssColor` or Tailwind tokens). D3 by sub-module only (ESLint enforced). Widget
+  chunk < 50 KB gzip.
 - **Data**: one seeded portfolio model (`src/data/model.ts`) on one seeded market
   (`src/data/dataset.ts`); everything derives from it; never randomise per widget. INR (USD
   where relevant), IST, Nifty 50, T+1, NSE 09:15–15:30 IST. Document data assumptions in

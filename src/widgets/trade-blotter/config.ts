@@ -15,6 +15,7 @@ export const tradeBlotterDefinition: WidgetDefinition<TradeBlotterConfig, TradeB
   category: WidgetCategory.TABLE,
   defaultSize: { w: 12, h: 5 },
   minSize: { w: 4, h: 3 },
+  maxSize: { w: 12, h: 12 },
   configSchema: {
     type: 'object',
     properties: {

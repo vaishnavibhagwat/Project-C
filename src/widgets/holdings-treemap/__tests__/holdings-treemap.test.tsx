@@ -1,10 +1,11 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { holdingsTreemapDefinition, summarizeTreemap } from '../config';
 import HoldingsTreemap from '../index';
 import { buildTree, layoutTreemap } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('HoldingsTreemap', () => {
   const data = fixtureData();
@@ -39,3 +40,5 @@ describe('HoldingsTreemap', () => {
     );
   });
 });
+
+describeWidgetStates('holdings-treemap', { data: fixtureData, emptyData });

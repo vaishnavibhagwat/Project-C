@@ -2,11 +2,12 @@ import { render, screen } from '@testing-library/react';
 import { VirtuosoMockContext } from 'react-virtuoso';
 import { describe, expect, it } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { settlementDate } from '@/utils/time';
 import { summarizeBlotter, tradeBlotterDefinition } from '../config';
 import TradeBlotter from '../index';
 import { filterTrades, flows } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('TradeBlotter', () => {
   const data = fixtureData();
@@ -37,3 +38,5 @@ describe('TradeBlotter', () => {
     expect(summarizeBlotter(data, defaults)).toMatch(/Latest: (BUY|SELL) \d+ [A-Z&-]+ at ₹/);
   });
 });
+
+describeWidgetStates('trade-blotter', { data: fixtureData, emptyData });

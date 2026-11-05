@@ -52,11 +52,13 @@ describe('size limits', () => {
     });
     expect(sizeLimitsFor('var-gauge', DEFAULT_GRID_CONFIG)).toEqual({
       min: { w: 3, h: 4 },
-      max: undefined,
+      max: { w: 6, h: 8 },
     });
     expect(sizeLimitsFor(PLACEHOLDER_WIDGET_ID, DEFAULT_GRID_CONFIG).min).toEqual(PLACEHOLDER_MIN);
     // 24 columns: the same minimum share of the width.
-    expect(sizeLimitsFor('var-gauge', { ...DEFAULT_GRID_CONFIG, cols: 24 }).min.w).toBe(6);
+    const wide = sizeLimitsFor('var-gauge', { ...DEFAULT_GRID_CONFIG, cols: 24 });
+    expect(wide.min.w).toBe(6);
+    expect(wide.max?.w).toBe(12);
   });
 
   it('are attached to every item and clamp stored sizes outside them', () => {
@@ -104,17 +106,24 @@ describe('GridContainer interaction', () => {
     renderGrid();
     const id = 'research-alerts-monitor';
     await screen.findByRole('region', { name: 'Alerts' });
+    // Wait until every widget body has mounted, so only the drag itself is measured.
+    await waitFor(() => expect(document.querySelector('[data-testid^="skeleton-"]')).toBeNull());
     const handle = document.querySelector(`[data-instance-id="${id}"] .widget-drag-handle`);
     if (!(handle instanceof HTMLElement)) throw new Error('no drag handle');
     const pagesBefore = store().pages;
     const before = store().pages.research.layouts.desktop?.find((l) => l.i === id);
 
+    // Let the widget bodies finish their first renders (size measured, deferred data). The
+    // drag below is synchronous, so timer-driven renders (react-virtuoso re-measuring in jsdom)
+    // cannot land inside it: anything recorded during it was caused by the drag.
+    await act(() => new Promise((resolve) => setTimeout(resolve, 300)));
     window.__MERIDIAN_PERF__ = [];
     fireEvent.mouseDown(handle, { clientX: 900, clientY: 20, button: 0 });
     fireEvent.mouseMove(document, { clientX: 200, clientY: 20 });
     fireEvent.mouseMove(document, { clientX: 20, clientY: 20 });
 
     expect(store().pages).toBe(pagesBefore);
+    console.log('LEFT', JSON.stringify(window.__MERIDIAN_PERF__));
     expect(window.__MERIDIAN_PERF__).toEqual([]);
     expect(screen.getByTestId('drag-departure')).toBeInTheDocument();
     expect(document.querySelector('.react-grid-placeholder')).not.toBeNull();

@@ -1,3 +1,4 @@
+import { parseEndpoint } from '@/data/api';
 import { fixture } from '@/__tests__/fixtures';
 import type { HoldingsTableConfig } from '../types';
 
@@ -10,4 +11,10 @@ export const configuredConfig: HoldingsTableConfig = {
   sortDir: 'asc',
   sector: 'Financial Services',
   showPnl: false,
+};
+
+/** A valid response with nothing to show: the widget renders its empty state. */
+export const emptyData = () => {
+  const base = fixture('portfolio/holdings');
+  return parseEndpoint('portfolio/holdings', { ...base, holdings: [] });
 };

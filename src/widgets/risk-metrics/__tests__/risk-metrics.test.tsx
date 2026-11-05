@@ -1,11 +1,12 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { formatRatio } from '@/utils/format';
 import { riskMetricsDefinition, summarizeMetrics } from '../config';
 import RiskMetrics from '../index';
 import { buildTiles } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 describe('RiskMetrics', () => {
   const data = fixtureData();
@@ -36,3 +37,5 @@ describe('RiskMetrics', () => {
     expect(summarizeMetrics(data, defaults)).toMatch(/^Sharpe ratio \d\.\d{2}\./);
   });
 });
+
+describeWidgetStates('risk-metrics', { data: fixtureData, emptyData });

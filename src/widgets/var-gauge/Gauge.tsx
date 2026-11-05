@@ -1,4 +1,4 @@
-import { arc } from 'd3';
+import { arc } from 'd3-shape';
 import { memo, useMemo } from 'react';
 import { cssColor } from '@/theme/themes';
 import type { LimitStatus } from './model';

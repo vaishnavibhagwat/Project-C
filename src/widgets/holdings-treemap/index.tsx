@@ -1,4 +1,4 @@
-import { scaleLinear } from 'd3';
+import { scaleLinear } from 'd3-scale';
 import { unrealisedPnLPercent } from '@/utils/holdings';
 import { memo, useMemo, useState } from 'react';
 import { HoverCard } from '@/components/charts';

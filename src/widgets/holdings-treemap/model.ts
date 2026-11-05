@@ -1,4 +1,4 @@
-import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3';
+import { hierarchy, treemap, treemapSquarify, type HierarchyRectangularNode } from 'd3-hierarchy';
 import { unrealisedPnLPercent } from '@/utils/holdings';
 import type { Holding } from '@/types';
 import {

@@ -21,6 +21,7 @@ export const assetAllocationDefinition: WidgetDefinition<
   category: WidgetCategory.CHART,
   defaultSize: { w: 3, h: 5 },
   minSize: { w: 3, h: 4 },
+  maxSize: { w: 8, h: 8 },
   configSchema: {
     type: 'object',
     properties: {

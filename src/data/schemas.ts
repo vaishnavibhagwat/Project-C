@@ -72,7 +72,8 @@ export const SummarySchema = PortfolioSchema.extend({
   marketValueInr: price,
   benchmarkDayChangePct: pct,
   oneYearReturnPct: finite,
-  holdingsCount: z.number().int().positive(),
+  /** Zero for a fund with no positions yet (the overview then shows its empty state). */
+  holdingsCount: z.number().int().nonnegative(),
   /** Equity asset class (stocks and depositary receipts), percent of market value. */
   equityWeightPct: pct,
   /** T-bill and cash, percent of market value. */
@@ -82,7 +83,8 @@ export const SummarySchema = PortfolioSchema.extend({
 export const NavHistorySchema = z.object({
   ...meta,
   inceptionDate: dateKey,
-  points: z.array(z.object({ date: dateKey, nav: price, benchmark: price })).min(2),
+  /** Fewer than two points means there is no history to chart (the widgets show empty). */
+  points: z.array(z.object({ date: dateKey, nav: price, benchmark: price })),
 });
 
 export const AllocationSchema = z.object({
@@ -97,10 +99,16 @@ export const AllocationSchema = z.object({
         weightPct: pct,
       }),
     )
-    .refine((rows) => sumsTo100(rows.map((r) => r.weightPct)), 'Asset classes must sum to 100%'),
+    .refine(
+      (rows) => rows.length === 0 || sumsTo100(rows.map((r) => r.weightPct)),
+      'Asset classes must sum to 100%',
+    ),
   geographies: z
     .array(z.object({ geography: GeographySchema, valueInr: nonNegative, weightPct: pct }))
-    .refine((rows) => sumsTo100(rows.map((r) => r.weightPct)), 'Geographies must sum to 100%'),
+    .refine(
+      (rows) => rows.length === 0 || sumsTo100(rows.map((r) => r.weightPct)),
+      'Geographies must sum to 100%',
+    ),
   /** Equity asset class by sector: weightPct within equity, portfolioWeightPct of the book. */
   sectors: z
     .array(
@@ -111,7 +119,10 @@ export const AllocationSchema = z.object({
         portfolioWeightPct: pct,
       }),
     )
-    .refine((rows) => sumsTo100(rows.map((r) => r.weightPct)), 'Sector weights must sum to 100%'),
+    .refine(
+      (rows) => rows.length === 0 || sumsTo100(rows.map((r) => r.weightPct)),
+      'Sector weights must sum to 100%',
+    ),
 });
 
 export const HoldingSchema = z.object({
@@ -156,7 +167,8 @@ export const SectorReturnsSchema = z.object({
 
 export const VarSchema = z.object({
   ...meta,
-  lookbackDays: z.number().int().positive(),
+  /** Zero when there is no return history yet (the gauge shows its empty state). */
+  lookbackDays: z.number().int().nonnegative(),
   horizonDays: z.literal(1),
   portfolioValueInr: price,
   portfolioValueUsd: price,
@@ -178,6 +190,8 @@ export const MetricsSchema = z.object({
   ...meta,
   riskFreeRate: z.number().min(0.065).max(0.07),
   periodStart: dateKey,
+  /** Daily returns the metrics were computed from; under 2 means there is nothing to show. */
+  observations: z.number().int().nonnegative(),
   cagr: finite,
   annualVolatility: nonNegative,
   sharpe: finite,

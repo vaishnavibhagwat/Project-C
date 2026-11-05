@@ -1,12 +1,13 @@
 import { fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { alertsMonitorDefinition, summarizeAlerts } from '../config';
 import AlertsMonitor from '../index';
 import { filterAlerts } from '../model';
 import type { AlertsMonitorConfig } from '../types';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 const initial = useDashboardStore.getState();
 
@@ -68,4 +69,10 @@ describe('AlertsMonitor', () => {
       /^\d+ active alerts: \d+ critical, \d+ warning\./,
     );
   });
+});
+
+describeWidgetStates('alerts-monitor', {
+  data: fixtureData,
+  emptyData,
+  emptyText: 'No active alerts',
 });

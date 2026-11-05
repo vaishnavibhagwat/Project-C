@@ -22,6 +22,7 @@ export const drawdownDefinition: WidgetDefinition<DrawdownConfig, DrawdownData> 
   category: WidgetCategory.CHART,
   defaultSize: { w: 6, h: 4 },
   minSize: { w: 3, h: 3 },
+  maxSize: { w: 12, h: 8 },
   configSchema: {
     type: 'object',
     properties: {

@@ -3,10 +3,11 @@ import { VirtuosoMockContext } from 'react-virtuoso';
 import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
+import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { holdingsTableDefinition, summarizeHoldings } from '../config';
 import HoldingsTable from '../index';
 import { selectHoldings, totals } from '../model';
-import { configuredConfig, fixtureData } from './index';
+import { configuredConfig, emptyData, fixtureData } from './index';
 
 const withViewport = (ui: ReactNode) => (
   <VirtuosoMockContext.Provider value={{ viewportHeight: 600, itemHeight: 32 }}>
@@ -80,3 +81,5 @@ describe('HoldingsTable', () => {
     );
   });
 });
+
+describeWidgetStates('holdings-table', { data: fixtureData, emptyData });

@@ -1,3 +1,4 @@
+import { parseEndpoint } from '@/data/api';
 import { fixture } from '@/__tests__/fixtures';
 import type { VarGaugeConfig } from '../types';
 
@@ -11,4 +12,10 @@ export const configuredConfig: VarGaugeConfig = {
   limitPct: 1,
   currency: 'USD',
   showHistogram: true,
+};
+
+/** A valid response with nothing to show: the widget renders its empty state. */
+export const emptyData = () => {
+  const base = fixture('risk/var');
+  return parseEndpoint('risk/var', { ...base, lookbackDays: 0, histogram: [] });
 };
