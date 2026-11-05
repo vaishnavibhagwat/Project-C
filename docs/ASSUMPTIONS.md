@@ -100,7 +100,16 @@ All metrics use simple daily returns of the NAV derived from the holdings and a 
 | Money value        | VaR fraction × AUM at the last close                                                                                                     |
 | Not modelled       | position-level revaluation, liquidity horizons, fat-tail or volatility scaling, intraday positions                                       |
 
-The VaR gauge's limit (default 2.0% of AUM) is a configurable illustrative policy value.
+The VaR gauge's limit (default 2.0% of AUM) is a configurable illustrative policy value. The
+default is 99% confidence over 1 day, the level SEBI uses for risk reporting; 95% is a toggle.
+
+- **Zones:** green below 70% of the limit, amber from 70% to 90%, red above 90%; "Limit
+  breached" once VaR reaches the limit. The dial runs to 125% of the limit (further if VaR or
+  its range is higher).
+- **30-day range:** `risk/var` also returns VaR (both methods, 95% and 99%) for each of the last
+  30 trading days, each computed with `valueAtRisk` (`src/utils/finance.ts`) over the 252
+  returns ending that day. The gauge shows the lowest and highest as a band; the last day
+  equals today's figure.
 
 ## 8. Sector attribution
 

@@ -48,7 +48,9 @@ describe('query policies', () => {
       Math.min(refresh('holdings-table') ?? Infinity, refresh('holdings-treemap') ?? Infinity),
     );
     expect(QUERY_POLICIES.performance.refetchInterval).toBe(refresh('nav-performance'));
-    expect(QUERY_POLICIES.risk.refetchInterval).toBe(refresh('var-gauge'));
+    expect(QUERY_POLICIES.risk.refetchInterval).toBe(
+      Math.min(refresh('var-gauge') ?? Infinity, refresh('risk-metrics') ?? Infinity),
+    );
     expect(QUERY_POLICIES.marketOverview.refetchInterval).toBe(refresh('sector-heatmap'));
     expect(QUERY_POLICIES.news.refetchInterval).toBe(refresh('research-feed'));
     expect(QUERY_POLICIES.alerts.refetchInterval).toBe(refresh('alerts-monitor'));

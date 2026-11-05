@@ -51,13 +51,13 @@ describe('size limits', () => {
       max: { w: 12, h: 3 },
     });
     expect(sizeLimitsFor('var-gauge', DEFAULT_GRID_CONFIG)).toEqual({
-      min: { w: 3, h: 4 },
+      min: { w: 2, h: 2 },
       max: { w: 6, h: 8 },
     });
     expect(sizeLimitsFor(PLACEHOLDER_WIDGET_ID, DEFAULT_GRID_CONFIG).min).toEqual(PLACEHOLDER_MIN);
     // 24 columns: the same minimum share of the width.
     const wide = sizeLimitsFor('var-gauge', { ...DEFAULT_GRID_CONFIG, cols: 24 });
-    expect(wide.min.w).toBe(6);
+    expect(wide.min.w).toBe(4);
     expect(wide.max?.w).toBe(12);
   });
 

@@ -210,6 +210,17 @@ export const VarSchema = z.object({
   stdevDailyReturn: fraction,
   worstDay: z.object({ date: dateKey, returnPct: pct }),
   histogram: z.array(z.object({ from: fraction, to: fraction, count: z.number().int().min(0) })),
+  /**
+   * VaR on each of the last 30 trading days (oldest first), each from the 252 returns ending
+   * that day: the band of recent values the gauge shows.
+   */
+  history: z.array(
+    z.object({
+      date: dateKey,
+      historical: z.object({ var95: fraction, var99: fraction }),
+      parametric: z.object({ var95: fraction, var99: fraction }),
+    }),
+  ),
   assumptions: z.array(z.string()),
 });
 

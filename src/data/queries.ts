@@ -85,7 +85,7 @@ export const QUERY_POLICIES = {
   holdings: policy(5000),
   /** nav-performance, drawdown (daily NAV) */
   performance: policy(env.VITE_DATA_REFRESH_INTERVAL),
-  /** risk-metrics, var-gauge */
+  /** risk-metrics (VITE_DATA_REFRESH_INTERVAL), var-gauge (60 s): the faster rate */
   risk: policy(env.VITE_DATA_REFRESH_INTERVAL),
   /** sector-heatmap */
   marketOverview: policy(15_000),

@@ -1,90 +1,130 @@
-import { arc } from 'd3-shape';
-import { memo, useMemo } from 'react';
+import { m } from 'framer-motion';
+import { memo } from 'react';
 import { cssColor } from '@/theme/themes';
-import type { LimitStatus } from './model';
+import { AMBER_FROM, RED_FROM } from './model';
 
-const START = -Math.PI / 2;
-const END = Math.PI / 2;
+/** The dial sweeps 180°, from -90° (left, zero) to +90° (right, the scale's maximum). */
+const SWEEP = 180;
+
+/** Spring for the needle: settles in about half a second with a small overshoot. */
+export const NEEDLE_SPRING = { type: 'spring', stiffness: 110, damping: 13, mass: 0.8 } as const;
+
+/** Degrees from vertical for a value on [0, max] (clamped). */
+export function needleAngle(value: number, max: number): number {
+  const t = max > 0 ? Math.min(Math.max(value / max, 0), 1) : 0;
+  return -SWEEP / 2 + t * SWEEP;
+}
+
+function point(r: number, deg: number): [number, number] {
+  const rad = (deg * Math.PI) / 180;
+  return [r * Math.sin(rad), -r * Math.cos(rad)];
+}
+
+/** SVG path of a ring segment between two angles (degrees from vertical), centred on 0,0. */
+export function arcPath(inner: number, outer: number, from: number, to: number): string {
+  if (to - from < 0.01) return '';
+  const large = to - from > 180 ? 1 : 0;
+  const [x0, y0] = point(outer, from);
+  const [x1, y1] = point(outer, to);
+  const [x2, y2] = point(inner, to);
+  const [x3, y3] = point(inner, from);
+  const f = (n: number) => n.toFixed(2);
+  return [
+    `M${f(x0)},${f(y0)}`,
+    `A${f(outer)},${f(outer)} 0 ${large} 1 ${f(x1)},${f(y1)}`,
+    `L${f(x2)},${f(y2)}`,
+    `A${f(inner)},${f(inner)} 0 ${large} 0 ${f(x3)},${f(y3)}`,
+    'Z',
+  ].join(' ');
+}
 
 interface GaugeProps {
   value: number;
   limit: number;
-  status: LimitStatus;
+  /** Top of the scale. */
+  max: number;
+  /** 30-day low and high, drawn as a band inside the zones. */
+  range: { min: number; max: number } | null;
+  /** Width in px; the dial is half as tall. */
   size: number;
-  label: string;
-  sublabel: string;
 }
 
-const STATUS_COLOR = { within: 'positive', near: 'warning', breach: 'negative' } as const;
-
-/** Map a value on [0, max] to an angle on the half circle. */
-function angleFor(v: number, max: number): number {
-  return START + (Math.min(Math.max(v, 0), max) / max) * (END - START);
-}
-
-/** Semicircular gauge (D3 arc generator). Scale runs from 0 to 2x the limit. */
-function GaugeImpl({ value, limit, status, size, label, sublabel }: GaugeProps) {
-  const max = limit * 2;
-  const outer = size / 2;
-  const inner = outer * 0.74;
-  const angle = (v: number) => angleFor(v, max);
-
-  const paths = useMemo(() => {
-    const gen = arc<{ a0: number; a1: number }>()
-      .innerRadius(inner)
-      .outerRadius(outer)
-      .startAngle((d) => d.a0)
-      .endAngle((d) => d.a1)
-      .cornerRadius(1);
-    return {
-      track: gen({ a0: START, a1: END }) ?? '',
-      within: gen({ a0: START, a1: angleFor(limit * 0.75, max) }) ?? '',
-      near: gen({ a0: angleFor(limit * 0.75, max), a1: angleFor(limit, max) }) ?? '',
-      breach: gen({ a0: angleFor(limit, max), a1: END }) ?? '',
-      value: gen({ a0: START, a1: angleFor(value, max) }) ?? '',
-    };
-  }, [inner, outer, limit, value, max]);
-
-  const needle = angle(value);
-  const nx = Math.sin(needle) * (outer + 2);
-  const ny = -Math.cos(needle) * (outer + 2);
-  const limitAngle = angle(limit);
+/**
+ * Custom SVG speedometer: green, amber and red zones (0–70%, 70–90%, 90%+ of the limit), a
+ * limit tick, the 30-day VaR range as an inner band, and a needle that springs to the value
+ * (Framer Motion; instant when the user prefers reduced motion).
+ */
+function GaugeImpl({ value, limit, max, range, size }: GaugeProps) {
+  const outer = size / 2 - 4;
+  const zoneInner = outer * 0.8;
+  const bandOuter = zoneInner - 3;
+  const bandInner = bandOuter - Math.max(4, outer * 0.1);
+  const a = (v: number) => needleAngle(v, max);
+  const zones = [
+    { key: 'green', from: 0, to: limit * AMBER_FROM, token: 'positive' },
+    { key: 'amber', from: limit * AMBER_FROM, to: limit * RED_FROM, token: 'warning' },
+    { key: 'red', from: limit * RED_FROM, to: max, token: 'negative' },
+  ] as const;
+  const [lx0, ly0] = point(bandInner - 2, a(limit));
+  const [lx1, ly1] = point(outer + 3, a(limit));
+  const needleLength = bandInner - 2;
 
   return (
-    <div className="flex flex-col items-center">
-      <svg
-        width={size}
-        height={outer + 6}
-        viewBox={`${-outer - 4} ${-outer - 4} ${size + 8} ${outer + 10}`}
-        aria-hidden="true"
-      >
-        <path d={paths.track} fill={cssColor('raised')} />
-        <path d={paths.within} fill={cssColor('positive')} fillOpacity={0.14} />
-        <path d={paths.near} fill={cssColor('warning')} fillOpacity={0.18} />
-        <path d={paths.breach} fill={cssColor('negative')} fillOpacity={0.18} />
-        <path d={paths.value} fill={cssColor(STATUS_COLOR[status])} />
-        <line
-          x1={Math.sin(limitAngle) * (inner - 4)}
-          y1={-Math.cos(limitAngle) * (inner - 4)}
-          x2={Math.sin(limitAngle) * (outer + 4)}
-          y2={-Math.cos(limitAngle) * (outer + 4)}
-          stroke={cssColor('text')}
-          strokeWidth={1.5}
+    <svg
+      width={size}
+      height={size / 2 + 8}
+      viewBox={`${-size / 2} ${-size / 2} ${size} ${size / 2 + 8}`}
+      aria-hidden="true"
+      data-testid="var-dial"
+    >
+      {zones.map((z) => (
+        <path
+          key={z.key}
+          data-zone={z.key}
+          d={arcPath(zoneInner, outer, a(z.from), a(z.to))}
+          fill={cssColor(z.token)}
+          fillOpacity={0.75}
         />
+      ))}
+      <path d={arcPath(bandInner, bandOuter, -90, 90)} fill={cssColor('raised')} />
+      {range ? (
+        <path
+          data-testid="var-range-band"
+          d={arcPath(bandInner, bandOuter, a(range.min), Math.max(a(range.max), a(range.min) + 1))}
+          fill={cssColor('textMuted')}
+          fillOpacity={0.7}
+        />
+      ) : null}
+      <line
+        x1={lx0}
+        y1={ly0}
+        x2={lx1}
+        y2={ly1}
+        stroke={cssColor('text')}
+        strokeWidth={2}
+        data-testid="var-limit-tick"
+      />
+      <m.g
+        data-testid="var-needle"
+        initial={{ rotate: -SWEEP / 2 }}
+        animate={{ rotate: a(value) }}
+        transition={NEEDLE_SPRING}
+        style={{ originX: 0.5, originY: 0.5 }}
+      >
+        {/* Invisible circle centred on the hub, so the group rotates about the hub. */}
+        <circle r={needleLength} fill="none" stroke="none" />
         <line
           x1={0}
-          y1={0}
-          x2={nx * 0.7}
-          y2={ny * 0.7}
+          y1={4}
+          x2={0}
+          y2={-needleLength}
           stroke={cssColor('text')}
-          strokeWidth={1.5}
+          strokeWidth={2}
           strokeLinecap="round"
         />
-        <circle r={3} fill={cssColor('text')} />
-      </svg>
-      <span className="num -mt-0.5 text-xl font-semibold leading-tight text-fg">{label}</span>
-      <span className="num text-2xs text-muted">{sublabel}</span>
-    </div>
+      </m.g>
+      <circle r={4} fill={cssColor('text')} />
+    </svg>
   );
 }
 

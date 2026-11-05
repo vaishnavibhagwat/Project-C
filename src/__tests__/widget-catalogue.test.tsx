@@ -80,6 +80,9 @@ function dragAt(kind: DragKind, target: Element, point: { clientX: number; clien
 const catalogue = () => screen.getByRole('complementary', { name: 'Widget catalogue' });
 const items = () => within(catalogue()).queryAllByRole('button', { name: /^Add / });
 
+/** The VaR gauge's default size, as the grid places it on a 12-column desktop grid. */
+const VAR_SIZE = widgetRegistry.getWidget('var-gauge')?.defaultSize ?? { w: 0, h: 0 };
+
 describe('groupCatalogue', () => {
   it('groups every widget under its category, in category order', () => {
     const groups = groupCatalogue(widgetRegistry.getAllWidgets(), '');
@@ -214,7 +217,7 @@ describe('WidgetCatalogue', () => {
 
     expect(typesOnPage()).toEqual(['portfolio-overview', 'nav-performance', 'var-gauge']);
     const added = store().pages.performance.itemIds[2] ?? '';
-    expect(desktop().find((l) => l.i === added)).toMatchObject({ x: 6, y: 0, w: 3, h: 5 });
+    expect(desktop().find((l) => l.i === added)).toMatchObject({ x: 6, y: 0, ...VAR_SIZE });
     expect(hasOverlap(desktop())).toBe(false);
     expect(draggedCatalogueWidget()).toBeNull();
     expect(await screen.findByText('Added Value at Risk')).toBeInTheDocument();
@@ -236,7 +239,7 @@ describe('dropWidgetOnPage', () => {
   it('places at the drop cell on desktop and pushes overlapping widgets down', () => {
     const id = dropWidgetOnPage('performance', 'var-gauge', { x: 0, y: 0 });
     expect(id).not.toBeNull();
-    expect(desktop().find((l) => l.i === id)).toMatchObject({ x: 0, y: 0, w: 3, h: 5 });
+    expect(desktop().find((l) => l.i === id)).toMatchObject({ x: 0, y: 0, ...VAR_SIZE });
     expect(hasOverlap(desktop())).toBe(false);
   });
 
@@ -247,7 +250,7 @@ describe('dropWidgetOnPage', () => {
     });
     const id = dropWidgetOnPage('performance', 'var-gauge', { x: 3, y: 0 }, 'tablet') ?? '';
     const tablet = store().pages.performance.layouts.tablet ?? [];
-    expect(tablet.find((l) => l.i === id)).toMatchObject({ x: 3, y: 0, w: 3 });
+    expect(tablet.find((l) => l.i === id)).toMatchObject({ x: 3, y: 0 });
     expect(hasOverlap(tablet)).toBe(false);
     expect(desktop().find((l) => l.i === id)).toBeDefined();
     expect(hasOverlap(desktop())).toBe(false);

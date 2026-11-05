@@ -17,5 +17,5 @@ export const configuredConfig: VarGaugeConfig = {
 /** A valid response with nothing to show: the widget renders its empty state. */
 export const emptyData = () => {
   const base = fixture('risk/var');
-  return parseEndpoint('risk/var', { ...base, lookbackDays: 0, histogram: [] });
+  return parseEndpoint('risk/var', { ...base, lookbackDays: 0, histogram: [], history: [] });
 };

@@ -6,18 +6,22 @@ import {
   mean,
   sharpeRatio,
   stdev,
+  valueAtRisk,
 } from '@/utils/finance';
 import { modelStats, STATS_LOOKBACK_DAYS } from '../model';
 import type { MetricsData, VarData } from '../schemas';
 import { asOfIso, round, type DeriveContext } from './context';
 
 export const VAR_LOOKBACK_DAYS = STATS_LOOKBACK_DAYS;
+/** Trading days of rolling VaR history (the gauge's 30-day range band). */
+export const VAR_HISTORY_DAYS = 30;
 
 export const VAR_ASSUMPTIONS = [
   'Horizon: 1 trading day. Values are losses as a fraction of AUM at the last close.',
   'Historical simulation: empirical quantile of the last 252 daily fund returns, equally weighted, linear interpolation.',
   'Parametric: variance-covariance on the same 252 returns, assuming normally distributed returns (mean - z * sigma).',
   'Expected shortfall (CVaR): mean of returns at or beyond the historical VaR threshold.',
+  '30-day range: the same VaR recomputed on each of the last 30 trading days, each over the 252 returns ending that day.',
   'Returns are daily returns of the NAV derived from the holdings (positions held constant); no liquidity or fat-tail adjustment.',
 ];
 
@@ -59,8 +63,33 @@ export function deriveVar(ctx: DeriveContext): VarData {
       to: round(b.to, 6),
       count: b.count,
     })),
+    history: varHistory(ctx),
     assumptions: VAR_ASSUMPTIONS,
   };
+}
+
+const historyCache = new WeakMap<DeriveContext['dataset'], VarData['history']>();
+
+/** VaR (both methods, 95% and 99%) on each of the last VAR_HISTORY_DAYS trading days. */
+function varHistory(ctx: DeriveContext): VarData['history'] {
+  const { dataset } = ctx;
+  const hit = historyCache.get(dataset);
+  if (hit) return hit;
+  const r = dataset.fundReturns;
+  const out: VarData['history'] = [];
+  for (let k = VAR_HISTORY_DAYS - 1; k >= 0; k -= 1) {
+    const end = r.length - k;
+    if (end < 2) continue;
+    const v = valueAtRisk(r.slice(Math.max(0, end - VAR_LOOKBACK_DAYS), end));
+    out.push({
+      // fundReturns[i] is the return into dates[i + 1], so the window ends on dates[end].
+      date: dataset.dates[end] ?? dataset.asOfDate,
+      historical: { var95: round(v.historical.var95, 6), var99: round(v.historical.var99, 6) },
+      parametric: { var95: round(v.parametric.var95, 6), var99: round(v.parametric.var99, 6) },
+    });
+  }
+  historyCache.set(dataset, out);
+  return out;
 }
 
 export function deriveMetrics(ctx: DeriveContext): MetricsData {
