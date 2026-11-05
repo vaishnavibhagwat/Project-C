@@ -7,6 +7,7 @@ import {
   deriveAllocation,
   deriveHoldings,
   deriveNavHistory,
+  derivePerformanceSeries,
   deriveSectorReturns,
   deriveSummary,
 } from './derive/portfolio';
@@ -20,6 +21,7 @@ import {
   HoldingsSchema,
   MetricsSchema,
   NavHistorySchema,
+  PerformanceSeriesSchema,
   ResearchSchema,
   SectorReturnsSchema,
   SummarySchema,
@@ -31,6 +33,7 @@ import {
   type HoldingsData,
   type MetricsData,
   type NavHistoryData,
+  type PerformanceSeriesData,
   type ResearchData,
   type SectorReturnsData,
   type SummaryData,
@@ -47,6 +50,7 @@ export interface EndpointDataMap {
   'risk/var': VarData;
   'risk/metrics': MetricsData;
   'performance/attribution': AttributionData;
+  'performance/benchmarks': PerformanceSeriesData;
   'trades/blotter': TradesData;
   'research/feed': ResearchData;
   'alerts/active': AlertsData;
@@ -90,6 +94,11 @@ export const ENDPOINTS: EndpointRegistry = {
     derive: deriveAttribution,
     isEmpty: (d) => d.periods.length === 0,
   },
+  'performance/benchmarks': {
+    schema: PerformanceSeriesSchema,
+    derive: derivePerformanceSeries,
+    isEmpty: (d) => d.dates.length < 2,
+  },
   'trades/blotter': {
     schema: TradesSchema,
     derive: deriveTrades,
@@ -116,6 +125,7 @@ export const ENDPOINT_IDS: readonly EndpointId[] = [
   'risk/var',
   'risk/metrics',
   'performance/attribution',
+  'performance/benchmarks',
   'trades/blotter',
   'research/feed',
   'alerts/active',

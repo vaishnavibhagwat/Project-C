@@ -26,7 +26,7 @@ flowchart TB
     registry["widgetRegistry<br/>contract + runtime validation"]
     grid["GridContainer + GridItem<br/>react-grid-layout"]
     frame["WidgetFrame<br/>states, header, error boundary"]
-    widgets["14 widgets<br/>one lazy chunk each"]
+    widgets["15 widgets<br/>one lazy chunk each"]
   end
   subgraph D["Data"]
     query["TanStack Query cache<br/>one query per endpoint"]
@@ -723,9 +723,14 @@ strings. Unrealised P&L and previous close are derived from a `Holding` in
 
 `src/utils/widgetEvents.ts` is a small typed publish/subscribe channel for events between
 widgets; `useWidgetEvent(type, handler)` (`src/hooks`) subscribes and unsubscribes on unmount.
-The only event so far is `SYMBOL_SELECTED { symbol, sourceInstanceId? }`. The Portfolio Pie
-Chart listens for it and highlights the slice holding that symbol; nothing publishes it yet.
-Events are transient module state, like the connection state, not a fifth store.
+Events so far:
+
+- `SYMBOL_SELECTED { symbol, sourceInstanceId? }`: the Portfolio Pie Chart listens and
+  highlights the slice holding that symbol. Nothing publishes it yet.
+- `DATE_RANGE_CHANGED { from, to, sourceInstanceId? }`: Performance vs Benchmarks publishes
+  it 250 ms after its visible range settles (preset, zoom, pan or brush; not on first render).
+  Nothing listens yet.
+  Events are transient module state, like the connection state, not a fifth store.
 
 ### Sharing and import
 

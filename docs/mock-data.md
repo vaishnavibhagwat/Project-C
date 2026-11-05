@@ -151,6 +151,11 @@ Things to know:
   constituents.
 - **S&P 500** is its own USD GBM (μ 10%, σ 14%) with a 0.35 beta to the Nifty factor.
 - Each index ends at a round, illustrative level (e.g. Nifty 24,350). None are market quotes.
+- The `performance/benchmarks` endpoint serves the fund NAV and all six series over the full
+  history, on the same trading days. S&P 500 levels are in USD; with the fixed FX rate its
+  returns are the same in INR.
+- **Custom blend** (Performance vs Benchmarks widget): a chosen share in the Nifty 50 and the
+  rest in the S&P 500, rebalanced daily (the blend's daily return is the weighted sum of the two).
 
 ## 8. Intraday tape, trades, research and alerts
 

@@ -1,0 +1,33 @@
+import { fixture } from '@/__tests__/fixtures';
+import { parseEndpoint } from '@/data/api';
+import type { PerformanceLineChartConfig } from '../types';
+
+/** Deterministic, validated data for tests and stories (shared seeded portfolio model). */
+export const fixtureData = () => fixture('performance/benchmarks');
+
+/** A non-default configuration used by the "configured" story and tests. */
+export const configuredConfig: PerformanceLineChartConfig = {
+  range: 'MAX',
+  logScale: true,
+  showNifty50: true,
+  showSensex: true,
+  showSpx: false,
+  showNiftyBank: true,
+  showNiftyIt: true,
+  showNiftyPharma: true,
+  showCustom: true,
+  customNiftyPct: 70,
+  fundColor: 'chart3',
+  benchmarkColors: 'muted',
+};
+
+/** A valid response with nothing to show: the widget renders its empty state. */
+export const emptyData = () => {
+  const base = fixture('performance/benchmarks');
+  return parseEndpoint('performance/benchmarks', {
+    ...base,
+    dates: [],
+    fund: [],
+    benchmarks: base.benchmarks.map((b) => ({ ...b, levels: [] })),
+  });
+};

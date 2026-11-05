@@ -214,3 +214,14 @@ The query hooks treat data as stale for display after 2× the refresh interval, 
 as the widget frame. Streamed alerts carry no volatility reading, so a merged alert takes the
 response's current volatility. The news stream carries in-house research notes; when merged
 into the market news response they get the source "Meridian Research" and no price move.
+
+## 14. Performance vs Benchmarks widget
+
+- Every line is rebased to 100 on the first visible trading day, so the value at the cursor
+  minus 100 is the return since then. Zoom, pan and the brush all re-base.
+- Presets end on the last trading day and start on the last close on or before the same
+  calendar date one period earlier (1W = 7 calendar days). YTD starts on the last close of
+  the previous year, so its end value is the year-to-date return.
+- Log scale plots the same rebased values on a logarithmic axis: equal heights are equal
+  percentage moves.
+- The custom benchmark is an approximation of a daily-rebalanced blend (no costs, fixed FX).

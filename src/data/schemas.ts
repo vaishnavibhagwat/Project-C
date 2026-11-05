@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import type { Alert, Holding, NewsArticle, Portfolio } from '@/types';
+import { BENCHMARK_IDS } from './mock/benchmarks';
 import { ASSET_CLASSES, GEOGRAPHIES, INSTRUMENT_TYPES } from './mock/instruments';
 
 /**
@@ -86,6 +87,32 @@ export const NavHistorySchema = z.object({
   /** Fewer than two points means there is no history to chart (the widgets show empty). */
   points: z.array(z.object({ date: dateKey, nav: price, benchmark: price })),
 });
+
+/**
+ * performance/benchmarks: the fund NAV and six simulated index series on the same trading
+ * days, in their own units (each widget rebases them).
+ */
+export const PerformanceSeriesSchema = z
+  .object({
+    ...meta,
+    inceptionDate: dateKey,
+    dates: z.array(dateKey),
+    fund: z.array(price),
+    benchmarks: z.array(
+      z.object({
+        id: z.enum(BENCHMARK_IDS),
+        name: z.string().min(1),
+        currency: CurrencySchema,
+        levels: z.array(price),
+      }),
+    ),
+  })
+  .refine(
+    (d) =>
+      d.fund.length === d.dates.length &&
+      d.benchmarks.every((b) => b.levels.length === d.dates.length),
+    'Every series needs one value per date',
+  );
 
 export const AllocationSchema = z.object({
   ...meta,
@@ -293,6 +320,7 @@ export const AlertsSchema = z.object({
 
 export type SummaryData = z.infer<typeof SummarySchema>;
 export type NavHistoryData = z.infer<typeof NavHistorySchema>;
+export type PerformanceSeriesData = z.infer<typeof PerformanceSeriesSchema>;
 export type AllocationData = z.infer<typeof AllocationSchema>;
 export type HoldingsData = z.infer<typeof HoldingsSchema>;
 export type SectorReturnsData = z.infer<typeof SectorReturnsSchema>;

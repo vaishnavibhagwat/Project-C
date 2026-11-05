@@ -6,6 +6,7 @@ import type {
   AllocationData,
   HoldingsData,
   NavHistoryData,
+  PerformanceSeriesData,
   SectorReturnsData,
   SummaryData,
 } from '../schemas';
@@ -161,6 +162,24 @@ export function deriveNavHistory(ctx: DeriveContext): NavHistoryData {
       date,
       nav: round(dataset.fundNav[i] ?? 0, 4),
       benchmark: round(dataset.benchmarkLevels[i] ?? 0, 4),
+    })),
+  };
+}
+
+/** The fund NAV and every benchmark series of the model, over the full history. */
+export function derivePerformanceSeries(ctx: DeriveContext): PerformanceSeriesData {
+  const { dataset } = ctx;
+  return {
+    asOf: asOfIso(ctx),
+    simulated: true,
+    inceptionDate: dataset.dates[0] ?? dataset.asOfDate,
+    dates: dataset.dates,
+    fund: dataset.fundNav.map((v) => round(v, 4)),
+    benchmarks: dataset.benchmarks.map((b) => ({
+      id: b.id,
+      name: b.name,
+      currency: b.currency,
+      levels: b.levels.map((v) => round(v, 4)),
     })),
   };
 }

@@ -1,6 +1,6 @@
 /**
- * Cross-widget events (hook point). Widgets subscribe with `useWidgetEvent`; nothing publishes
- * yet. A later prompt wires publishers (e.g. a holdings-table row click sends SYMBOL_SELECTED).
+ * Cross-widget events (hook points). Widgets subscribe with `useWidgetEvent`. The performance
+ * line chart publishes DATE_RANGE_CHANGED; nothing publishes SYMBOL_SELECTED yet.
  * Module state like `data/connection.ts`, not a store: events are transient and not persisted.
  */
 export interface SymbolSelectedEvent {
@@ -11,7 +11,16 @@ export interface SymbolSelectedEvent {
   sourceInstanceId?: string;
 }
 
-export type WidgetEvent = SymbolSelectedEvent;
+/** The visible date range of a time-series widget changed (preset, zoom, pan or brush). */
+export interface DateRangeChangedEvent {
+  type: 'DATE_RANGE_CHANGED';
+  /** First and last visible trading days, YYYY-MM-DD (IST). */
+  from: string;
+  to: string;
+  sourceInstanceId?: string;
+}
+
+export type WidgetEvent = SymbolSelectedEvent | DateRangeChangedEvent;
 export type WidgetEventType = WidgetEvent['type'];
 export type WidgetEventOf<T extends WidgetEventType> = Extract<WidgetEvent, { type: T }>;
 

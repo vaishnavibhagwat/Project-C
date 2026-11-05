@@ -8,6 +8,7 @@ export type EndpointId =
   | 'risk/var'
   | 'risk/metrics'
   | 'performance/attribution'
+  | 'performance/benchmarks'
   | 'trades/blotter'
   | 'research/feed'
   | 'alerts/active';

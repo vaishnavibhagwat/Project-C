@@ -5,6 +5,7 @@ import { drawdownWidget } from '@/widgets/drawdown/config';
 import { holdingsTableWidget } from '@/widgets/holdings-table/config';
 import { holdingsTreemapWidget } from '@/widgets/holdings-treemap/config';
 import { navPerformanceWidget } from '@/widgets/nav-performance/config';
+import { performanceLineChartWidget } from '@/widgets/performance-line-chart/config';
 import { portfolioOverviewWidget } from '@/widgets/portfolio-overview/config';
 import { portfolioPieChartWidget } from '@/widgets/portfolio-pie-chart/config';
 import { researchFeedWidget } from '@/widgets/research-feed/config';
@@ -20,6 +21,7 @@ import { WidgetRegistry } from './WidgetRegistry';
 const BUILT_IN_WIDGETS: readonly RegisteredWidget[] = [
   portfolioOverviewWidget,
   navPerformanceWidget,
+  performanceLineChartWidget,
   assetAllocationWidget,
   portfolioPieChartWidget,
   drawdownWidget,
