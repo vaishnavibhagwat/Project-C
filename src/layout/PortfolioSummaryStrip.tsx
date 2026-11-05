@@ -2,7 +2,7 @@ import { useMemo, type ReactNode } from 'react';
 import { Button } from '@/components/Button';
 import { IconAlert, IconRefresh, IconWifiOff } from '@/components/Icons';
 import { InfoTooltip } from '@/components/Tooltip';
-import { LIMITS } from '@/data/derive/alerts';
+import { LIMITS } from '@/data/constants';
 import { useConnection } from '@/hooks/useConnection';
 import { useEndpoint } from '@/hooks/useEndpoint';
 import { cx } from '@/utils/cx';

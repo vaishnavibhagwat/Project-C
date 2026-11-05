@@ -13,7 +13,8 @@ import type {
 import { asOfIso, liveBook, liveHoldings, round, type DeriveContext } from './context';
 
 /** Identity of the simulated fund (fictional). */
-export const PORTFOLIO_ID = 'MER-IMAF-01';
+export { PORTFOLIO_ID } from '../constants';
+import { PORTFOLIO_ID } from '../constants';
 export const PORTFOLIO_NAME = 'Meridian India Multi-Asset Fund';
 export const BENCHMARK_NAME = 'Nifty 50 TRI';
 

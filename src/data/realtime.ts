@@ -1,6 +1,6 @@
 import type { EndpointId } from '@/types';
 import { isLiveUpdatesPaused } from './controls';
-import { PORTFOLIO_ID } from './derive/portfolio';
+import { PORTFOLIO_ID } from './constants';
 import {
   ALERTS_STREAM_URL,
   MARKET_TICKER_URL,

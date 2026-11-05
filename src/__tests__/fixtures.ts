@@ -1,4 +1,6 @@
-import { buildContext, ENDPOINTS, parseEndpoint, type EndpointDataMap } from '@/data';
+import { parseEndpoint, type EndpointDataMap } from '@/data';
+import { ENDPOINTS } from '@/data/endpoints';
+import { buildContext } from '@/data/server';
 import type { EndpointId, GridItemLayout } from '@/types';
 import { istTimeMs } from '@/utils/time';
 

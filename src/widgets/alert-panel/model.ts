@@ -1,4 +1,4 @@
-import { PORTFOLIO_ENTITY } from '@/data/derive/alerts';
+import { PORTFOLIO_ENTITY } from '@/data/constants';
 import { formatPct } from '@/utils/format';
 import { istDateKey, istTimeMs } from '@/utils/time';
 import {

@@ -1,4 +1,3 @@
-import type { ZodType } from 'zod';
 import type { EndpointId } from '@/types';
 import type { DeriveContext } from './derive/context';
 import { deriveAlertPanel, deriveAlerts } from './derive/alerts';
@@ -18,165 +17,41 @@ import { deriveReturnSeries } from './derive/returns';
 import { deriveTicker } from './derive/ticker';
 import { deriveMetrics, deriveVar } from './derive/risk';
 import { deriveTrades } from './derive/trades';
-import {
-  AlertPanelSchema,
-  AlertsSchema,
-  AllocationSchema,
-  AttributionInputsSchema,
-  AttributionSchema,
-  HoldingsSchema,
-  MarketNewsSchema,
-  MarketTickerSchema,
-  MetricsSchema,
-  NavHistorySchema,
-  PerformanceSeriesSchema,
-  ResearchSchema,
-  ReturnSeriesSchema,
-  SectorReturnsSchema,
-  SummarySchema,
-  TradesSchema,
-  VarSchema,
-  type AlertPanelData,
-  type AlertsData,
-  type AllocationData,
-  type AttributionData,
-  type AttributionInputsData,
-  type HoldingsData,
-  type MarketNewsData,
-  type MarketTickerData,
-  type MetricsData,
-  type NavHistoryData,
-  type PerformanceSeriesData,
-  type ResearchData,
-  type ReturnSeriesData,
-  type SectorReturnsData,
-  type SummaryData,
-  type TradesData,
-  type VarData,
-} from './schemas';
+import { ENDPOINT_SCHEMAS, type EndpointDataMap, type EndpointSchemaSpec } from './endpointSchemas';
 
-export interface EndpointDataMap {
-  'portfolio/summary': SummaryData;
-  'portfolio/nav-history': NavHistoryData;
-  'portfolio/allocation': AllocationData;
-  'portfolio/holdings': HoldingsData;
-  'market/sector-returns': SectorReturnsData;
-  'market/ticker': MarketTickerData;
-  'risk/var': VarData;
-  'risk/metrics': MetricsData;
-  'risk/returns': ReturnSeriesData;
-  'performance/attribution': AttributionData;
-  'performance/attribution-inputs': AttributionInputsData;
-  'performance/benchmarks': PerformanceSeriesData;
-  'trades/blotter': TradesData;
-  'research/feed': ResearchData;
-  'market/news': MarketNewsData;
-  'alerts/active': AlertsData;
-  'alerts/panel': AlertPanelData;
+export { ENDPOINT_IDS, ENDPOINT_SCHEMAS } from './endpointSchemas';
+export type { EndpointDataMap } from './endpointSchemas';
+
+/** Server side of the mock API: an endpoint's schema plus the derivation that answers it. */
+export interface EndpointSpec<T> extends EndpointSchemaSpec<T> {
+  derive: (ctx: DeriveContext) => T;
 }
 
-export interface EndpointSpec<T> {
-  schema: ZodType<T>;
-  derive: (ctx: DeriveContext) => T;
-  /** True when the response has nothing to show ("No data available"). */
-  isEmpty: (data: T) => boolean;
+function spec<E extends EndpointId>(
+  endpoint: E,
+  derive: (ctx: DeriveContext) => EndpointDataMap[E],
+): EndpointSpec<EndpointDataMap[E]> {
+  return { ...ENDPOINT_SCHEMAS[endpoint], derive };
 }
 
 type EndpointRegistry = { [K in EndpointId]: EndpointSpec<EndpointDataMap[K]> };
 
 export const ENDPOINTS: EndpointRegistry = {
-  'portfolio/summary': { schema: SummarySchema, derive: deriveSummary, isEmpty: () => false },
-  'portfolio/nav-history': {
-    schema: NavHistorySchema,
-    derive: deriveNavHistory,
-    isEmpty: (d) => d.points.length < 2,
-  },
-  'portfolio/allocation': {
-    schema: AllocationSchema,
-    derive: deriveAllocation,
-    isEmpty: (d) => d.assetClasses.length === 0,
-  },
-  'portfolio/holdings': {
-    schema: HoldingsSchema,
-    derive: deriveHoldings,
-    isEmpty: (d) => d.holdings.length === 0,
-  },
-  'market/sector-returns': {
-    schema: SectorReturnsSchema,
-    derive: deriveSectorReturns,
-    isEmpty: (d) => d.cells.length === 0,
-  },
-  'market/ticker': {
-    schema: MarketTickerSchema,
-    derive: deriveTicker,
-    isEmpty: (d) => d.quotes.length === 0,
-  },
-  'risk/var': { schema: VarSchema, derive: deriveVar, isEmpty: (d) => d.lookbackDays === 0 },
-  'risk/metrics': { schema: MetricsSchema, derive: deriveMetrics, isEmpty: () => false },
-  'risk/returns': {
-    schema: ReturnSeriesSchema,
-    derive: deriveReturnSeries,
-    isEmpty: (d) => d.dates.length < 2,
-  },
-  'performance/attribution': {
-    schema: AttributionSchema,
-    derive: deriveAttribution,
-    isEmpty: (d) => d.periods.length === 0,
-  },
-  'performance/attribution-inputs': {
-    schema: AttributionInputsSchema,
-    derive: deriveAttributionInputs,
-    isEmpty: (d) => d.dates.length < 2,
-  },
-  'performance/benchmarks': {
-    schema: PerformanceSeriesSchema,
-    derive: derivePerformanceSeries,
-    isEmpty: (d) => d.dates.length < 2,
-  },
-  'trades/blotter': {
-    schema: TradesSchema,
-    derive: deriveTrades,
-    isEmpty: (d) => d.trades.length === 0,
-  },
-  'research/feed': {
-    schema: ResearchSchema,
-    derive: deriveResearch,
-    isEmpty: (d) => d.articles.length === 0,
-  },
-  'market/news': {
-    schema: MarketNewsSchema,
-    derive: deriveMarketNews,
-    isEmpty: (d) => d.articles.length === 0,
-  },
-  'alerts/active': {
-    schema: AlertsSchema,
-    derive: deriveAlerts,
-    isEmpty: (d) => d.alerts.length === 0,
-  },
-  'alerts/panel': {
-    schema: AlertPanelSchema,
-    derive: deriveAlertPanel,
-    // Rules can still fire with no active alerts, so an empty list is not "no data".
-    isEmpty: () => false,
-  },
+  'portfolio/summary': spec('portfolio/summary', deriveSummary),
+  'portfolio/nav-history': spec('portfolio/nav-history', deriveNavHistory),
+  'portfolio/allocation': spec('portfolio/allocation', deriveAllocation),
+  'portfolio/holdings': spec('portfolio/holdings', deriveHoldings),
+  'market/sector-returns': spec('market/sector-returns', deriveSectorReturns),
+  'market/ticker': spec('market/ticker', deriveTicker),
+  'risk/var': spec('risk/var', deriveVar),
+  'risk/metrics': spec('risk/metrics', deriveMetrics),
+  'risk/returns': spec('risk/returns', deriveReturnSeries),
+  'performance/attribution': spec('performance/attribution', deriveAttribution),
+  'performance/attribution-inputs': spec('performance/attribution-inputs', deriveAttributionInputs),
+  'performance/benchmarks': spec('performance/benchmarks', derivePerformanceSeries),
+  'trades/blotter': spec('trades/blotter', deriveTrades),
+  'research/feed': spec('research/feed', deriveResearch),
+  'market/news': spec('market/news', deriveMarketNews),
+  'alerts/active': spec('alerts/active', deriveAlerts),
+  'alerts/panel': spec('alerts/panel', deriveAlertPanel),
 };
-
-export const ENDPOINT_IDS: readonly EndpointId[] = [
-  'portfolio/summary',
-  'portfolio/nav-history',
-  'portfolio/allocation',
-  'portfolio/holdings',
-  'market/sector-returns',
-  'market/ticker',
-  'risk/var',
-  'risk/metrics',
-  'risk/returns',
-  'performance/attribution',
-  'performance/attribution-inputs',
-  'performance/benchmarks',
-  'trades/blotter',
-  'research/feed',
-  'market/news',
-  'alerts/active',
-  'alerts/panel',
-];

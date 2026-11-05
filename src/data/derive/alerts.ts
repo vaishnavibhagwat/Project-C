@@ -6,21 +6,8 @@ import { deriveHoldings } from './portfolio';
 import { deriveResearch } from './research';
 import { deriveMetrics, deriveVar } from './risk';
 
-/** Risk limits used by the rule engine. Illustrative policy values. */
-export const LIMITS = {
-  var99Warning: 0.015,
-  var99Critical: 0.02,
-  singleNameWeightPct: 9,
-  priceMovePct: 2.5,
-  drawdownWarning: 0.05,
-  /** |sentimentScore| at or above which research on a held ticker raises a news alert. */
-  newsSentiment: 0.8,
-  /** Most recent qualifying news alerts kept. */
-  newsAlerts: 3,
-} as const;
-
-/** relatedEntity for fund-level alerts. */
-export const PORTFOLIO_ENTITY = 'PORTFOLIO';
+export { LIMITS, PORTFOLIO_ENTITY } from '../constants';
+import { LIMITS, PORTFOLIO_ENTITY } from '../constants';
 
 const SEVERITY_RANK: Record<AlertSeverity, number> = { critical: 0, warning: 1, info: 2 };
 

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { NEWS_SOURCES } from '@/data/mock/news';
+import { NEWS_SOURCES } from '@/data/constants';
 import type { MarketNewsData } from '@/data/schemas';
 
 export const NEWS_SOURCE_FILTERS = ['all', ...NEWS_SOURCES] as const;

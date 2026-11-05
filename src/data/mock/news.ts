@@ -5,7 +5,8 @@ import type { BenchmarkSeries } from './benchmarks';
 import type { Instrument } from './instruments';
 import type { MockWindow } from './window';
 
-export const NEWS_SOURCES = ['Reuters', 'Bloomberg', 'Economic Times', 'Moneycontrol'] as const;
+export { NEWS_SOURCES } from '../constants';
+import { NEWS_SOURCES } from '../constants';
 export type NewsSource = (typeof NEWS_SOURCES)[number];
 
 /** Trading days of news kept (the newest first in responses). */

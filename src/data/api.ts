@@ -2,11 +2,7 @@ import type { EndpointId, LatencyProfile } from '@/types';
 import { env } from '@/utils/env';
 import { isConnected } from './connection';
 import { effectiveLatencyProfile, isFailureSimulated } from './controls';
-import { getPortfolioModel } from './model';
-import { createTradeSchedule } from './derive/trades';
-import { ENDPOINTS, type EndpointDataMap } from './endpoints';
-import { getMarketSnapshot, primeMarket } from './market';
-import type { DeriveContext } from './derive/context';
+import { ENDPOINT_SCHEMAS, type EndpointDataMap } from './endpointSchemas';
 
 /** Thrown when the (simulated) data feed is unreachable. Shown as the disconnected state. */
 export class ConnectionError extends Error {
@@ -63,12 +59,6 @@ export function endpointUrl(endpoint: EndpointId, base: string = env.VITE_API_BA
   return `${base.replace(/\/+$/, '')}/${endpoint}`;
 }
 
-export function buildContext(nowMs: number): DeriveContext {
-  const dataset = getPortfolioModel(nowMs);
-  const market = getMarketSnapshot(dataset, nowMs, createTradeSchedule(dataset));
-  return { dataset, market, nowMs };
-}
-
 /** Objects that passed schema validation, tagged with the endpoint that validated them. */
 const validated = new WeakMap<object, EndpointId>();
 
@@ -83,7 +73,7 @@ export function parseEndpoint<E extends EndpointId>(
   endpoint: E,
   json: unknown,
 ): EndpointDataMap[E] {
-  const spec = ENDPOINTS[endpoint];
+  const spec = ENDPOINT_SCHEMAS[endpoint];
   const result = spec.schema.safeParse(json);
   if (!result.success) {
     const issue = result.error.issues[0];
@@ -119,9 +109,9 @@ export async function fetchEndpoint<E extends EndpointId>(
   }
 
   const nowMs = (options.now ?? Date.now)();
-  const dataset = getPortfolioModel(nowMs);
-  await primeMarket(dataset, nowMs, createTradeSchedule(dataset));
-  const payload = ENDPOINTS[endpoint].derive(buildContext(nowMs));
+  // The simulated back end loads on the first request (its own chunk).
+  const { serveEndpoint } = await import('./server');
+  const payload = await serveEndpoint(endpoint, nowMs);
   const wire: unknown = JSON.parse(JSON.stringify(payload));
   return parseEndpoint(endpoint, wire);
 }

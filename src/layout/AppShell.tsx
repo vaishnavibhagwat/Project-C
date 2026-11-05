@@ -24,7 +24,11 @@ import type { SearchResult } from './searchIndex';
 import { ShareDialog } from './ShareDialog';
 import { SharedLayoutBanner } from './SharedLayoutBanner';
 import type { ShellContext } from './shellContext';
-import { SymbolDetail } from './SymbolDetail';
+
+// The symbol panel reads the portfolio model directly, so it loads on first use (its own chunk).
+const SymbolDetail = lazy(() =>
+  import('./SymbolDetail').then((m) => ({ default: m.SymbolDetail })),
+);
 
 // The theme builder pulls in react-colorful; load it only when someone opens it.
 const ThemeBuilder = lazy(() => import('@/theme/ThemeBuilder'));
@@ -69,6 +73,9 @@ export function AppShell() {
   const [shareOpen, setShareOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [symbol, setSymbol] = useState<string | null>(null);
+  // Mounted from the first time a symbol opens (keeps the drawer's close animation after that).
+  const [symbolPanelLoaded, setSymbolPanelLoaded] = useState(false);
+  if (symbol !== null && !symbolPanelLoaded) setSymbolPanelLoaded(true);
   const [perfOpen, setPerfOpen] = useState(false);
   const builderOpen = useThemeStore((s) => s.builder.open);
   const openBuilder = useThemeStore((s) => s.openBuilder);
@@ -244,7 +251,11 @@ export function AppShell() {
       <ConfigPanel />
       <LayoutManager open={layoutsOpen} onClose={() => setLayoutsOpen(false)} page={meta} />
       <ShareDialog open={shareOpen} onClose={() => setShareOpen(false)} page={meta} />
-      <SymbolDetail symbol={symbol} onClose={() => setSymbol(null)} />
+      {symbolPanelLoaded ? (
+        <Suspense fallback={null}>
+          <SymbolDetail symbol={symbol} onClose={() => setSymbol(null)} />
+        </Suspense>
+      ) : null}
       <Modal
         open={resetOpen}
         onClose={() => setResetOpen(false)}

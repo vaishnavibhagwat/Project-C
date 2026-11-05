@@ -10,7 +10,7 @@ import { createRng, hashSeed, normal } from './random';
  * widget reads one set of numbers. Same seed + same as-of date => same prices.
  */
 
-export const AUM_USD = 45_000_000_000;
+export { AUM_USD } from './constants';
 export const RISK_FREE_RATE = 0.0675;
 /** Five years of daily history (+1 level for the starting point). */
 export const HISTORY_DAYS = 1261;

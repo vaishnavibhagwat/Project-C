@@ -237,7 +237,7 @@ have not been re-measured since.
 
 | Target (brief)                  | Result                                                                                                                                                                                                     |
 | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Main bundle < 150 KB gzip       | **127.2 KB** gzip (`npm run build` then `npm run analyze`, 5 Nov)                                                                                                                                          |
+| Main bundle < 150 KB gzip       | **131.8 KB** gzip (`npm run build` then `npm run analyze`, 5 Nov; the simulated back end is its own 11 KB lazy chunk)                                                                                      |
 | Widget chunk < 50 KB gzip       | Widget chunks **0.7–2.1 KB**; largest lazy chunk 35.2 KB (dashboard page: grid, react-grid-layout, summary strip). Shared Recharts vendor chunk is **137.3 KB** gzip, loaded on first chart                |
 | Initial load < 2 s              | **1.07–1.22 s** until all 10 widgets showed data (median 1.12 s over 5 runs, local preview server; 21 Oct, previous Workstation layout)                                                                    |
 | Drag > 55 FPS                   | **~60 FPS** during a widget drag (p95 frame 16.8 ms)                                                                                                                                                       |

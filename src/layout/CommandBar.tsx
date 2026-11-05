@@ -1,6 +1,6 @@
 import { Badge } from '@/components/Badge';
 import { IconSearch } from '@/components/Icons';
-import { AUM_USD } from '@/data/dataset';
+import { AUM_USD } from '@/data/constants';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { ThemeMenu } from '@/theme/ThemeMenu';
 import type { PageId } from '@/types';

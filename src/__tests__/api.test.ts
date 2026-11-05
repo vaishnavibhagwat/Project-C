@@ -2,13 +2,13 @@ import { describe, expect, it } from 'vitest';
 import {
   ConnectionError,
   ENDPOINT_IDS,
-  ENDPOINTS,
   fetchEndpoint,
   isEndpointData,
   parseEndpoint,
   setSimulatedOutage,
   ValidationError,
 } from '@/data';
+import { ENDPOINTS } from '@/data/endpoints';
 import { getMarketSnapshot, primeMarket, resetMarketSimulation } from '@/data/market';
 import { buildPortfolioModel } from '@/data/model';
 import { createTradeSchedule } from '@/data/derive/trades';

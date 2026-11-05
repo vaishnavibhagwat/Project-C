@@ -2,7 +2,7 @@ export * from './api';
 export * from './connection';
 export * from './controls';
 export * from './dataset';
-export * from './endpoints';
+export * from './endpointSchemas';
 export * from './market';
 export * from './model';
 export * from './nifty50';

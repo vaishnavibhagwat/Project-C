@@ -83,6 +83,12 @@ describe('global search index', () => {
   });
 });
 
+// The symbol panel is a lazy chunk with the portfolio model behind it: compile it up front so
+// the test that opens it does not pay that cost inside its own timeout.
+beforeAll(async () => {
+  await import('@/layout/SymbolDetail');
+}, 60_000);
+
 describe('AppShell', () => {
   it('renders the workstation: nav rail, command bar, simulated-data label, summary strip and 9 widgets', async () => {
     renderShell();
@@ -119,7 +125,7 @@ describe('AppShell', () => {
     );
     expect(within(strip).getByText('$45.0B')).toBeInTheDocument();
     expect(within(strip).getAllByRole('term')).toHaveLength(8);
-  }, 15_000);
+  }, 30_000);
 
   it('switches between app areas', async () => {
     renderShell();
@@ -193,11 +199,17 @@ describe('AppShell', () => {
     const input = screen.getByRole('combobox', { name: /Search pages, widgets/ });
     fireEvent.change(input, { target: { value: 'RELIANCE' } });
     fireEvent.keyDown(input, { key: 'Enter' });
+    // The panel builds the portfolio model on first open: about 0.1 s in a browser, but 5–9 s
+    // under the full parallel test suite, hence the long waits.
     expect(
-      await screen.findByRole('dialog', { name: /RELIANCE · Reliance Industries/ }),
+      await screen.findByRole(
+        'dialog',
+        { name: /RELIANCE · Reliance Industries/ },
+        { timeout: 20_000 },
+      ),
     ).toBeInTheDocument();
     expect(await screen.findByText('Quantity', {}, { timeout: 8000 })).toBeInTheDocument();
-  });
+  }, 15_000);
 
   it('adds a widget from the marketplace to the chosen page', async () => {
     renderShell();

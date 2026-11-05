@@ -1,14 +1,7 @@
 import { z } from 'zod';
-import { getNseSession, toIstIso } from '@/utils/time';
-import { buildContext } from './api';
+import { toIstIso } from '@/utils/time';
+import { PORTFOLIO_ID } from './constants';
 import { isConnected, subscribeConnection } from './connection';
-import { lastClose, previousClose } from './dataset';
-import { getPortfolioModel } from './model';
-import { liveHoldings } from './derive/context';
-import { PORTFOLIO_ID } from './derive/portfolio';
-import { createTradeSchedule } from './derive/trades';
-import { ENDPOINTS } from './endpoints';
-import { primeMarket } from './market';
 import { AlertSchema, finite, istIso, NewsArticleSchema, price } from './schemas';
 
 /**
@@ -169,54 +162,9 @@ export interface BuildRequest {
 
 export type MessageBuilder = (request: BuildRequest) => Promise<MessageBody>;
 
-const pctChange = (last: number, prev: number) => (prev > 0 ? (last / prev - 1) * 100 : 0);
-
-/** Builds messages from the shared dataset and the intraday tape (the same prices as the API). */
-export const buildFromDataset: MessageBuilder = async ({ kind, portfolioId, nowMs, seen }) => {
-  const dataset = getPortfolioModel(nowMs);
-  await primeMarket(dataset, nowMs, createTradeSchedule(dataset));
-  const ctx = buildContext(nowMs);
-  switch (kind) {
-    case 'prices':
-      return {
-        type: 'prices',
-        portfolioId: portfolioId ?? PORTFOLIO_ID,
-        prices: liveHoldings(ctx).map((h) => ({
-          ticker: h.holding.symbol,
-          price: h.ltp,
-          previousClose: h.prevClose,
-          changePct: pctChange(h.ltp, h.prevClose),
-        })),
-      };
-    case 'ticker': {
-      const frozen = ctx.market.mode === 'frozen';
-      return {
-        type: 'ticker',
-        session: getNseSession(nowMs).phase,
-        quotes: dataset.constituents.map((c, i) => {
-          const last = frozen
-            ? lastClose(dataset, i)
-            : (ctx.market.prices[i] ?? lastClose(dataset, i));
-          const prev = frozen ? previousClose(dataset, i) : (ctx.market.referenceCloses[i] ?? last);
-          return { symbol: c.symbol, last, changePct: pctChange(last, prev) };
-        }),
-      };
-    }
-    case 'alerts':
-      return {
-        type: 'alerts',
-        alerts: ENDPOINTS['alerts/active'].derive(ctx).alerts.filter((a) => !seen.has(a.alertId)),
-      };
-    case 'news':
-      return {
-        type: 'news',
-        articles: [
-          ...ENDPOINTS['market/news'].derive(ctx).articles,
-          ...ENDPOINTS['research/feed'].derive(ctx).articles,
-        ].filter((a) => !seen.has(a.articleId)),
-      };
-  }
-};
+/** Builds messages from the portfolio model and the intraday tape (the same prices as the API). */
+export const buildFromDataset: MessageBuilder = async (request) =>
+  (await import('./server')).buildFromDataset(request);
 
 // ---------------------------------------------------------------------------------------------
 // Status

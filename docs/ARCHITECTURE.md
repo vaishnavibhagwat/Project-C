@@ -450,6 +450,18 @@ sequenceDiagram
    state to show, and renders the registered component, which checks config and data before
    handing them to the widget.
 
+### The simulated back end is a lazy chunk
+
+The mock API has two halves. `src/data/endpointSchemas.ts` (client, main bundle) holds each
+endpoint's response type, zod schema and "empty" test; `parseEndpoint` uses it. The back end
+(`src/data/server.ts`, with `endpoints.ts`, the portfolio model, the intraday tape and every
+derivation) loads on the first request: `fetchEndpoint` and the WebSocket simulator import it
+dynamically, as a real server's code would never ship to the browser. Constants both halves
+need (portfolio id, AUM, limits, news outlet labels) live in `src/data/constants.ts` so
+importing one does not pull the model in. The symbol detail panel, which reads the model
+directly, is also loaded on first use. Together this took the main bundle from 145.5 KB to
+131.8 KB gzip.
+
 ### Portfolio model: one source for every number
 
 ```mermaid

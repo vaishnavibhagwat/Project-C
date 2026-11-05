@@ -1,6 +1,6 @@
 import type { JSONSchema7, JSONSchema7Definition, JSONSchema7Type } from 'json-schema';
 import { z } from 'zod';
-import { ENDPOINT_IDS } from '@/data/endpoints';
+import { ENDPOINT_IDS } from '@/data/endpointSchemas';
 import { WidgetCategory } from '@/types';
 import { validateWidgetConfig } from './configValidator';
 
