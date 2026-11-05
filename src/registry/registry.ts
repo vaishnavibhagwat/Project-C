@@ -1,4 +1,5 @@
 import { WidgetCategory } from '@/types';
+import { alertPanelWidget } from '@/widgets/alert-panel/config';
 import { alertsMonitorWidget } from '@/widgets/alerts-monitor/config';
 import { assetAllocationWidget } from '@/widgets/asset-allocation/config';
 import { drawdownWidget } from '@/widgets/drawdown/config';
@@ -33,6 +34,7 @@ const BUILT_IN_WIDGETS: readonly RegisteredWidget[] = [
   researchFeedWidget,
   newsFeedWidget,
   alertsMonitorWidget,
+  alertPanelWidget,
   varGaugeWidget,
   riskMetricsWidget,
   sectorHeatmapWidget,

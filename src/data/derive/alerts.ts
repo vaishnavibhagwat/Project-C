@@ -1,6 +1,6 @@
 import type { Alert, AlertSeverity } from '@/types';
 import { formatPct } from '@/utils/format';
-import type { AlertsData } from '../schemas';
+import type { AlertPanelData, AlertsData } from '../schemas';
 import { asOfIso, type DeriveContext } from './context';
 import { deriveHoldings } from './portfolio';
 import { deriveResearch } from './research';
@@ -117,4 +117,25 @@ export function deriveAlerts(ctx: DeriveContext): AlertsData {
 
   alerts.sort((a, b) => SEVERITY_RANK[a.severity] - SEVERITY_RANK[b.severity]);
   return { asOf: at, simulated: true, alerts };
+}
+
+/** alerts/panel: active alerts plus the prices, VaR and drawdown the panel's rules check. */
+export function deriveAlertPanel(ctx: DeriveContext): AlertPanelData {
+  const v = deriveVar(ctx);
+  return {
+    asOf: asOfIso(ctx),
+    simulated: true,
+    alerts: deriveAlerts(ctx).alerts,
+    inputs: {
+      quotes: deriveHoldings(ctx).holdings.map((h) => ({
+        ticker: h.ticker,
+        name: h.name,
+        price: h.currentPrice,
+        currency: h.currency,
+      })),
+      var95: v.historical.var95,
+      var99: v.historical.var99,
+      currentDrawdown: deriveMetrics(ctx).currentDrawdown,
+    },
+  };
 }

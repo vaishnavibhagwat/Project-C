@@ -1,5 +1,6 @@
 // Widget barrel: definitions and registry entries only. Components stay behind React.lazy
 // in each widget's config.ts so every widget is its own chunk.
+export * from './alert-panel/config';
 export * from './alerts-monitor/config';
 export * from './asset-allocation/config';
 export * from './drawdown/config';

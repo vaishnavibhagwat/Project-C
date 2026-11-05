@@ -33,6 +33,8 @@ export default {
         pos: token('color-positive'),
         neg: token('color-negative'),
         warn: token('color-warning'),
+        // Informational blue: Series 5 is blue in every built-in theme.
+        info: token('color-chart-5'),
         focus: token('color-focus'),
       },
       fontFamily: {
@@ -46,9 +48,16 @@ export default {
           '0%': { backgroundPosition: '-400px 0' },
           '100%': { backgroundPosition: '400px 0' },
         },
+        // Critical alerts: a soft ring that grows and fades (motion-safe only).
+        'alert-pulse': {
+          '0%': { boxShadow: '0 0 0 0 rgb(var(--color-negative) / 0.45)' },
+          '70%': { boxShadow: '0 0 0 6px rgb(var(--color-negative) / 0)' },
+          '100%': { boxShadow: '0 0 0 0 rgb(var(--color-negative) / 0)' },
+        },
       },
       animation: {
         shimmer: 'shimmer 1.4s linear infinite',
+        'alert-pulse': 'alert-pulse 1.8s ease-out infinite',
       },
     },
   },

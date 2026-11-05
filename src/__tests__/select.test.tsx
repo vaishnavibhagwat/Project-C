@@ -40,3 +40,30 @@ describe('SentimentBadge', () => {
     expect(screen.getAllByText(/^[▲▼■]$/)).toHaveLength(3);
   });
 });
+
+describe('Dropdown on scroll', () => {
+  it('stays open while its trigger is in view, and closes once it scrolls away', () => {
+    render(
+      <div data-testid="scroller">
+        <Select label="Letter" value="a" options={OPTIONS} onValueChange={() => undefined} />
+      </div>,
+    );
+    const trigger = screen.getByRole('button', { name: 'Letter: Alpha' });
+    fireEvent.click(trigger);
+    fireEvent.scroll(screen.getByTestId('scroller'));
+    expect(screen.getByRole('menu')).toBeInTheDocument();
+    const away = {
+      top: 5000,
+      bottom: 5020,
+      left: 0,
+      right: 80,
+      width: 80,
+      height: 20,
+      x: 0,
+      y: 5000,
+    };
+    trigger.getBoundingClientRect = () => ({ ...away, toJSON: () => away });
+    fireEvent.scroll(screen.getByTestId('scroller'));
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
+  });
+});

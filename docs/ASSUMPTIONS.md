@@ -253,3 +253,20 @@ into the market news response they get the source "Meridian Research" and no pri
   the News Feed keeps only the four outlet labels, the Research Feed its own notes.
 - Sentiment for wire stories uses the same rule as the daily stories (tanh of the move plus
   noise; positive above 0.15, negative below −0.15).
+
+## 17. Alert Panel widget
+
+- `alerts/panel` returns the active rule-engine alerts (§9) together with the inputs the
+  panel's own rules check, read at the same moment: every holding's price (own currency), the
+  1-day historical 95% and 99% VaR, and the current drawdown from the NAV high-water mark.
+- User rules: price above / below a level for one ticker, VaR (95% or 99%) above a % of AUM,
+  drawdown deeper than a %. A rule fires while its condition holds; its alert id is stable
+  (`rule-<id>`), so dismissals and snoozes stick. Rules are saved with the widget (zod
+  validated; at most 20).
+- On demand: the panel is not polled. It refreshes on each alerts-stream push (every 10 s by
+  default) and on Refresh, so price rules see prices as of the last push.
+- Snooze ends after 15 minutes, 1 hour, or at the next 15:30 IST (the NSE close; the next
+  day's 15:30 if it is already later). Dismissed and snoozed ids of alerts that no longer
+  exist are dropped the next time either list changes.
+- Default rules: 99% VaR above 1.2% of AUM (warning) and drawdown deeper than 10% (critical).
+  Illustrative policy values.

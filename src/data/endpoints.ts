@@ -1,7 +1,7 @@
 import type { ZodType } from 'zod';
 import type { EndpointId } from '@/types';
 import type { DeriveContext } from './derive/context';
-import { deriveAlerts } from './derive/alerts';
+import { deriveAlertPanel, deriveAlerts } from './derive/alerts';
 import { deriveAttribution } from './derive/attribution';
 import {
   deriveAllocation,
@@ -16,6 +16,7 @@ import { deriveResearch } from './derive/research';
 import { deriveMetrics, deriveVar } from './derive/risk';
 import { deriveTrades } from './derive/trades';
 import {
+  AlertPanelSchema,
   AlertsSchema,
   AllocationSchema,
   AttributionSchema,
@@ -29,6 +30,7 @@ import {
   SummarySchema,
   TradesSchema,
   VarSchema,
+  type AlertPanelData,
   type AlertsData,
   type AllocationData,
   type AttributionData,
@@ -58,6 +60,7 @@ export interface EndpointDataMap {
   'research/feed': ResearchData;
   'market/news': MarketNewsData;
   'alerts/active': AlertsData;
+  'alerts/panel': AlertPanelData;
 }
 
 export interface EndpointSpec<T> {
@@ -123,6 +126,12 @@ export const ENDPOINTS: EndpointRegistry = {
     derive: deriveAlerts,
     isEmpty: (d) => d.alerts.length === 0,
   },
+  'alerts/panel': {
+    schema: AlertPanelSchema,
+    derive: deriveAlertPanel,
+    // Rules can still fire with no active alerts, so an empty list is not "no data".
+    isEmpty: () => false,
+  },
 };
 
 export const ENDPOINT_IDS: readonly EndpointId[] = [
@@ -139,4 +148,5 @@ export const ENDPOINT_IDS: readonly EndpointId[] = [
   'research/feed',
   'market/news',
   'alerts/active',
+  'alerts/panel',
 ];

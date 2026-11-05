@@ -322,6 +322,30 @@ export const AlertSchema = z.object({
   acknowledged: z.boolean(),
 }) satisfies z.ZodType<Alert>;
 
+/**
+ * alerts/panel: the active alerts plus the inputs the Alert Panel's own rules check (prices,
+ * VaR and drawdown at the same moment), so rules and alerts agree.
+ */
+export const AlertPanelSchema = z.object({
+  ...meta,
+  alerts: z.array(AlertSchema),
+  inputs: z.object({
+    quotes: z.array(
+      z.object({
+        ticker: z.string().min(1),
+        name: z.string().min(1),
+        price,
+        currency: CurrencySchema,
+      }),
+    ),
+    /** 1-day historical VaR, fractions of AUM. */
+    var95: z.number().min(0).max(1),
+    var99: z.number().min(0).max(1),
+    /** Fraction below the NAV high-water mark. */
+    currentDrawdown: z.number().min(0).max(1),
+  }),
+});
+
 export const AlertsSchema = z.object({
   ...meta,
   alerts: z.array(AlertSchema),
@@ -343,3 +367,4 @@ export type TradesData = z.infer<typeof TradesSchema>;
 export type ResearchData = z.infer<typeof ResearchSchema>;
 export type MarketNewsData = z.infer<typeof MarketNewsSchema>;
 export type AlertsData = z.infer<typeof AlertsSchema>;
+export type AlertPanelData = z.infer<typeof AlertPanelSchema>;

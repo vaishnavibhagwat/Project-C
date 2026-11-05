@@ -12,7 +12,8 @@ export type EndpointId =
   | 'trades/blotter'
   | 'research/feed'
   | 'market/news'
-  | 'alerts/active';
+  | 'alerts/active'
+  | 'alerts/panel';
 
 export type Sector =
   | 'Financial Services'

@@ -26,7 +26,7 @@ flowchart TB
     registry["widgetRegistry<br/>contract + runtime validation"]
     grid["GridContainer + GridItem<br/>react-grid-layout"]
     frame["WidgetFrame<br/>states, header, error boundary"]
-    widgets["17 widgets<br/>one lazy chunk each"]
+    widgets["18 widgets<br/>one lazy chunk each"]
   end
   subgraph D["Data"]
     query["TanStack Query cache<br/>one query per endpoint"]
@@ -736,6 +736,21 @@ Settings a widget sets from its own UI (the Holdings table's sort, column order 
 columns) are declared in `configSchema` with `readOnly: true`: they are validated like any
 setting but not shown in the settings form.
 
+### On-demand data sources
+
+`DataSourceConfig.onDemand: true` turns polling off: the widget refreshes only when its
+endpoint's simulated stream pushes (the realtime bridge invalidates the query) or when the
+user presses Refresh. `refreshInterval` then only decides when the data counts as stale (2x).
+The Alert Panel uses it with `alerts/panel` and `ws://mock/alerts/stream`.
+
+### Toasts
+
+`ToastProvider` / `useToast()` (`src/components/Toast.tsx`): info, success, warning and error,
+each with an icon and a spoken label. They auto-dismiss after 5 s, pause while hovered or
+focused, carry one optional action, and keep at most four on screen. Errors go to an
+assertive live region, the rest to a polite one. The Alert Panel raises an error toast for
+each critical alert that appears after it has loaded (once per alert, across panels).
+
 ### Cross-widget events
 
 `src/utils/widgetEvents.ts` is a small typed publish/subscribe channel for events between
@@ -746,6 +761,9 @@ Events so far:
   is clicked (or Enter / Space on a focused row). The Portfolio Pie Chart listens and
   highlights the slice holding that symbol; the News Feed narrows to stories that mention it
   (a chip clears the filter).
+- `ALERT_CLICKED { alertId, severity, relatedWidget, relatedEntity, sourceInstanceId? }`: the
+  Alert Panel publishes it when an alert (or a critical toast's View) is clicked. Nothing
+  listens yet.
 - `DATE_RANGE_CHANGED { from, to, sourceInstanceId? }`: Performance vs Benchmarks publishes
   it 250 ms after its visible range settles (preset, zoom, pan or brush; not on first render).
   Nothing listens yet.

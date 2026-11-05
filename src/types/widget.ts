@@ -41,6 +41,11 @@ export interface DataSourceConfig {
   refreshInterval: number;
   /** Simulated latency class: low ≈ 0.4x, normal 1x, high ≈ 2.5x the configured latency. */
   latencyProfile: LatencyProfile;
+  /**
+   * On demand: never polled. Fresh data comes from pushes on the endpoint's simulated stream
+   * and the header's Refresh button; `refreshInterval` then only sets when it counts as stale.
+   */
+  onDemand?: boolean;
 }
 
 /** Props every widget component receives from its frame. */

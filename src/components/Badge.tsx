@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { cx } from '@/utils/cx';
 
-export type BadgeTone = 'neutral' | 'accent' | 'positive' | 'negative' | 'warning';
+export type BadgeTone = 'neutral' | 'accent' | 'info' | 'positive' | 'negative' | 'warning';
 
 export interface BadgeProps {
   tone?: BadgeTone;
@@ -12,6 +12,7 @@ export interface BadgeProps {
 const BADGE_TONES: Record<BadgeTone, string> = {
   neutral: 'border-line-strong text-muted',
   accent: 'border-accent/40 text-accent bg-accent/10',
+  info: 'border-info/40 text-info bg-info/10',
   positive: 'border-pos/40 text-pos bg-pos/10',
   negative: 'border-neg/40 text-neg bg-neg/10',
   warning: 'border-warn/40 text-warn bg-warn/10',

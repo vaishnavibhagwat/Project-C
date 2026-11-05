@@ -84,7 +84,8 @@ function itemText(item: ActionItem): string {
  * and returns focus to the trigger. Disabled items are skipped.
  *
  * The menu renders in a portal with fixed positioning, so it is never clipped by a scrolling
- * or transformed container (grid cells are both). It closes when the page scrolls.
+ * or transformed container (grid cells are both). It follows its trigger when something scrolls
+ * and closes once the trigger leaves the window.
  */
 export function Dropdown({ trigger, items, align = 'start', width = 'w-56' }: DropdownProps) {
   const [open, setOpen] = useState(false);
@@ -127,10 +128,14 @@ export function Dropdown({ trigger, items, align = 'start', width = 'w-56' }: Dr
     const onPointer = (event: PointerEvent) => {
       if (!inside(event.target)) setOpen(false);
     };
-    // A fixed menu would drift away from its trigger, so close it when anything scrolls
-    // (except the menu's own list).
+    // A fixed menu would drift away from its trigger when something scrolls (the page, or a
+    // widget's own list bringing the trigger into view as it takes focus). Follow the trigger,
+    // and close only once it has scrolled out of the window.
     const onScroll = (event: Event) => {
-      if (!inside(event.target)) setOpen(false);
+      if (inside(event.target)) return;
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (!rect || rect.bottom < 0 || rect.top > window.innerHeight) setOpen(false);
+      else setPosition(menuPosition(rect, align));
     };
     const onResize = () => setOpen(false);
     document.addEventListener('pointerdown', onPointer);
@@ -141,7 +146,7 @@ export function Dropdown({ trigger, items, align = 'start', width = 'w-56' }: Dr
       window.removeEventListener('scroll', onScroll, true);
       window.removeEventListener('resize', onResize);
     };
-  }, [open]);
+  }, [open, align]);
 
   const move = (delta: number) => {
     const at = enabled.findIndex((e) => e.index === focusIndex);

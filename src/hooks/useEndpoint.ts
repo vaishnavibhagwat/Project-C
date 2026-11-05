@@ -35,6 +35,7 @@ export function useEndpoint<E extends EndpointId>(
   refreshInterval: number,
   enabled = true,
   latencyProfile: LatencyProfile = 'normal',
+  onDemand = false,
 ): UseQueryResult<EndpointDataMap[E], Error> {
   const fetcher = useContext(EndpointFetcherContext);
   const live = useLiveEndpoint(endpoint);
@@ -43,7 +44,7 @@ export function useEndpoint<E extends EndpointId>(
     queryKey: endpointKey(endpoint),
     queryFn: ({ signal }) => fetcher(endpoint, { signal, latencyProfile }),
     // Paused: no polling; the data ages until it shows as stale.
-    refetchInterval: paused ? false : pollInterval(refreshInterval, live),
+    refetchInterval: paused || onDemand ? false : pollInterval(refreshInterval, live),
     refetchIntervalInBackground: false,
     staleTime: refreshInterval / 2,
     // Keep the validated object identity; validation tags objects by identity.
@@ -53,5 +54,11 @@ export function useEndpoint<E extends EndpointId>(
 }
 
 export function useDataSource(source: DataSourceConfig, enabled = true) {
-  return useEndpoint(source.endpoint, source.refreshInterval, enabled, source.latencyProfile);
+  return useEndpoint(
+    source.endpoint,
+    source.refreshInterval,
+    enabled,
+    source.latencyProfile,
+    source.onDemand ?? false,
+  );
 }

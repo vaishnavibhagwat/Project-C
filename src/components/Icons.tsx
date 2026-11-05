@@ -122,6 +122,12 @@ export const IconAlert = createIcon('IconAlert', [
   'M12 9v4',
   'M12 17h.01',
 ]);
+/** Octagon with "!": critical severity (distinct shape from the warning triangle). */
+export const IconCritical = createIcon('IconCritical', [
+  'M7.9 2h8.2L22 7.9v8.2L16.1 22H7.9L2 16.1V7.9z',
+  'M12 8v5',
+  'M12 16.5h.01',
+]);
 export const IconLineChart = createIcon('IconLineChart', ['M3 3v18h18', 'M7 15l4-4 3 3 5-6']);
 export const IconAreaChart = createIcon('IconAreaChart', ['M3 3v18h18', 'M7 14l4-3 3 2 5-5v8H7z']);
 export const IconPie = createIcon('IconPie', [

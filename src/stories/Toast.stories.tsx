@@ -22,6 +22,12 @@ function ToastDemo() {
       <Button onClick={() => notify({ message: 'Could not copy link', tone: 'error' })}>
         Error
       </Button>
+      <Button
+        onClick={() => notify({ message: 'Feed reconnecting, showing last data', tone: 'warning' })}
+      >
+        Warning
+      </Button>
+      <Button onClick={() => notify({ message: 'New layout version saved' })}>Info</Button>
     </div>
   );
 }

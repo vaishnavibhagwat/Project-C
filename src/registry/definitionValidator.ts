@@ -133,6 +133,7 @@ const DataSourceSchema = z.object({
   wsChannel: z.string().min(1).optional(),
   refreshInterval: z.number().int().min(1000, 'must be at least 1000 ms'),
   latencyProfile: z.enum(['low', 'normal', 'high']),
+  onDemand: z.boolean().optional(),
 });
 
 type Size = z.infer<typeof SizeSchema>;

@@ -32,7 +32,7 @@ export const REALTIME_ROUTES: readonly RealtimeRoute[] = [
     endpoints: ['portfolio/holdings', 'portfolio/summary', 'portfolio/allocation'],
   },
   { url: MARKET_TICKER_URL, endpoints: ['market/sector-returns'] },
-  { url: ALERTS_STREAM_URL, endpoints: ['alerts/active'] },
+  { url: ALERTS_STREAM_URL, endpoints: ['alerts/active', 'alerts/panel'] },
   { url: NEWS_STREAM_URL, endpoints: ['market/news', 'research/feed'] },
 ];
 

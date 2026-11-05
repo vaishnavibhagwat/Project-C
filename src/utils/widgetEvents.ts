@@ -20,7 +20,19 @@ export interface DateRangeChangedEvent {
   sourceInstanceId?: string;
 }
 
-export type WidgetEvent = SymbolSelectedEvent | DateRangeChangedEvent;
+/** An alert was clicked in an alert widget; other widgets may focus what it is about. */
+export interface AlertClickedEvent {
+  type: 'ALERT_CLICKED';
+  alertId: string;
+  severity: 'info' | 'warning' | 'critical';
+  /** Registry id of the widget the alert concerns (e.g. var-gauge). */
+  relatedWidget: string;
+  /** Ticker, or PORTFOLIO for fund-level alerts. */
+  relatedEntity: string;
+  sourceInstanceId?: string;
+}
+
+export type WidgetEvent = SymbolSelectedEvent | DateRangeChangedEvent | AlertClickedEvent;
 export type WidgetEventType = WidgetEvent['type'];
 export type WidgetEventOf<T extends WidgetEventType> = Extract<WidgetEvent, { type: T }>;
 
