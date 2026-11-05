@@ -279,3 +279,19 @@ into the market news response they get the source "Meridian Research" and no pri
   exist are dropped the next time either list changes.
 - Default rules: 99% VaR above 1.2% of AUM (warning) and drawdown deeper than 10% (critical).
   Illustrative policy values.
+
+## 18. Correlation Matrix widget
+
+- `risk/returns` serves the last 252 daily close-to-close returns of the book's 15 largest
+  holdings by weight (cash and the T-bill are left out: their prices barely move, so a
+  correlation is meaningless) and of each equity sector (value-weighted, today's quantities
+  held constant). USD instruments use local-currency returns; with the fixed FX rate these
+  equal INR returns.
+- Correlation is Pearson's r on simple daily returns over the chosen lookback (30, 60, 90 or
+  252 trading days), from `correlationMatrix` in `src/utils/finance.ts`. Short lookbacks are
+  noisy; 30 days gives only 30 points per pair.
+- The largest "holdings" include the Government of India bonds, so many pairs sit near 0.
+- Cell colours use d3-scale-chromatic's RdBu reversed (−1 blue, 0 white, +1 red), as the brief
+  asks, in every theme: the one place colours are not theme tokens.
+- The scatter plot's beta is the least-squares slope of the second asset's returns on the
+  first's (r × σ₂ / σ₁).

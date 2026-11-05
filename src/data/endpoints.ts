@@ -13,6 +13,7 @@ import {
 } from './derive/portfolio';
 import { deriveMarketNews } from './derive/news';
 import { deriveResearch } from './derive/research';
+import { deriveReturnSeries } from './derive/returns';
 import { deriveMetrics, deriveVar } from './derive/risk';
 import { deriveTrades } from './derive/trades';
 import {
@@ -26,6 +27,7 @@ import {
   NavHistorySchema,
   PerformanceSeriesSchema,
   ResearchSchema,
+  ReturnSeriesSchema,
   SectorReturnsSchema,
   SummarySchema,
   TradesSchema,
@@ -40,6 +42,7 @@ import {
   type NavHistoryData,
   type PerformanceSeriesData,
   type ResearchData,
+  type ReturnSeriesData,
   type SectorReturnsData,
   type SummaryData,
   type TradesData,
@@ -54,6 +57,7 @@ export interface EndpointDataMap {
   'market/sector-returns': SectorReturnsData;
   'risk/var': VarData;
   'risk/metrics': MetricsData;
+  'risk/returns': ReturnSeriesData;
   'performance/attribution': AttributionData;
   'performance/benchmarks': PerformanceSeriesData;
   'trades/blotter': TradesData;
@@ -96,6 +100,11 @@ export const ENDPOINTS: EndpointRegistry = {
   },
   'risk/var': { schema: VarSchema, derive: deriveVar, isEmpty: (d) => d.lookbackDays === 0 },
   'risk/metrics': { schema: MetricsSchema, derive: deriveMetrics, isEmpty: () => false },
+  'risk/returns': {
+    schema: ReturnSeriesSchema,
+    derive: deriveReturnSeries,
+    isEmpty: (d) => d.dates.length < 2,
+  },
   'performance/attribution': {
     schema: AttributionSchema,
     derive: deriveAttribution,
@@ -142,6 +151,7 @@ export const ENDPOINT_IDS: readonly EndpointId[] = [
   'market/sector-returns',
   'risk/var',
   'risk/metrics',
+  'risk/returns',
   'performance/attribution',
   'performance/benchmarks',
   'trades/blotter',

@@ -56,10 +56,10 @@ deep-linkable on static hosting; each page is a lazy chunk):
 | Holdings Explorer (`G 3`)         | Holdings table, treemap, allocation, trade blotter                                                                 |
 | Performance & Attribution (`G 4`) | Overview, NAV vs Nifty 50, metrics, sector attribution, drawdown                                                   |
 | Research & Alerts (`G 5`)         | Sample research feed, alerts, trade blotter                                                                        |
-| Widget Marketplace (`G 6`)        | Browse all 18 widgets by category and add them to any page                                                         |
+| Widget Marketplace (`G 6`)        | Browse all 19 widgets by category and add them to any page                                                         |
 | Settings (`G 7`)                  | Grid (columns, row height, gap, compaction), theme, display currency, data feed, workspace, shortcuts              |
 
-**18 widgets**, each lazy-loaded as its own chunk:
+**19 widgets**, each lazy-loaded as its own chunk:
 
 | Widget                    | Category | Rendering                      | Data source                    | Refresh     |
 | ------------------------- | -------- | ------------------------------ | ------------------------------ | ----------- |
@@ -80,6 +80,7 @@ deep-linkable on static hosting; each page is a lazy chunk):
 | Risk-Adjusted Metrics     | ANALYSIS | HTML tiles                     | `risk/metrics`                 | 30 s¹       |
 | Sector Returns Heat Map   | ANALYSIS | D3 scales + SVG                | `market/sector-returns`        | 15 s        |
 | Holdings Treemap          | ANALYSIS | D3 squarified treemap          | `portfolio/holdings`           | 5 s         |
+| Correlation Matrix        | ANALYSIS | CSS grid, RdBu, scatter modal  | `risk/returns`                 | 5 min       |
 | Sector Heat Map           | CHART    | D3 treemap, sector drill-in    | `portfolio/holdings`           | 15 s        |
 
 ¹ `VITE_DATA_REFRESH_INTERVAL` (default 30 s): widgets backed by end-of-day data. Widgets driven

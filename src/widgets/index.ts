@@ -3,6 +3,7 @@
 export * from './alert-panel/config';
 export * from './alerts-monitor/config';
 export * from './asset-allocation/config';
+export * from './correlation-matrix/config';
 export * from './drawdown/config';
 export * from './holdings-table/config';
 export * from './holdings-treemap/config';

@@ -7,6 +7,7 @@ export type EndpointId =
   | 'market/sector-returns'
   | 'risk/var'
   | 'risk/metrics'
+  | 'risk/returns'
   | 'performance/attribution'
   | 'performance/benchmarks'
   | 'trades/blotter'

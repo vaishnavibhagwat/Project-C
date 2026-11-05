@@ -2,6 +2,7 @@ import { WidgetCategory } from '@/types';
 import { alertPanelWidget } from '@/widgets/alert-panel/config';
 import { alertsMonitorWidget } from '@/widgets/alerts-monitor/config';
 import { assetAllocationWidget } from '@/widgets/asset-allocation/config';
+import { correlationMatrixWidget } from '@/widgets/correlation-matrix/config';
 import { drawdownWidget } from '@/widgets/drawdown/config';
 import { holdingsTableWidget } from '@/widgets/holdings-table/config';
 import { holdingsTreemapWidget } from '@/widgets/holdings-treemap/config';
@@ -40,6 +41,7 @@ const BUILT_IN_WIDGETS: readonly RegisteredWidget[] = [
   sectorHeatmapWidget,
   sectorHeatMapWidget,
   holdingsTreemapWidget,
+  correlationMatrixWidget,
 ];
 
 /**

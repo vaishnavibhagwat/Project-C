@@ -114,6 +114,31 @@ export const PerformanceSeriesSchema = z
     'Every series needs one value per date',
   );
 
+const ReturnSeriesItemSchema = z.object({
+  key: z.string().min(1),
+  /** Short label (ticker or sector). */
+  label: z.string().min(1),
+  name: z.string().min(1),
+  /** Share of the book, percent. */
+  weightPct: pct,
+  /** Daily simple returns (fractions), one per date. */
+  returns: z.array(z.number().finite().min(-1)),
+});
+
+/** risk/returns: daily returns of the largest holdings and of each equity sector. */
+export const ReturnSeriesSchema = z
+  .object({
+    ...meta,
+    /** Trading day of each return (the close it runs to), oldest first. */
+    dates: z.array(dateKey),
+    holdings: z.array(ReturnSeriesItemSchema),
+    sectors: z.array(ReturnSeriesItemSchema),
+  })
+  .refine(
+    (d) => [...d.holdings, ...d.sectors].every((s) => s.returns.length === d.dates.length),
+    'Every series needs one return per date',
+  );
+
 export const AllocationSchema = z.object({
   ...meta,
   totalInr: price,
@@ -364,6 +389,7 @@ export const AlertsSchema = z.object({
 
 export type SummaryData = z.infer<typeof SummarySchema>;
 export type NavHistoryData = z.infer<typeof NavHistorySchema>;
+export type ReturnSeriesData = z.infer<typeof ReturnSeriesSchema>;
 export type PerformanceSeriesData = z.infer<typeof PerformanceSeriesSchema>;
 export type AllocationData = z.infer<typeof AllocationSchema>;
 export type HoldingsData = z.infer<typeof HoldingsSchema>;
