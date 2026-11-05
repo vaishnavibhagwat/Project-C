@@ -5,6 +5,7 @@ export type EndpointId =
   | 'portfolio/allocation'
   | 'portfolio/holdings'
   | 'market/sector-returns'
+  | 'market/ticker'
   | 'risk/var'
   | 'risk/metrics'
   | 'risk/returns'

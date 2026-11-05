@@ -322,7 +322,7 @@ describe('realtime bridge', () => {
       'portfolio/summary',
       'portfolio/allocation',
     ]);
-    expect(onPush).toHaveBeenCalledWith(['market/sector-returns']);
+    expect(onPush).toHaveBeenCalledWith(['market/sector-returns', 'market/ticker']);
 
     sim.simulateDisconnect();
     expect(isEndpointLive('portfolio/holdings')).toBe(false);

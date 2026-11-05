@@ -320,3 +320,24 @@ into the market news response they get the source "Meridian Research" and no pri
 - **Relative (%)** shows each effect as a share of the period's active return; below 5 bps of
   active return it falls back to basis points.
 - On demand: refreshed only by the Refresh button (stale after an hour without one).
+
+## 20. Market Ticker widget
+
+- `market/ticker` quotes eight instruments, all simulated:
+  - **Nifty 50, BSE Sensex:** the model's index levels; during the NSE session (or with
+    `VITE_SIMULATE_MARKET_OPEN`) they move with the simulated tape (the Nifty's intraday move;
+    the Sensex uses the same move). Otherwise they show the last close against the one before.
+  - **S&P 500:** the model's series, last simulated close.
+  - **FTSE 100, EUR/USD, gold (USD/oz), Brent crude (USD/bbl):** new seeded daily GBM series
+    (`src/data/mock/macro.ts`) with a small beta to the Nifty factor, ending at round,
+    illustrative levels. Display only; nothing is valued with them. Last simulated close.
+  - **USD/INR:** the fixed rate the book is valued at (`VITE_USD_INR_RATE`, 83.50), change 0.00%.
+    It does not move, so the ticker never disagrees with the USD figures elsewhere.
+- Change % is computed from the rounded prices shown. Sparklines show the last 30 daily closes
+  (plus today's live value for the NSE indices).
+- NSE status comes from the IST clock: pre-open 09:00–09:15, open 09:15–15:30, closed otherwise
+  (weekends and the trading-holiday list included), independent of the simulation switch.
+- Motion: CSS `translateX` keyframes on a track holding the items twice (moving by half loops
+  seamlessly). It pauses with the Pause button, on hover, and while keyboard focus is inside
+  (then it becomes a still, scrollable row so the focused item is in view). Under
+  `prefers-reduced-motion` it never moves.

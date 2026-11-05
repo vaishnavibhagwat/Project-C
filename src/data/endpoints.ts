@@ -15,6 +15,7 @@ import {
 import { deriveMarketNews } from './derive/news';
 import { deriveResearch } from './derive/research';
 import { deriveReturnSeries } from './derive/returns';
+import { deriveTicker } from './derive/ticker';
 import { deriveMetrics, deriveVar } from './derive/risk';
 import { deriveTrades } from './derive/trades';
 import {
@@ -25,6 +26,7 @@ import {
   AttributionSchema,
   HoldingsSchema,
   MarketNewsSchema,
+  MarketTickerSchema,
   MetricsSchema,
   NavHistorySchema,
   PerformanceSeriesSchema,
@@ -41,6 +43,7 @@ import {
   type AttributionInputsData,
   type HoldingsData,
   type MarketNewsData,
+  type MarketTickerData,
   type MetricsData,
   type NavHistoryData,
   type PerformanceSeriesData,
@@ -58,6 +61,7 @@ export interface EndpointDataMap {
   'portfolio/allocation': AllocationData;
   'portfolio/holdings': HoldingsData;
   'market/sector-returns': SectorReturnsData;
+  'market/ticker': MarketTickerData;
   'risk/var': VarData;
   'risk/metrics': MetricsData;
   'risk/returns': ReturnSeriesData;
@@ -101,6 +105,11 @@ export const ENDPOINTS: EndpointRegistry = {
     schema: SectorReturnsSchema,
     derive: deriveSectorReturns,
     isEmpty: (d) => d.cells.length === 0,
+  },
+  'market/ticker': {
+    schema: MarketTickerSchema,
+    derive: deriveTicker,
+    isEmpty: (d) => d.quotes.length === 0,
   },
   'risk/var': { schema: VarSchema, derive: deriveVar, isEmpty: (d) => d.lookbackDays === 0 },
   'risk/metrics': { schema: MetricsSchema, derive: deriveMetrics, isEmpty: () => false },
@@ -158,6 +167,7 @@ export const ENDPOINT_IDS: readonly EndpointId[] = [
   'portfolio/allocation',
   'portfolio/holdings',
   'market/sector-returns',
+  'market/ticker',
   'risk/var',
   'risk/metrics',
   'risk/returns',

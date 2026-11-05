@@ -26,7 +26,7 @@ flowchart TB
     registry["widgetRegistry<br/>contract + runtime validation"]
     grid["GridContainer + GridItem<br/>react-grid-layout"]
     frame["WidgetFrame<br/>states, header, error boundary"]
-    widgets["20 widgets<br/>one lazy chunk each"]
+    widgets["21 widgets<br/>one lazy chunk each"]
   end
   subgraph D["Data"]
     query["TanStack Query cache<br/>one query per endpoint"]

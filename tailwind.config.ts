@@ -48,6 +48,12 @@ export default {
           '0%': { backgroundPosition: '-400px 0' },
           '100%': { backgroundPosition: '400px 0' },
         },
+        // Market ticker: the track holds the items twice; moving it by half loops seamlessly.
+        // translateX only (compositor-friendly), never margin or left.
+        'ticker-crawl': {
+          from: { transform: 'translateX(0)' },
+          to: { transform: 'translateX(-50%)' },
+        },
         // Critical alerts: a soft ring that grows and fades (motion-safe only).
         'alert-pulse': {
           '0%': { boxShadow: '0 0 0 0 rgb(var(--color-negative) / 0.45)' },
@@ -58,6 +64,7 @@ export default {
       animation: {
         shimmer: 'shimmer 1.4s linear infinite',
         'alert-pulse': 'alert-pulse 1.8s ease-out infinite',
+        'ticker-crawl': 'ticker-crawl 30s linear infinite',
       },
     },
   },

@@ -8,6 +8,7 @@ export * from './correlation-matrix/config';
 export * from './drawdown/config';
 export * from './holdings-table/config';
 export * from './holdings-treemap/config';
+export * from './market-ticker/config';
 export * from './nav-performance/config';
 export * from './news-feed/config';
 export * from './performance-line-chart/config';

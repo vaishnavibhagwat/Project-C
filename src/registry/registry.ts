@@ -7,6 +7,7 @@ import { correlationMatrixWidget } from '@/widgets/correlation-matrix/config';
 import { drawdownWidget } from '@/widgets/drawdown/config';
 import { holdingsTableWidget } from '@/widgets/holdings-table/config';
 import { holdingsTreemapWidget } from '@/widgets/holdings-treemap/config';
+import { marketTickerWidget } from '@/widgets/market-ticker/config';
 import { navPerformanceWidget } from '@/widgets/nav-performance/config';
 import { newsFeedWidget } from '@/widgets/news-feed/config';
 import { performanceLineChartWidget } from '@/widgets/performance-line-chart/config';
@@ -36,6 +37,7 @@ const BUILT_IN_WIDGETS: readonly RegisteredWidget[] = [
   tradeBlotterWidget,
   researchFeedWidget,
   newsFeedWidget,
+  marketTickerWidget,
   alertsMonitorWidget,
   alertPanelWidget,
   varGaugeWidget,

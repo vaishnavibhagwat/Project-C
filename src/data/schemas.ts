@@ -190,6 +190,27 @@ export const AttributionInputsSchema = z
     'Every series needs one value per date',
   );
 
+/** market/ticker: index, FX and commodity quotes for the ticker widget. */
+export const MarketTickerSchema = z.object({
+  ...meta,
+  quotes: z.array(
+    z.object({
+      symbol: z.string().min(1),
+      name: z.string().min(1),
+      price,
+      previousClose: price,
+      changePct: finite,
+      decimals: z.number().int().min(0).max(6),
+      /** True while the value moves with the simulated NSE tape. */
+      live: z.boolean(),
+      /** Where the value comes from (live tape, last close, fixed rate). */
+      note: z.string(),
+      /** Recent daily closes (and today's live value), oldest first. */
+      history: z.array(price),
+    }),
+  ),
+});
+
 export const AllocationSchema = z.object({
   ...meta,
   totalInr: price,
@@ -440,6 +461,7 @@ export const AlertsSchema = z.object({
 
 export type SummaryData = z.infer<typeof SummarySchema>;
 export type NavHistoryData = z.infer<typeof NavHistorySchema>;
+export type MarketTickerData = z.infer<typeof MarketTickerSchema>;
 export type AttributionInputsData = z.infer<typeof AttributionInputsSchema>;
 export type ReturnSeriesData = z.infer<typeof ReturnSeriesSchema>;
 export type PerformanceSeriesData = z.infer<typeof PerformanceSeriesSchema>;
