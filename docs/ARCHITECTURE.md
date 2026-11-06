@@ -768,21 +768,35 @@ each critical alert that appears after it has loaded (once per alert, across pan
 
 ### Cross-widget events
 
-`src/utils/widgetEvents.ts` is a small typed publish/subscribe channel for events between
-widgets; `useWidgetEvent(type, handler)` (`src/hooks`) subscribes and unsubscribes on unmount.
-Events so far:
+`src/registry/eventBus.ts` holds `EventBus<Events>`, a typed publish/subscribe class generic
+over an event map (event name → payload). `publish(type, payload)` and
+`subscribe(type, handler)` only accept names in the map and the matching payload, and
+`subscribe` returns the unsubscribe function. Handlers run in subscription order. A handler
+that throws is logged and the rest still run. Subscribing or unsubscribing during a publish
+takes effect from the next publish. The app has one bus, `eventBus`, typed by
+`WidgetEventMap`. `useEventBus(type, handler)` (`src/hooks/useEventBus.ts`) subscribes while
+the component is mounted, always calls the latest handler, and unsubscribes on unmount.
 
-- `SYMBOL_SELECTED { symbol, sourceInstanceId? }`: the Holdings table publishes it when a row
-  is clicked (or Enter / Space on a focused row). The Portfolio Pie Chart listens and
-  highlights the slice holding that symbol; the News Feed narrows to stories that mention it
-  (a chip clears the filter).
-- `ALERT_CLICKED { alertId, severity, relatedWidget, relatedEntity, sourceInstanceId? }`: the
-  Alert Panel publishes it when an alert (or a critical toast's View) is clicked. Nothing
-  listens yet.
-- `DATE_RANGE_CHANGED { from, to, sourceInstanceId? }`: Performance vs Benchmarks publishes
-  it 250 ms after its visible range settles (preset, zoom, pan or brush; not on first render).
-  Attribution Bars listens and adds a "Selected range" period for that window.
-  Events are transient module state, like the connection state, not a fifth store.
+| Event                | Payload                                     | Published by                                                                                | Handled by                                                                                                                                                                                                                                             |
+| -------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `SYMBOL_SELECTED`    | `{ ticker, source }`                        | W04 Holdings table: row click, or Enter / Space on a row. `source` is its instance id.      | W01 Portfolio pie chart highlights the slice that holds the ticker (`aria-current`, with a chip that clears it). W05 News feed shows only stories that mention the ticker, with a clear-filter chip. Each one ignores events whose `source` is itself. |
+| `DATE_RANGE_CHANGED` | `{ from, to }` (YYYY-MM-DD, trading days)   | W02 Performance vs Benchmarks, 250 ms after its visible range settles. Not on first render. | W09 Attribution bars adds a "Selected range" period for that window. W11 will also use it.                                                                                                                                                             |
+| `ALERT_CLICKED`      | `{ alertId, relatedWidget, relatedEntity }` | W06 Alert panel: alert click, or View on a critical toast.                                  | `GridContainer` and `useAlertNavigation`. See below.                                                                                                                                                                                                   |
+
+When an alert is clicked, the widget it is about is found on the current page first, then on
+the other pages in navigation order. If it is on the current page, `GridContainer` scrolls it
+into view (smooth, or instant with reduced motion), focuses its region (`tabIndex={-1}`, so the
+region is not a Tab stop) and flashes its border for 1.6 s (`.widget-flash` in `global.css`:
+an outline in the focus colour that pulses twice, or a steady outline with reduced motion). If
+it is on another page, `useAlertNavigation` (mounted in `AppShell`) leaves a pending reveal and
+switches page; the new page's grid completes the reveal once the widget is rendered, and a
+pending reveal older than 5 s is dropped. If no page has the widget, a toast says so. Helpers:
+`src/grid/revealWidget.ts`.
+
+Events are transient: nothing is stored, and a subscriber only sees events published after
+it subscribed. The bus is plain module state, like the connection state, not a fifth store.
+Tests: `src/__tests__/event-bus.test.ts` (the class and the hook) and
+`event-bus-integration.test.tsx` (the widgets rendered together, plus the grid reveal).
 
 ### Sharing and import
 

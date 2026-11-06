@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
 import { describeWidgetStates } from '@/__tests__/widgetStates';
-import { publishWidgetEvent } from '@/utils/widgetEvents';
+import { eventBus } from '@/registry/eventBus';
 import { portfolioPieChartDefinition, summarizePortfolioPie } from '../config';
 import PortfolioPieChart from '../index';
 import { buildLevel, drillInto, MAX_SLICES, sliceColor } from '../model';
@@ -147,7 +147,9 @@ describe('PortfolioPieChart', () => {
     const stock = data.holdings.find((h) => h.assetClass === 'Equity');
     if (!stock) throw new Error('fixture has no equity');
     render(<PortfolioPieChart {...widgetProps(defaults, data)} />);
-    act(() => publishWidgetEvent({ type: 'SYMBOL_SELECTED', symbol: stock.ticker }));
+    act(() =>
+      eventBus.publish('SYMBOL_SELECTED', { ticker: stock.ticker, source: 'other-widget' }),
+    );
     expect(within(legend()).getByRole('button', { name: /^Equity,/ })).toHaveClass('bg-raised');
   });
 

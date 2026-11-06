@@ -1,6 +1,7 @@
 export * from './configValidator';
 export * from './defineWidget';
 export * from './definitionValidator';
+export * from './eventBus';
 export * from './pages';
 export * from './placeholder';
 export * from './pluginHost';

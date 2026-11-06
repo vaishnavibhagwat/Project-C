@@ -14,7 +14,7 @@ import { AXIS_TICK, ChartTooltipBody, GRID_STROKE } from '@/components/charts';
 import { Segmented } from '@/components/FormControls';
 import { IconChevronLeft, IconClose } from '@/components/Icons';
 import { Select } from '@/components/Select';
-import { useWidgetEvent } from '@/hooks/useWidgetEvent';
+import { useEventBus } from '@/hooks/useEventBus';
 import { cssColor } from '@/theme/themes';
 import type { ThemeTokenKey, WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
@@ -101,7 +101,7 @@ function AttributionBarChart({
   // DATE_RANGE_CHANGED (e.g. from the performance line chart) adds a "Selected range" period.
   const [range, setRange] = useState<{ from: string; to: string } | null>(null);
   const [choice, setChoice] = useState<PeriodKey | null>(null);
-  useWidgetEvent('DATE_RANGE_CHANGED', (e) => {
+  useEventBus('DATE_RANGE_CHANGED', (e) => {
     setRange({ from: e.from, to: e.to });
     setChoice('range');
   });

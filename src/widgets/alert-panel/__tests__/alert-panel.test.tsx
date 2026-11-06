@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderWithProviders, widgetProps } from '@/__tests__/render';
 import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { istTimeMs } from '@/utils/time';
-import { subscribeWidgetEvents, type WidgetEvent } from '@/utils/widgetEvents';
+import { eventBus, type WidgetEventMap } from '@/registry/eventBus';
 import { alertPanelDefinition, alertPanelWidget } from '../config';
 import AlertPanel from '../index';
 import {
@@ -168,8 +168,8 @@ describe('AlertPanel', () => {
   });
 
   it('publishes ALERT_CLICKED when an alert is clicked', () => {
-    const events: WidgetEvent[] = [];
-    const stop = subscribeWidgetEvents((e) => events.push(e));
+    const events: WidgetEventMap['ALERT_CLICKED'][] = [];
+    const stop = eventBus.subscribe('ALERT_CLICKED', (e) => events.push(e));
     renderWithProviders(<AlertPanel {...widgetProps(defaults, data)} />);
     const first = groupBySeverity(visibleAlerts(data, defaults, Date.now()))[0]?.alerts[0];
     if (!first) throw new Error('no alerts');
@@ -177,12 +177,9 @@ describe('AlertPanel', () => {
     stop();
     expect(events).toEqual([
       {
-        type: 'ALERT_CLICKED',
         alertId: first.alertId,
-        severity: first.severity,
         relatedWidget: first.relatedWidget,
         relatedEntity: first.relatedEntity,
-        sourceInstanceId: 'test-instance',
       },
     ]);
   });

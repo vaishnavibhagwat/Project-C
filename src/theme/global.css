@@ -192,6 +192,25 @@
   cursor: grabbing;
 }
 
+/* A widget revealed by an alert click (GridContainer, ALERT_CLICKED): its border is outlined
+   in the focus colour for FLASH_MS (src/grid/revealWidget.ts) and, with motion allowed, pulses
+   twice. With reduced motion only the steady outline shows. */
+.react-grid-item.widget-flash {
+  z-index: 5;
+  border-radius: var(--radius);
+  outline: 2px solid rgb(var(--color-focus));
+  outline-offset: 1px;
+  animation: widget-flash 800ms ease-out 2;
+}
+@keyframes widget-flash {
+  0% {
+    box-shadow: 0 0 0 0 rgb(var(--color-focus) / 0.55);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgb(var(--color-focus) / 0);
+  }
+}
+
 /* Departure indicator: the dragged widget's starting position (rendered by GridContainer). */
 .grid-departure {
   position: absolute;

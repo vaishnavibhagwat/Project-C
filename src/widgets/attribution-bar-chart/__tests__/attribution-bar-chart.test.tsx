@@ -2,7 +2,7 @@ import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders, widgetProps } from '@/__tests__/render';
 import { describeWidgetStates } from '@/__tests__/widgetStates';
-import { publishWidgetEvent } from '@/utils/widgetEvents';
+import { eventBus } from '@/registry/eventBus';
 import { attributionBarChartDefinition, summarizeAttributionBars } from '../config';
 import AttributionBarChart from '../index';
 import {
@@ -175,7 +175,7 @@ describe('AttributionBarChart', () => {
   it('reacts to DATE_RANGE_CHANGED with a "Selected range" period', () => {
     renderWithProviders(<AttributionBarChart {...widgetProps(defaults, data, 640, 300)} />);
     const from = data.dates[data.dates.length - 40] ?? '';
-    act(() => publishWidgetEvent({ type: 'DATE_RANGE_CHANGED', from, to: last }));
+    act(() => eventBus.publish('DATE_RANGE_CHANGED', { from, to: last }));
     expect(screen.getByRole('button', { name: /^Period: Selected range/ })).toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent(/^Selected range/);
     fireEvent.click(screen.getByRole('button', { name: 'Remove the selected range' }));

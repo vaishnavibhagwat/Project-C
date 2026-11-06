@@ -25,6 +25,7 @@ import type { SearchResult } from './searchIndex';
 import { ShareDialog } from './ShareDialog';
 import { SharedLayoutBanner } from './SharedLayoutBanner';
 import type { ShellContext } from './shellContext';
+import { useAlertNavigation } from './useAlertNavigation';
 
 // The symbol panel reads the portfolio model directly, so it loads on first use (its own chunk).
 const SymbolDetail = lazy(() =>
@@ -91,6 +92,9 @@ export function AppShell() {
   useEffect(() => {
     if (isPageRoute(route)) setLastPage(route);
   }, [route]);
+
+  // An alert about a widget on another page opens that page (see useAlertNavigation).
+  useAlertNavigation();
 
   // Marketplace plugins installed in an earlier session register their widgets again.
   useEffect(() => {

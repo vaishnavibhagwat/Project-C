@@ -2,6 +2,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Responsive, WidthProvider, type Layout, type Layouts } from 'react-grid-layout';
 import { useShallow } from 'zustand/react/shallow';
 import { useToast } from '@/components/Toast';
+import { useEventBus } from '@/hooks/useEventBus';
 import { useViewportWidth } from '@/hooks/useViewportWidth';
 import { isPlaceholder } from '@/registry/placeholder';
 import { widgetRegistry } from '@/registry/registry';
@@ -27,6 +28,7 @@ import {
 import { DROPPING_ITEM_ID, draggedCatalogueWidget, endCatalogueDrag } from './catalogueDrag';
 import { GridItem } from './GridItem';
 import { PlaceholderCard } from './PlaceholderCard';
+import { clearPendingReveal, FLASH_MS, pendingRevealFor, revealWidget } from './revealWidget';
 import { sizeLimitsFor, withSizeLimits, type SizeLimits } from './sizeLimits';
 import { DRAG_HANDLE_CLASS, NO_DRAG_CLASS, WidgetFrame } from './WidgetFrame';
 
@@ -256,16 +258,54 @@ function GridContainerImpl({ page }: { page: PageId }) {
     [page, breakpoint, notify],
   );
 
-  // Children depend only on the ids, so a drag (which re-renders the grid) never re-renders
-  // widget bodies.
+  // ALERT_CLICKED: scroll the widget the alert is about into view, focus it and flash its
+  // border (the first instance on this page). When it is on another page, the app shell
+  // switches page and leaves a pending reveal, which this grid completes once it has rendered.
+  const [flashId, setFlashId] = useState<string | null>(null);
+  useEventBus('ALERT_CLICKED', ({ relatedWidget }) => {
+    const { instances } = useWidgetStore.getState();
+    const target = grid.itemIds.find((id) => instances[id]?.widgetId === relatedWidget);
+    if (target !== undefined && revealWidget(wrapperRef.current, target)) setFlashId(target);
+  });
+  useEffect(() => {
+    if (pendingRevealFor(grid.itemIds) === null) return undefined;
+    // The cell may need a few frames after a page switch (lazy page, grid width measurement).
+    let frame = 0;
+    let tries = 0;
+    const attempt = () => {
+      const target = pendingRevealFor(grid.itemIds);
+      if (target === null) return;
+      if (revealWidget(wrapperRef.current, target)) {
+        clearPendingReveal();
+        setFlashId(target);
+      } else if ((tries += 1) < 60) {
+        frame = requestAnimationFrame(attempt);
+      }
+    };
+    frame = requestAnimationFrame(attempt);
+    return () => cancelAnimationFrame(frame);
+  }, [grid.itemIds]);
+  useEffect(() => {
+    if (flashId === null) return undefined;
+    const timer = setTimeout(() => setFlashId(null), FLASH_MS);
+    return () => clearTimeout(timer);
+  }, [flashId]);
+
+  // Children depend only on the ids (and the flashing cell), so a drag (which re-renders the
+  // grid) never re-renders widget bodies.
   const children = useMemo(
     () =>
       grid.itemIds.map((id) => (
-        <GridItem key={id} instanceId={id}>
+        <GridItem
+          key={id}
+          instanceId={id}
+          data-flash={id === flashId || undefined}
+          className={id === flashId ? 'widget-flash' : undefined}
+        >
           <GridCell page={page} instanceId={id} />
         </GridItem>
       )),
-    [grid.itemIds, page],
+    [grid.itemIds, page, flashId],
   );
 
   // No `measureBeforeMount`: in react-grid-layout 1.5 it measures a temporary <div> that is

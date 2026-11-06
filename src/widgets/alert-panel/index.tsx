@@ -18,7 +18,7 @@ import { useNow } from '@/hooks/useNow';
 import type { WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
 import { formatIstTime } from '@/utils/time';
-import { publishWidgetEvent } from '@/utils/widgetEvents';
+import { eventBus } from '@/registry/eventBus';
 import {
   allAlerts,
   describeRule,
@@ -388,16 +388,13 @@ function AlertPanel({
   const open = useCallback(
     (a: Alert) => {
       if (!readIds.has(a.alertId)) onConfigChange(readPatch(config, [a.alertId], presentIds));
-      publishWidgetEvent({
-        type: 'ALERT_CLICKED',
+      eventBus.publish('ALERT_CLICKED', {
         alertId: a.alertId,
-        severity: a.severity,
         relatedWidget: a.relatedWidget,
         relatedEntity: a.relatedEntity,
-        sourceInstanceId: instanceId,
       });
     },
-    [config, instanceId, onConfigChange, presentIds, readIds],
+    [config, onConfigChange, presentIds, readIds],
   );
   const acknowledge = useCallback(
     (a: Alert) =>

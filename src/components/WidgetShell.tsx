@@ -141,6 +141,8 @@ export function WidgetShell({
     <section
       role="region"
       aria-label={title}
+      // Focusable from code only (an alert click moves focus here), not a Tab stop.
+      tabIndex={-1}
       aria-busy={busy || status === 'loading'}
       data-stale={stale || undefined}
       data-collapsed={collapsed || undefined}

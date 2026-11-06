@@ -9,8 +9,8 @@ import {
   type PieLabelRenderProps,
 } from 'recharts';
 import { Segmented } from '@/components/FormControls';
-import { IconChevronLeft } from '@/components/Icons';
-import { useWidgetEvent } from '@/hooks/useWidgetEvent';
+import { IconChevronLeft, IconClose } from '@/components/Icons';
+import { useEventBus } from '@/hooks/useEventBus';
 import { cssColor } from '@/theme/themes';
 import type { WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
@@ -114,8 +114,8 @@ function PortfolioPieChart({
   const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
 
   // Hook point: SYMBOL_SELECTED from another widget highlights the slice holding that symbol.
-  useWidgetEvent('SYMBOL_SELECTED', (event) => {
-    if (event.sourceInstanceId !== instanceId) setSelectedSymbol(event.symbol);
+  useEventBus('SYMBOL_SELECTED', (event) => {
+    if (event.source !== instanceId) setSelectedSymbol(event.ticker);
   });
   const selected =
     selectedSymbol === null ? null : sliceIndexForSymbol(data, level, selectedSymbol);
@@ -181,6 +181,27 @@ function PortfolioPieChart({
             )}
           </span>
         )}
+        {selectedSymbol !== null ? (
+          <span
+            data-testid="selected-symbol"
+            title={
+              selected === null
+                ? `${selectedSymbol} is not in this view`
+                : `${selectedSymbol} is in ${level.slices[selected]?.label ?? ''}`
+            }
+            className="ml-auto inline-flex shrink-0 items-center gap-1 rounded border border-line-strong px-1.5 text-2xs text-fg"
+          >
+            {selectedSymbol}
+            <button
+              type="button"
+              aria-label={`Clear the ${selectedSymbol} highlight`}
+              onClick={() => setSelectedSymbol(null)}
+              className="text-muted hover:text-fg"
+            >
+              <IconClose size={10} aria-hidden="true" />
+            </button>
+          </span>
+        ) : null}
         <Segmented<PieGrouping>
           label="Group allocation by"
           value={config.grouping}
@@ -281,6 +302,7 @@ function PortfolioPieChart({
                         'hover:bg-raised focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus',
                       )}
                       aria-label={`${s.label}, ${s.sharePct.toFixed(1)}%, ${formatInrCompact(s.valueInr)}. Show breakdown`}
+                      aria-current={selected === i || undefined}
                       onClick={() => open(s)}
                       onFocus={() => setHovered(i)}
                       onBlur={() => setHovered(null)}
@@ -289,7 +311,11 @@ function PortfolioPieChart({
                       {content}
                     </button>
                   ) : (
-                    <div className={rowClass} {...highlight}>
+                    <div
+                      className={rowClass}
+                      aria-current={selected === i || undefined}
+                      {...highlight}
+                    >
                       {content}
                     </div>
                   )}

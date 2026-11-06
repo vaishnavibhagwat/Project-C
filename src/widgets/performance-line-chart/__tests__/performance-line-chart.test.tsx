@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { widgetProps } from '@/__tests__/render';
 import { describeWidgetStates } from '@/__tests__/widgetStates';
-import { subscribeWidgetEvents, type WidgetEvent } from '@/utils/widgetEvents';
+import { eventBus, type WidgetEventMap } from '@/registry/eventBus';
 import { performanceLineChartDefinition, summarizePerformanceLine } from '../config';
 import PerformanceLineChart, { DATE_RANGE_DEBOUNCE_MS } from '../index';
 import {
@@ -156,8 +156,8 @@ describe('PerformanceLineChart', () => {
 
   it('publishes DATE_RANGE_CHANGED once the range settles, not on first render', () => {
     vi.useFakeTimers();
-    const events: WidgetEvent[] = [];
-    const stop = subscribeWidgetEvents((e) => events.push(e));
+    const events: WidgetEventMap['DATE_RANGE_CHANGED'][] = [];
+    const stop = eventBus.subscribe('DATE_RANGE_CHANGED', (e) => events.push(e));
     render(<PerformanceLineChart {...widgetProps(defaults, data)} />);
     act(() => {
       vi.advanceTimersByTime(DATE_RANGE_DEBOUNCE_MS * 2);
@@ -172,11 +172,9 @@ describe('PerformanceLineChart', () => {
     stop();
     expect(events).toHaveLength(1);
     const [event] = events;
-    expect(event).toMatchObject({ type: 'DATE_RANGE_CHANGED', sourceInstanceId: 'test-instance' });
-    if (event?.type === 'DATE_RANGE_CHANGED') {
-      expect(event.from < event.to).toBe(true);
-      expect(event.to < last).toBe(true);
-    }
+    if (!event) throw new Error('no event');
+    expect(event.from < event.to).toBe(true);
+    expect(event.to < last).toBe(true);
   });
 });
 

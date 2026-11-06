@@ -24,7 +24,7 @@ import type { WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
 import { formatPct } from '@/utils/format';
 import { formatDateKey } from '@/utils/time';
-import { publishWidgetEvent } from '@/utils/widgetEvents';
+import { eventBus } from '@/registry/eventBus';
 import {
   clampWindow,
   describeWindow,
@@ -93,7 +93,6 @@ function CrosshairTooltip({
 }
 
 function PerformanceLineChart({
-  instanceId,
   onConfigChange,
   data,
   config,
@@ -208,10 +207,10 @@ function PerformanceLineChart({
     if (key === published.current || !from || !to) return undefined;
     const timer = setTimeout(() => {
       published.current = key;
-      publishWidgetEvent({ type: 'DATE_RANGE_CHANGED', from, to, sourceInstanceId: instanceId });
+      eventBus.publish('DATE_RANGE_CHANGED', { from, to });
     }, DATE_RANGE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [from, to, instanceId]);
+  }, [from, to]);
 
   const setPreset = useCallback(
     (range: PerfPreset) => {

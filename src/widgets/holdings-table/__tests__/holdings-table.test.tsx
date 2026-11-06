@@ -6,7 +6,7 @@ import { renderWithProviders, widgetProps } from '@/__tests__/render';
 import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { generateStressHoldings } from '@/data/mock/stressHoldings';
 import { applyPricesToHoldings } from '@/data/transformers';
-import { subscribeWidgetEvents, type WidgetEvent } from '@/utils/widgetEvents';
+import { eventBus, type WidgetEventMap } from '@/registry/eventBus';
 import { holdingsTableDefinition, summarizeHoldings } from '../config';
 import HoldingsTable from '../index';
 import { filterHoldings, sortedHoldings, totals } from '../model';
@@ -150,8 +150,8 @@ describe('HoldingsTable', () => {
   });
 
   it('publishes SYMBOL_SELECTED when a row is clicked', () => {
-    const events: WidgetEvent[] = [];
-    const stop = subscribeWidgetEvents((e) => events.push(e));
+    const events: WidgetEventMap['SYMBOL_SELECTED'][] = [];
+    const stop = eventBus.subscribe('SYMBOL_SELECTED', (e) => events.push(e));
     renderWithProviders(
       withViewport(<HoldingsTable {...widgetProps(defaults, data, 1000, 600)} />),
     );
@@ -159,9 +159,7 @@ describe('HoldingsTable', () => {
     if (!top) throw new Error('no rows');
     fireEvent.click(screen.getByRole('row', { name: `Open ${top.ticker} details` }));
     stop();
-    expect(events).toEqual([
-      { type: 'SYMBOL_SELECTED', symbol: top.ticker, sourceInstanceId: 'test-instance' },
-    ]);
+    expect(events).toEqual([{ ticker: top.ticker, source: 'test-instance' }]);
   });
 
   it('switches to 1,000 generated rows for the performance demo', () => {

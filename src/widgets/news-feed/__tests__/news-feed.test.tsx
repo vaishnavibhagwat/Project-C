@@ -6,7 +6,7 @@ import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { MARKET_NEWS_LIMIT } from '@/data/derive/news';
 import { NEWS_SOURCES } from '@/data/mock/news';
 import { WIRE_GAP_SECONDS } from '@/data/mock/wire';
-import { publishWidgetEvent } from '@/utils/widgetEvents';
+import { eventBus } from '@/registry/eventBus';
 import { newsFeedDefinition, summarizeNewsFeed } from '../config';
 import NewsFeed from '../index';
 import { filterArticles, mergeArticles } from '../model';
@@ -159,7 +159,7 @@ describe('NewsFeed', () => {
     const ticker = data.articles.find((a) => a.relevantTickers.length > 0)?.relevantTickers[0];
     if (!ticker) throw new Error('no tickers in fixture');
     renderWithProviders(<NewsFeed {...widgetProps(defaults, data)} />);
-    act(() => publishWidgetEvent({ type: 'SYMBOL_SELECTED', symbol: ticker }));
+    act(() => eventBus.publish('SYMBOL_SELECTED', { ticker, source: 'other-widget' }));
     expect(screen.getByText('Showing news for')).toBeInTheDocument();
     const shown = within(list()).getAllByRole('listitem').length;
     expect(shown).toBe(filterArticles(data.articles, defaults, ticker).length);

@@ -18,7 +18,7 @@ import { cx } from '@/utils/cx';
 import { formatInrCompact, formatNumber } from '@/utils/format';
 import { formatLocalPrice } from '@/utils/holdings';
 import { istDateKey } from '@/utils/time';
-import { publishWidgetEvent } from '@/utils/widgetEvents';
+import { eventBus } from '@/registry/eventBus';
 import { HoldingDrawer } from './HoldingDrawer';
 import { activeFilterCount, filterHoldings, HOLDING_COLUMNS, holdingSort, totals } from './model';
 import {
@@ -145,11 +145,7 @@ function HoldingsTable({
   const onRowClick = useCallback(
     (h: Holding) => {
       if (mockCount === 0) setDrawerId(h.holdingId);
-      publishWidgetEvent({
-        type: 'SYMBOL_SELECTED',
-        symbol: h.ticker,
-        sourceInstanceId: instanceId,
-      });
+      eventBus.publish('SYMBOL_SELECTED', { ticker: h.ticker, source: instanceId });
     },
     [instanceId, mockCount],
   );

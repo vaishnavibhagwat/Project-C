@@ -7,7 +7,7 @@ import { Select } from '@/components/Select';
 import { EmptyState } from '@/components/StateViews';
 import { useRealTimeData } from '@/data/queries';
 import { NEWS_STREAM_URL } from '@/data/wsSimulator';
-import { useWidgetEvent } from '@/hooks/useWidgetEvent';
+import { useEventBus } from '@/hooks/useEventBus';
 import type { WidgetComponentProps } from '@/types';
 import { formatIstTime, istDateKey, formatDateKey } from '@/utils/time';
 import { filterArticles, mergeArticles, summarizeFeed } from './model';
@@ -102,8 +102,8 @@ function NewsFeed({
 
   // Hook point: SYMBOL_SELECTED from another widget narrows the feed to that ticker.
   const [symbol, setSymbol] = useState<string | null>(null);
-  useWidgetEvent('SYMBOL_SELECTED', (event) => {
-    if (event.sourceInstanceId !== instanceId) setSymbol(event.symbol);
+  useEventBus('SYMBOL_SELECTED', (event) => {
+    if (event.source !== instanceId) setSymbol(event.ticker);
   });
 
   const shown = useMemo(() => filterArticles(all, config, symbol), [all, config, symbol]);
