@@ -55,6 +55,8 @@ interface DashboardData {
   displayCurrency: DisplayCurrency;
   /** Risk Analytics page controls: VaR confidence and horizon for the page's risk widgets. */
   riskSettings: RiskSettings;
+  /** Marketplace plugins the user installed (re-installed on start-up). */
+  installedPlugins: string[];
   /** Alert ids the user has acknowledged (alert ids are stable per rule and entity). */
   acknowledgedAlertIds: string[];
 }
@@ -101,6 +103,7 @@ interface DashboardActions {
   setCatalogueOpen: (open: boolean) => void;
   setDisplayCurrency: (currency: DisplayCurrency) => void;
   setRiskSettings: (patch: Partial<RiskSettings>) => void;
+  setPluginInstalled: (pluginId: string, installed: boolean) => void;
   acknowledgeAlerts: (ids: string[]) => void;
 }
 
@@ -151,6 +154,11 @@ const PersistedSchema = z.preprocess(
     acknowledgedAlertIds: z.array(z.string().max(80)).max(500).default([]),
     /** Absent before the Risk page controls existed. */
     riskSettings: RiskSettingsSchema.default(DEFAULT_RISK_SETTINGS),
+    /** Absent before marketplace plugins existed. */
+    installedPlugins: z
+      .array(z.string().regex(/^[a-z0-9-]{1,40}$/))
+      .max(20)
+      .default([]),
   }),
 );
 
@@ -188,6 +196,7 @@ export const useDashboardStore = create<DashboardState>()(
         catalogueOpen: true,
         displayCurrency: 'INR',
         riskSettings: { ...DEFAULT_RISK_SETTINGS },
+        installedPlugins: [],
         acknowledgedAlertIds: [],
 
         setGridConfig: (patch) => {
@@ -343,6 +352,11 @@ export const useDashboardStore = create<DashboardState>()(
             const next = RiskSettingsSchema.safeParse({ ...s.riskSettings, ...patch });
             if (next.success) s.riskSettings = next.data;
           }),
+        setPluginInstalled: (pluginId, installed) =>
+          set((s) => {
+            const rest = s.installedPlugins.filter((id) => id !== pluginId);
+            s.installedPlugins = installed ? [...rest, pluginId].slice(-20) : rest;
+          }),
 
         acknowledgeAlerts: (ids) =>
           set((s) => {
@@ -364,6 +378,7 @@ export const useDashboardStore = create<DashboardState>()(
           displayCurrency: s.displayCurrency,
           acknowledgedAlertIds: s.acknowledgedAlertIds,
           riskSettings: s.riskSettings,
+          installedPlugins: s.installedPlugins,
         }),
         migrate: (persisted, version): Persisted =>
           // Unreadable old state: start from the defaults.
@@ -376,6 +391,7 @@ export const useDashboardStore = create<DashboardState>()(
             displayCurrency: 'INR',
             acknowledgedAlertIds: [],
             riskSettings: { ...DEFAULT_RISK_SETTINGS },
+            installedPlugins: [],
           },
         merge: (persisted, current) => {
           const parsed = PersistedSchema.safeParse(persisted);

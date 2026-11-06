@@ -4,6 +4,7 @@ import { IconChevronLeft, IconChevronRight } from '@/components/Icons';
 import { SearchInput } from '@/components/SearchInput';
 import { useToast } from '@/components/Toast';
 import type { RegisteredWidget } from '@/registry/defineWidget';
+import { useRegistryVersion } from '@/registry/pluginHost';
 import { CATEGORIES, CATEGORY_LABELS, widgetRegistry } from '@/registry/registry';
 import { addWidgetToPage, MAX_WIDGETS_PER_PAGE } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
@@ -124,7 +125,13 @@ function WidgetCatalogueImpl({ page }: WidgetCatalogueProps) {
 
   useEffect(() => (open ? prefetchWidgetChunks() : undefined), [open]);
 
-  const groups = useMemo(() => groupCatalogue(widgetRegistry.getAllWidgets(), query), [query]);
+  const registryVersion = useRegistryVersion();
+  const groups = useMemo(
+    () => groupCatalogue(widgetRegistry.getAllWidgets(), query),
+    // registryVersion: plugins add widgets at runtime.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [query, registryVersion],
+  );
   const found = groups.reduce((n, g) => n + g.widgets.length, 0);
 
   const add = useCallback(

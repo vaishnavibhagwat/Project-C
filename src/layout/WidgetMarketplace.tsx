@@ -2,16 +2,26 @@ import { useMemo, useState } from 'react';
 import { Button } from '@/components/Button';
 import { Badge } from '@/components/Badge';
 import { SelectField } from '@/components/FormControls';
-import { IconPlus } from '@/components/Icons';
+import { IconPlug, IconPlus, IconTrash } from '@/components/Icons';
 import { SearchInput } from '@/components/SearchInput';
 import { useToast } from '@/components/Toast';
 import { PAGES } from '@/registry/pages';
+import {
+  installPlugin,
+  isPluginActive,
+  uninstallPlugin,
+  useRegistryVersion,
+} from '@/registry/pluginHost';
+import { AVAILABLE_PLUGINS, type PluginManifest } from '@/registry/plugins';
 import { CATEGORIES, CATEGORY_LABELS, widgetRegistry } from '@/registry/registry';
 import { addWidgetToPage, MAX_WIDGETS_PER_PAGE } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { PageIdSchema } from '@/store/schemas';
 import type { PageId, WidgetCategory } from '@/types';
 import { cx } from '@/utils/cx';
+import { WidgetPreview } from './WidgetPreview';
+
+const PLUGIN_WIDGET_IDS = new Set(AVAILABLE_PLUGINS.flatMap((p) => p.widgetIds));
 
 /** Browse every registered widget and add it to any page. */
 export function WidgetMarketplace({
@@ -25,6 +35,7 @@ export function WidgetMarketplace({
   const [category, setCategory] = useState<WidgetCategory | 'ALL'>('ALL');
   const [target, setTarget] = useState<PageId>(initialTarget);
   const notify = useToast();
+  const registryVersion = useRegistryVersion();
 
   const widgets = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -36,7 +47,9 @@ export function WidgetMarketplace({
       (w) =>
         q === '' || w.name.toLowerCase().includes(q) || w.description.toLowerCase().includes(q),
     );
-  }, [query, category]);
+    // registryVersion: installing a plugin adds widgets without a reload.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, category, registryVersion]);
 
   const targetMeta = PAGES.find((p) => p.id === target);
   const targetCount = useDashboardStore((s) => s.pages[target].itemIds.length);
@@ -50,6 +63,7 @@ export function WidgetMarketplace({
           {widgetRegistry.size} widgets. Every widget loads on demand as its own code chunk.
         </p>
       </div>
+      <PluginList />
       <div className="flex flex-wrap items-end gap-3">
         <SearchInput
           label="Search widgets"
@@ -89,7 +103,10 @@ export function WidgetMarketplace({
           />
         </div>
       </div>
-      <ul className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2">
+      <ul
+        aria-label="Widgets"
+        className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2"
+      >
         {widgets.map((w) => {
           const Icon = w.icon;
           return (
@@ -104,8 +121,10 @@ export function WidgetMarketplace({
                   <Icon />
                 </span>
                 <h2 className="flex-1 text-sm font-semibold text-fg">{w.name}</h2>
+                {PLUGIN_WIDGET_IDS.has(w.id) ? <Badge tone="info">Plugin</Badge> : null}
                 <Badge>{CATEGORY_LABELS[w.category]}</Badge>
               </div>
+              <WidgetPreview variant={w.skeleton} />
               <p className="flex-1 text-xs leading-snug text-muted">{w.description}</p>
               <dl className="num grid grid-cols-2 gap-x-2 text-2xs text-subtle">
                 <dt>Default size</dt>
@@ -140,5 +159,87 @@ export function WidgetMarketplace({
         <p className="py-8 text-center text-sm text-muted">No widgets match.</p>
       ) : null}
     </div>
+  );
+}
+
+function PluginCard({ plugin }: { plugin: PluginManifest }) {
+  useRegistryVersion();
+  const notify = useToast();
+  const [busy, setBusy] = useState(false);
+  const active = isPluginActive(plugin.id);
+  return (
+    <li className="flex flex-col gap-2 rounded border border-dashed border-line-strong bg-panel p-3">
+      <div className="flex items-center gap-2">
+        <span className="flex h-7 w-7 items-center justify-center rounded bg-raised text-accent">
+          <IconPlug />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h3 className="text-sm font-semibold text-fg">{plugin.name}</h3>
+          <p className="text-2xs text-subtle">
+            {plugin.publisher} · v{plugin.version}
+          </p>
+        </div>
+        <Badge tone={active ? 'positive' : 'neutral'}>{active ? 'Installed' : 'Available'}</Badge>
+      </div>
+      <p className="text-xs leading-snug text-muted">{plugin.description}</p>
+      {active ? (
+        <Button
+          size="sm"
+          icon={IconTrash}
+          onClick={() => {
+            const removed = uninstallPlugin(plugin.id);
+            notify({
+              message: `Uninstalled ${plugin.name}${removed > 0 ? `; removed ${removed} widget${removed === 1 ? '' : 's'} from your pages` : ''}`,
+            });
+          }}
+        >
+          Uninstall
+        </Button>
+      ) : (
+        <Button
+          size="sm"
+          icon={IconPlug}
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            void installPlugin(plugin.id).then((ok) => {
+              setBusy(false);
+              notify(
+                ok
+                  ? {
+                      message: `Installed ${plugin.name}: its widget is now in the catalogue`,
+                      tone: 'success',
+                    }
+                  : { message: `${plugin.name} could not be installed`, tone: 'error' },
+              );
+            });
+          }}
+        >
+          {busy ? 'Installing…' : 'Install plugin'}
+        </Button>
+      )}
+    </li>
+  );
+}
+
+/** Third-party plugins: loaded on install, registered through the public registry API. */
+function PluginList() {
+  return (
+    <section aria-labelledby="marketplace-plugins" className="flex flex-col gap-2">
+      <div>
+        <h2 id="marketplace-plugins" className="text-sm font-semibold text-fg">
+          Plugins
+        </h2>
+        <p className="text-2xs text-subtle">
+          Demo of a third-party package: installing it loads its code and registers its widgets at
+          runtime, with no reload. See docs/ADDING_A_WIDGET.md.
+        </p>
+      </div>
+      <ul className="grid grid-cols-[repeat(auto-fill,minmax(260px,1fr))] gap-2">
+        {AVAILABLE_PLUGINS.map((p) => (
+          <PluginCard key={p.id} plugin={p} />
+        ))}
+      </ul>
+    </section>
   );
 }

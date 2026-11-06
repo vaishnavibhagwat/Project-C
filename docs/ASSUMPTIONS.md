@@ -341,3 +341,48 @@ into the market news response they get the source "Meridian Research" and no pri
   seamlessly). It pauses with the Pause button, on hover, and while keyboard focus is inside
   (then it becomes a still, scrollable row so the focused item is in view). Under
   `prefers-reduced-motion` it never moves.
+
+## 21. Risk Analytics page: settings, stress, contributions, exposure
+
+- **Page settings.** Confidence (95% / 99%, default 99%) and horizon (1 day / 10 days, default
+  1 day) are stored in DashboardStore (`riskSettings`) and shared by the VaR gauge and the risk
+  contribution widget on the Risk page. On other pages the VaR gauge keeps its own setting.
+- **10-day VaR.** The 1-day figure × √10 (square-root-of-time). This assumes independent,
+  identically distributed daily returns. It is an approximation, and it understates risk when
+  losses cluster.
+- **Stress scenarios** (`risk/stress`). These are instantaneous, first-order shocks to today's
+  positions, with no convexity, gamma, liquidity or second-round effects:
+  - **Nifty 50 −10%:** each equity-linked position moves by beta × −10%.
+    - Stocks use their simulated beta. Depositary receipts use their underlying stock's beta.
+    - Index futures and options move with beta 1 on their exposure.
+    - REITs use beta 0.5, funds 0.8 and the gold ETF −0.1. Bonds use 0.
+  - **Rates +100 bps:** bonds move by −modified duration × 1%.
+    - Duration is approximated from the ticker as a par bond paying its coupon annually:
+      D = (1 − (1 + y)^−n) / y, with y the coupon and n the years to maturity + 0.5.
+    - T-bills use 0.25.
+  - **INR −5% vs USD:** USD positions gain 1 / 0.95 − 1 ≈ 5.26% in INR.
+  - **2020 COVID replay:** approximate 19 Feb – 23 Mar 2020 moves.
+    - Nifty 50 −38% (by beta), INR government bonds +2%, gold −1%, INR −6% vs USD.
+    - These are rounded, illustrative figures, not a replay of actual prices.
+- **Risk contribution** (`risk/contributions`). This is an Euler allocation of the portfolio's daily
+  P&L standard deviation σ.
+  - Each position's daily P&L is computed over 252 days at today's quantities, converted to INR
+    at the fixed rate.
+  - A position contributes cov(Pᵢ, P) / σ. The contributions sum to σ, and diversifiers are
+    negative.
+  - The widget scales σ to VaR as z × σ × √h, with z = 1.6449 (95%) or 2.3263 (99%). This
+    parametric (normal) figure differs from the gauge's historical VaR. In tests it stays within
+    15% of the parametric VaR in `risk/var`.
+- **Exposure** (`risk/exposure`). Futures count at full notional, options at delta-adjusted
+  notional, and everything else at market value.
+- **Volatility history.** This is a rolling annualised volatility: the sample standard deviation of
+  the last 21, 63 or 126 daily NAV returns (about 1, 3 or 6 months) × √252, for the fund and the Nifty 50.
+
+## 22. Widget Marketplace and the demo plugin
+
+- The Top Movers plugin ranks the book's holdings by the day's % move (or rupee P&L) from
+  `portfolio/holdings`. It adds no data of its own.
+- Its publisher, "Demo Labs", is fictional. The plugin ships in this repository as a separate
+  chunk. Nothing is fetched from a third-party origin.
+- Marketplace thumbnails are schematic drawings of each widget's layout. They are drawn from the
+  widget's skeleton shape, not from live data.

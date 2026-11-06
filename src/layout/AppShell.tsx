@@ -9,6 +9,7 @@ import { isPageRoute, useAppRoute } from '@/hooks/useAppRoute';
 import { useUndoRedo } from '@/hooks/useUndoRedo';
 import { SymbolDetailContext, type SymbolDetailApi } from '@/hooks/useSymbolDetail';
 import { getPageMeta } from '@/registry/pages';
+import { restoreInstalledPlugins } from '@/registry/pluginHost';
 import { addWidgetToPage, MAX_WIDGETS_PER_PAGE, resetPage } from '@/store/actions';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useThemeStore } from '@/store/themeStore';
@@ -90,6 +91,11 @@ export function AppShell() {
   useEffect(() => {
     if (isPageRoute(route)) setLastPage(route);
   }, [route]);
+
+  // Marketplace plugins installed in an earlier session register their widgets again.
+  useEffect(() => {
+    void restoreInstalledPlugins();
+  }, []);
 
   useEffect(() => {
     const title = (route && ROUTE_TITLES[route]) ?? meta.title;

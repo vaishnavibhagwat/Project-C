@@ -27,7 +27,7 @@ npm run dev                 # http://localhost:5173
 | `npm run dev`             | Vite dev server                                                    |
 | `npm run build`           | Type-check (`tsc`, strict) then production build to `dist/`        |
 | `npm run preview`         | Serve the production build                                         |
-| `npm run test`            | Vitest + React Testing Library (247 tests)                         |
+| `npm run test`            | Vitest + React Testing Library (1,200+ tests)                      |
 | `npm run test:coverage`   | Tests with v8 coverage (text + HTML report in `coverage/`)         |
 | `npm run lint`            | ESLint with `typescript-eslint` `recommended-type-checked`         |
 | `npm run format`          | Prettier `--write` (`printWidth` 100, `singleQuote`)               |
@@ -49,41 +49,46 @@ Python Playwright; see [docs/PERFORMANCE.md](docs/PERFORMANCE.md)).
 **Seven app areas** (slim icon rail with tooltips; React Router with hash URLs, so every page is
 deep-linkable on static hosting; each page is a lazy chunk):
 
-| Area                              | Default widgets                                                                                                    |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Portfolio Workstation (`G 1`)     | Portfolio Summary Strip + 9 widgets: NAV, allocation, VaR, holdings, alerts, heat map, treemap, drawdown, research |
-| Risk Analytics (`G 2`)            | Risk-adjusted metrics, VaR gauge, drawdown, sector heat map, limit alerts                                          |
-| Holdings Explorer (`G 3`)         | Holdings table, treemap, allocation, trade blotter                                                                 |
-| Performance & Attribution (`G 4`) | Overview, NAV vs Nifty 50, metrics, sector attribution, drawdown                                                   |
-| Research & Alerts (`G 5`)         | Sample research feed, alerts, trade blotter                                                                        |
-| Widget Marketplace (`G 6`)        | Browse all 21 widgets by category and add them to any page                                                         |
-| Settings (`G 7`)                  | Grid (columns, row height, gap, compaction), theme, display currency, data feed, workspace, shortcuts              |
+| Area                              | Default widgets                                                                                                                                                         |
+| --------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Portfolio Workstation (`G 1`)     | Portfolio Summary Strip + 9 widgets: NAV, allocation, VaR, holdings, alerts, heat map, treemap, drawdown, research                                                      |
+| Risk Analytics (`G 2`)            | 95/99% and 1/10-day controls; VaR gauge, risk contribution, stress scenarios, drawdown, volatility, correlation, exposure; assumptions panel                            |
+| Holdings Explorer (`G 3`)         | Full-width holdings table with sector / asset class / P&L filters, row selection and a detail drawer; treemap, allocation, blotter                                      |
+| Performance & Attribution (`G 4`) | Overview, performance vs benchmarks (periods), NAV, risk-adjusted metrics table, drawdown with recovery, Brinson drill-down (asset class → sector → holding)            |
+| Research & Alerts (`G 5`)         | Market ticker, news feed (sample research content), alert panel (read, acknowledge, dismiss, rules), research feed                                                      |
+| Widget Marketplace (`G 6`)        | Cards with preview, category and description for all 25 widgets; add to any page; install a demo plugin at runtime ([docs/ADDING_A_WIDGET.md](docs/ADDING_A_WIDGET.md)) |
+| Settings (`G 7`)                  | Grid (columns, row height, gap, compaction), theme, display currency, data feed, workspace, shortcuts                                                                   |
 
 **21 widgets**, each lazy-loaded as its own chunk:
 
-| Widget                    | Category | Rendering                        | Data source                      | Refresh     |
-| ------------------------- | -------- | -------------------------------- | -------------------------------- | ----------- |
-| Portfolio Overview        | ANALYSIS | HTML tiles                       | `portfolio/summary`              | 5 s         |
-| NAV vs Nifty 50           | CHART    | Recharts line                    | `portfolio/nav-history`          | 30 s¹       |
-| Asset Allocation          | CHART    | Recharts donut                   | `portfolio/allocation`           | 15 s        |
-| Portfolio Pie Chart       | CHART    | Recharts pie / donut, drill      | `portfolio/holdings`             | 30 s        |
-| Drawdown                  | CHART    | Recharts area                    | `portfolio/nav-history`          | 30 s¹       |
-| Sector Attribution        | CHART    | Recharts bars                    | `performance/attribution`        | 30 s¹       |
-| Attribution Bars          | CHART    | Recharts bars, drill, periods    | `performance/attribution-inputs` | on demand   |
-| Performance vs Benchmarks | CHART    | Recharts lines, zoom, brush      | `performance/benchmarks`         | 60 s        |
-| Holdings                  | TABLE    | DataTable (react-virtuoso)       | `portfolio/holdings`             | 10 s + live |
-| Trade Blotter             | TABLE    | react-virtuoso table             | `trades/blotter`                 | 5 s         |
-| Research Feed             | FEED     | react-virtuoso list              | `research/feed`                  | 30 s¹       |
-| News Feed                 | FEED     | HTML list, Framer Motion         | `market/news` + news stream      | 20 s + live |
-| Market Ticker             | FEED     | CSS translateX crawl, sparklines | `market/ticker` + ticker stream  | 5 s + live  |
-| Alerts                    | FEED     | HTML list                        | `alerts/active`                  | 15 s        |
-| Alert Panel               | FEED     | HTML list, rules editor          | `alerts/panel` + alerts stream   | on demand   |
-| Value at Risk             | GAUGE    | SVG speedometer, spring needle   | `risk/var`                       | 60 s        |
-| Risk-Adjusted Metrics     | ANALYSIS | HTML tiles                       | `risk/metrics`                   | 30 s¹       |
-| Sector Returns Heat Map   | ANALYSIS | D3 scales + SVG                  | `market/sector-returns`          | 15 s        |
-| Holdings Treemap          | ANALYSIS | D3 squarified treemap            | `portfolio/holdings`             | 5 s         |
-| Correlation Matrix        | ANALYSIS | CSS grid, RdBu, scatter modal    | `risk/returns`                   | 5 min       |
-| Sector Heat Map           | CHART    | D3 treemap, sector drill-in      | `portfolio/holdings`             | 15 s        |
+| Widget                    | Category | Rendering                         | Data source                      | Refresh     |
+| ------------------------- | -------- | --------------------------------- | -------------------------------- | ----------- |
+| Portfolio Overview        | ANALYSIS | HTML tiles                        | `portfolio/summary`              | 5 s         |
+| NAV vs Nifty 50           | CHART    | Recharts line                     | `portfolio/nav-history`          | 30 s¹       |
+| Asset Allocation          | CHART    | Recharts donut                    | `portfolio/allocation`           | 15 s        |
+| Portfolio Pie Chart       | CHART    | Recharts pie / donut, drill       | `portfolio/holdings`             | 30 s        |
+| Drawdown                  | CHART    | Recharts area                     | `portfolio/nav-history`          | 30 s¹       |
+| Sector Attribution        | CHART    | Recharts bars                     | `performance/attribution`        | 30 s¹       |
+| Attribution Bars          | CHART    | Recharts bars, drill, periods     | `performance/attribution-inputs` | on demand   |
+| Performance vs Benchmarks | CHART    | Recharts lines, zoom, brush       | `performance/benchmarks`         | 60 s        |
+| Holdings                  | TABLE    | DataTable (react-virtuoso)        | `portfolio/holdings`             | 10 s + live |
+| Trade Blotter             | TABLE    | react-virtuoso table              | `trades/blotter`                 | 5 s         |
+| Research Feed             | FEED     | react-virtuoso list               | `research/feed`                  | 30 s¹       |
+| News Feed                 | FEED     | HTML list, Framer Motion          | `market/news` + news stream      | 20 s + live |
+| Market Ticker             | FEED     | CSS translateX crawl, sparklines  | `market/ticker` + ticker stream  | 5 s + live  |
+| Alerts                    | FEED     | HTML list                         | `alerts/active`                  | 15 s        |
+| Alert Panel               | FEED     | HTML list, rules editor           | `alerts/panel` + alerts stream   | on demand   |
+| Value at Risk             | GAUGE    | SVG speedometer, spring needle    | `risk/var`                       | 60 s        |
+| Risk-Adjusted Metrics     | ANALYSIS | HTML tiles                        | `risk/metrics`                   | 30 s¹       |
+| Sector Returns Heat Map   | ANALYSIS | D3 scales + SVG                   | `market/sector-returns`          | 15 s        |
+| Holdings Treemap          | ANALYSIS | D3 squarified treemap             | `portfolio/holdings`             | 5 s         |
+| Correlation Matrix        | ANALYSIS | CSS grid, RdBu, scatter modal     | `risk/returns`                   | 5 min       |
+| Sector Heat Map           | CHART    | D3 treemap, sector drill-in       | `portfolio/holdings`             | 15 s        |
+| Volatility History        | CHART    | Recharts lines, rolling windows   | `portfolio/nav-history`          | 30 s¹       |
+| Exposure Breakdown        | ANALYSIS | Recharts bars by class / region   | `risk/exposure`                  | 15 s + live |
+| Stress Scenarios          | TABLE    | HTML table                        | `risk/stress`                    | 30 s¹       |
+| Risk Contribution         | CHART    | Recharts bars (Euler)             | `risk/contributions`             | 30 s¹       |
+| Top Movers (demo plugin)  | ANALYSIS | HTML lists, registered at runtime | `portfolio/holdings`             | 10 s + live |
 
 ¹ `VITE_DATA_REFRESH_INTERVAL` (default 30 s): widgets backed by end-of-day data. Widgets driven
 by the intraday tape keep their own 5–15 s intervals.

@@ -3,6 +3,7 @@ import { Button, IconButton } from '@/components/Button';
 import { Dropdown, type DropdownItem } from '@/components/Dropdown';
 import { IconChevronDown, IconClose, IconDrag, IconPlus } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
+import { useRegistryVersion } from '@/registry/pluginHost';
 import { CATEGORIES, CATEGORY_LABELS, widgetRegistry } from '@/registry/registry';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { fillPlaceholder, removeWidgetFromPage, restoreRemovedWidget } from '@/store/actions';
@@ -40,6 +41,7 @@ export const PlaceholderCard = memo(function PlaceholderCard({
 }) {
   const notify = useToast();
   const editing = !useDashboardStore((s) => s.locked);
+  useRegistryVersion();
   const items = widgetMenu((widgetId, name) => {
     if (fillPlaceholder(page, instanceId, widgetId)) {
       notify({ message: `Added ${name}`, tone: 'success' });

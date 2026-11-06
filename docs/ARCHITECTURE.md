@@ -630,6 +630,9 @@ types; and a failed request showing the widget's error state without reaching an
 
 ## 6. Adding a widget in under four hours
 
+For the full interface reference, including plugins that register widgets at runtime from the
+Widget Marketplace, see [ADDING_A_WIDGET.md](ADDING_A_WIDGET.md).
+
 A widget is one new folder plus two one-line registrations. Nothing in `src/grid`,
 `src/store`, `src/data`, `src/layout` or `src/theme` changes, provided an existing endpoint has
 the data you need. If it does not, stop: a new endpoint (derivation, zod schema, mock API entry)

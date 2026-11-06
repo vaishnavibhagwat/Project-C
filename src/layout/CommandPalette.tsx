@@ -2,6 +2,7 @@ import { useId, useMemo, useState } from 'react';
 import { IconSearch } from '@/components/Icons';
 import { Modal } from '@/components/Overlay';
 import { cx } from '@/utils/cx';
+import { useRegistryVersion } from '@/registry/pluginHost';
 import { search, type SearchResult } from './searchIndex';
 
 const KIND_LABEL = { page: 'Page', widget: 'Widget', symbol: 'Symbol', action: 'Command' } as const;
@@ -24,7 +25,10 @@ export function CommandPalette({ open, onClose, onSelect }: CommandPaletteProps)
 function PaletteBody({ onSelect }: Pick<CommandPaletteProps, 'onSelect'>) {
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(0);
-  const results = useMemo(() => search(query), [query]);
+  const registryVersion = useRegistryVersion();
+  // registryVersion: plugin widgets join the index when installed.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const results = useMemo(() => search(query), [query, registryVersion]);
   const listId = useId();
   const current = results[Math.min(active, results.length - 1)];
 

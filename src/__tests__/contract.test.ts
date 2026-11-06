@@ -7,6 +7,7 @@ import { parseChannelUrl } from '@/data/wsSimulator';
 import { WidgetFrame } from '@/grid/WidgetFrame';
 import { EndpointFetcherContext, type EndpointFetcher } from '@/hooks/useEndpoint';
 import { isComponentType, isLazyComponent } from '@/registry/definitionValidator';
+import { AVAILABLE_PLUGINS } from '@/registry/plugins';
 import { widgetRegistry } from '@/registry/registry';
 import { useWidgetStore } from '@/store/widgetStore';
 import { WidgetCategory, type GridSize } from '@/types';
@@ -17,19 +18,27 @@ import { renderWithProviders } from './render';
  * The WidgetDefinition contract, checked for every registered widget: field types, unique ids,
  * categories, sizes, default settings against their own schema, a lazy component, a valid data
  * source, and that each widget renders mock data and shows "No data available" for an empty
- * response. New widgets are covered as soon as they are registered.
+ * response. New widgets are covered as soon as they are registered, and the marketplace
+ * plugins are installed first so their runtime-registered widgets are held to the same contract.
  */
 
 interface WidgetFixtures {
   fixtureData: () => unknown;
   emptyData: () => unknown;
 }
-const fixtureModules = import.meta.glob<WidgetFixtures>('/src/widgets/*/__tests__/index.ts', {
-  eager: true,
-});
+const fixtureModules = import.meta.glob<WidgetFixtures>(
+  ['/src/widgets/*/__tests__/index.ts', '/src/registry/plugins/*/__tests__/index.ts'],
+  { eager: true },
+);
+/** Built-in widgets live in src/widgets/<id>; plugin widgets in their plugin's folder. */
+const fixtureDir = (id: string) => {
+  const plugin = AVAILABLE_PLUGINS.find((p) => p.widgetIds.includes(id));
+  return plugin ? `/src/registry/plugins/${plugin.id}` : `/src/widgets/${id}`;
+};
 const fixturesFor = (id: string): WidgetFixtures | undefined =>
-  fixtureModules[`/src/widgets/${id}/__tests__/index.ts`];
+  fixtureModules[`${fixtureDir(id)}/__tests__/index.ts`];
 
+for (const manifest of AVAILABLE_PLUGINS) (await manifest.load()).install(widgetRegistry);
 const widgets = widgetRegistry.getAllWidgets();
 const CATEGORIES = Object.values(WidgetCategory);
 const COLS = DEFAULT_GRID_CONFIG.cols;
@@ -47,7 +56,7 @@ const fits = (a: GridSize, b: GridSize) => a.w <= b.w && a.h <= b.h;
 
 // Load every widget chunk once, up front, so the render tests do not pay the first-transform
 // cost inside their own timeouts.
-const chunks = import.meta.glob('/src/widgets/*/index.tsx');
+const chunks = import.meta.glob(['/src/widgets/*/index.tsx', '/src/registry/plugins/*/*.tsx']);
 beforeAll(async () => {
   await Promise.all(Object.values(chunks).map((load) => load()));
 }, 120_000);
@@ -116,7 +125,7 @@ describe('widget contract', () => {
 
     it('has fixtures that are valid responses of its endpoint', () => {
       const f = fixturesFor(id);
-      if (!f) throw new Error(`src/widgets/${id}/__tests__/index.ts is missing`);
+      if (!f) throw new Error(`${fixtureDir(id)}/__tests__/index.ts is missing`);
       expect(() => parseEndpoint(w.dataSource.endpoint, f.fixtureData())).not.toThrow();
       expect(() => parseEndpoint(w.dataSource.endpoint, f.emptyData())).not.toThrow();
       expect(w.isEmpty(f.fixtureData())).toBe(false);

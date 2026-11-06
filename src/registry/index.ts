@@ -3,6 +3,8 @@ export * from './defineWidget';
 export * from './definitionValidator';
 export * from './pages';
 export * from './placeholder';
+export * from './pluginHost';
+export * from './plugins';
 export * from './registry';
 export * from './WidgetErrorBoundary';
 export * from './WidgetRegistry';

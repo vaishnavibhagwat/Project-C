@@ -234,9 +234,12 @@ describe('AppShell', () => {
     renderShell();
     goTo('#/marketplace');
     fireEvent.click(await screen.findByRole('button', { name: 'Gauges' }));
-    expect(screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)).toEqual([
-      'Value at Risk',
-    ]);
+    const list = screen.getByRole('list', { name: 'Widgets' });
+    expect(
+      within(list)
+        .getAllByRole('heading', { level: 2 })
+        .map((h) => h.textContent),
+    ).toEqual(['Value at Risk']);
   });
 
   it('saves a layout from the Layouts panel', () => {

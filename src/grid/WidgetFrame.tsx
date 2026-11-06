@@ -19,6 +19,7 @@ import { useDataSource } from '@/hooks/useEndpoint';
 import { useNow } from '@/hooks/useNow';
 import { useThrottledValue } from '@/hooks/useThrottledValue';
 import type { RegisteredWidget } from '@/registry/defineWidget';
+import { pluginManifest, useRegistryVersion } from '@/registry/pluginHost';
 import { widgetRegistry } from '@/registry/registry';
 import { UnknownWidgetPlaceholder, WidgetRenderer } from '@/registry/WidgetRenderer';
 import {
@@ -299,7 +300,21 @@ export const WidgetFrame = memo(function WidgetFrame({
   instanceId: string;
 }) {
   const instance = useWidgetStore((s) => s.instances[instanceId]);
+  // Plugins register widgets at runtime: look the type up again when the registry changes.
+  useRegistryVersion();
   const entry = instance ? widgetRegistry.getWidget(instance.widgetId) : undefined;
+  const restoring = useDashboardStore((s) =>
+    s.installedPlugins.some((id) =>
+      pluginManifest(id)?.widgetIds.includes(instance?.widgetId ?? ''),
+    ),
+  );
+  if (instance && !entry && restoring) {
+    return (
+      <WidgetShell title="Loading plugin" status="ready">
+        <p className="p-3 text-xs text-muted">Loading the plugin that provides this widget…</p>
+      </WidgetShell>
+    );
+  }
   if (!instance || !entry) return <UnknownWidget page={page} instance={instance} />;
   return <FrameBody page={page} instance={instance} entry={entry} />;
 });

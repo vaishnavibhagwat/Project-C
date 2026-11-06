@@ -35,11 +35,30 @@ function labelOf(definition: { id?: unknown }): string {
  * duplicate ids. Iteration follows registration order.
  *
  * `T` lets the app store definitions that carry extra runtime helpers (see RegisteredWidget)
- * while tests and other callers can use plain WidgetDefinitions. The registry is filled once
- * at start-up; mounted components do not re-render when it changes.
+ * while tests and other callers can use plain WidgetDefinitions. Built-in widgets are
+ * registered at start-up; plugins can add more at runtime. Components that list widgets
+ * subscribe (useRegistryVersion) so they re-render when the set changes.
  */
 export class WidgetRegistry<T extends WidgetDefinition = WidgetDefinition> {
   private readonly widgets = new Map<string, T>();
+  private readonly listeners = new Set<() => void>();
+  private revision = 0;
+
+  /** Call `listener` after every registration or removal. Returns the unsubscribe function. */
+  subscribe = (listener: () => void): (() => void) => {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  };
+
+  /** Increases on every change; a cheap snapshot for useSyncExternalStore. */
+  getVersion = (): number => this.revision;
+
+  private changed(): void {
+    this.revision += 1;
+    for (const listener of [...this.listeners]) listener();
+  }
 
   /** Add a widget. Throws InvalidWidgetDefinitionError or DuplicateWidgetError. */
   registerWidget(definition: T): void {
@@ -47,6 +66,7 @@ export class WidgetRegistry<T extends WidgetDefinition = WidgetDefinition> {
     if (!result.valid) throw new InvalidWidgetDefinitionError(labelOf(definition), result.errors);
     if (this.widgets.has(definition.id)) throw new DuplicateWidgetError(definition.id);
     this.widgets.set(definition.id, definition);
+    this.changed();
   }
 
   getWidget(id: string): T | undefined {
@@ -68,7 +88,9 @@ export class WidgetRegistry<T extends WidgetDefinition = WidgetDefinition> {
 
   /** Remove a widget. Returns false when the id was not registered. */
   unregisterWidget(id: string): boolean {
-    return this.widgets.delete(id);
+    const removed = this.widgets.delete(id);
+    if (removed) this.changed();
+    return removed;
   }
 
   /** Check a config against the configSchema of the widget registered under `id`. */
