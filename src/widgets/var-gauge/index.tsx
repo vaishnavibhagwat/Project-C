@@ -2,6 +2,7 @@ import { memo, useCallback, useMemo } from 'react';
 import { Badge } from '@/components/Badge';
 import { Segmented } from '@/components/FormControls';
 import { InfoTooltip } from '@/components/Tooltip';
+import { horizonScale, useRiskSettings } from '@/hooks/useRiskSettings';
 import { cssColor } from '@/theme/themes';
 import type { WidgetComponentProps } from '@/types';
 import { cx } from '@/utils/cx';
@@ -83,8 +84,28 @@ function VarGauge({
   width,
   height,
 }: WidgetComponentProps<VarGaugeConfig, VarGaugeData>) {
-  const reading = useMemo(() => selectVar(data, config), [data, config]);
-  const range = useMemo(() => rangeFor(data, config), [data, config]);
+  // On the Risk page its confidence and horizon apply (10-day by √10 scaling).
+  const page = useRiskSettings();
+  const horizon = page?.horizonDays ?? 1;
+  const effective = useMemo(
+    () => (page ? { ...config, confidence: page.confidence } : config),
+    [config, page],
+  );
+  const reading = useMemo(() => {
+    const r = selectVar(data, effective);
+    const k = horizonScale(horizon);
+    return {
+      ...r,
+      value: r.value * k,
+      limit: r.limit * k,
+      cvar: r.cvar === null ? null : r.cvar * k,
+    };
+  }, [data, effective, horizon]);
+  const range = useMemo(() => {
+    const r = rangeFor(data, effective);
+    const k = horizonScale(horizon);
+    return r ? { ...r, min: r.min * k, max: r.max * k } : null;
+  }, [data, effective, horizon]);
   const max = gaugeMax(reading, range);
   const fx = data.portfolioValueInr / data.portfolioValueUsd;
   const money = (fraction: number) =>
@@ -112,15 +133,21 @@ function VarGauge({
   return (
     <div className="scroll-thin flex h-full flex-col overflow-y-auto px-2 py-1">
       <div className="flex items-center justify-between gap-1">
-        <Segmented<VarGaugeConfig['confidence']>
-          label="Confidence"
-          value={config.confidence}
-          options={[
-            { value: '95', label: '95%' },
-            { value: '99', label: '99%' },
-          ]}
-          onValueChange={setConfidence}
-        />
+        {page ? (
+          <span className="text-2xs text-muted" title="Set by the Risk page controls">
+            {page.confidence}% · {horizon}-day · page
+          </span>
+        ) : (
+          <Segmented<VarGaugeConfig['confidence']>
+            label="Confidence"
+            value={config.confidence}
+            options={[
+              { value: '95', label: '95%' },
+              { value: '99', label: '99%' },
+            ]}
+            onValueChange={setConfidence}
+          />
+        )}
         <Segmented<VarGaugeConfig['method']>
           label="VaR method"
           value={config.method}
@@ -152,7 +179,7 @@ function VarGauge({
         <p
           className={cx('num text-center text-2xs leading-tight text-muted', compact && 'sr-only')}
         >
-          {formatPct(reading.value, 2, false)} of AUM · {config.confidence}% 1-day ·{' '}
+          {formatPct(reading.value, 2, false)} of AUM · {effective.confidence}% {horizon}-day ·{' '}
           {config.method === 'historical' ? 'historical' : 'parametric'}
           {range
             ? ` · ${range.days}d range ${formatPct(range.min, 2, false)}–${formatPct(range.max, 2, false)}`

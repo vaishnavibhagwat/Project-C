@@ -321,6 +321,7 @@ describe('realtime bridge', () => {
       'portfolio/holdings',
       'portfolio/summary',
       'portfolio/allocation',
+      'risk/exposure',
     ]);
     expect(onPush).toHaveBeenCalledWith(['market/sector-returns', 'market/ticker']);
 

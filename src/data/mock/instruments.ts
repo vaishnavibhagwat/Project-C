@@ -5,27 +5,15 @@ import type { BenchmarkSeries } from './benchmarks';
 import { blackScholes, gbmPath } from './gbm';
 import { dailyReturns, windowCloses, type SeriesWindow } from './window';
 
-export const ASSET_CLASSES = ['Equity', 'Fixed Income', 'Derivatives', 'Alternatives'] as const;
-export type MockAssetClass = (typeof ASSET_CLASSES)[number];
-
-export const GEOGRAPHIES = ['India', 'US', 'UK', 'Singapore'] as const;
-export type Geography = (typeof GEOGRAPHIES)[number];
-
-export const INSTRUMENT_TYPES = [
-  'Stock',
-  'ADR',
-  'GDR',
-  'Government Bond',
-  'Corporate Bond',
-  'Treasury Bill',
-  'Index Future',
-  'Index Option',
-  'REIT',
-  'ETF',
-  'Fund',
-  'Cash',
-] as const;
-export type InstrumentType = (typeof INSTRUMENT_TYPES)[number];
+export {
+  ASSET_CLASSES,
+  GEOGRAPHIES,
+  INSTRUMENT_TYPES,
+  type Geography,
+  type InstrumentType,
+  type MockAssetClass,
+} from '../constants';
+import type { Geography, InstrumentType, MockAssetClass } from '../constants';
 
 /** Rate used for futures carry and option pricing (approximation: flat, annual). */
 export const RISK_FREE_RATE_INR = 0.065;

@@ -9,8 +9,8 @@ import { NavPerformanceConfigSchema } from '@/widgets/nav-performance/types';
 describe('built-in widget registry', () => {
   const widgets = widgetRegistry.getAllWidgets();
 
-  it('registers all 21 widgets with unique ids and every category represented', () => {
-    expect(widgetRegistry.size).toBe(21);
+  it('registers all 25 widgets with unique ids and every category represented', () => {
+    expect(widgetRegistry.size).toBe(25);
     expect(new Set(widgets.map((w) => w.id)).size).toBe(widgets.length);
     for (const c of Object.values(WidgetCategory)) {
       expect(widgetRegistry.getWidgetsByCategory(c).length).toBeGreaterThan(0);
@@ -33,6 +33,26 @@ describe('built-in widget registry', () => {
       extra: 1,
     });
     expect(resolved).toEqual({ range: '5Y', showBenchmark: true, mode: 'rebased' });
+  });
+
+  it('places every default widget within its own min and max size', () => {
+    for (const page of PAGES) {
+      for (const inst of defaultSnapshot(page.id).instances) {
+        const w = widgetRegistry.getWidget(inst.widgetId);
+        if (!w) continue;
+        const where = `${page.id}/${inst.widgetId}`;
+        expect(inst.position.w, where).toBeGreaterThanOrEqual(w.minSize.w);
+        expect(inst.position.h, where).toBeGreaterThanOrEqual(w.minSize.h);
+        if (w.maxSize) {
+          expect(inst.position.w, where).toBeLessThanOrEqual(w.maxSize.w);
+          expect(inst.position.h, where).toBeLessThanOrEqual(w.maxSize.h);
+        }
+        // Default settings for a placement must be valid for the widget.
+        expect(
+          widgetRegistry.validateConfig(w.id, { ...w.defaultConfig, ...inst.config }).errors,
+        ).toEqual([]);
+      }
+    }
   });
 
   it('places only registered widgets on default pages', () => {

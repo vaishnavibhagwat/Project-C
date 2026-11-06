@@ -1,8 +1,10 @@
 import { fireEvent, screen } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { renderWithProviders, widgetProps } from '@/__tests__/render';
 import { describeWidgetStates } from '@/__tests__/widgetStates';
 import { VAR_HISTORY_DAYS } from '@/data/derive/risk';
+import { RiskSettingsContext } from '@/hooks/useRiskSettings';
 import { summarizeVar, varGaugeDefinition } from '../config';
 import { arcPath, NEEDLE_SPRING, needleAngle } from '../Gauge';
 import VarGauge from '../index';
@@ -120,6 +122,25 @@ describe('VarGauge', () => {
     expect(screen.getByRole('rowheader', { name: 'Historical' })).toBeInTheDocument();
     expect(screen.getByRole('rowheader', { name: 'Parametric' })).toBeInTheDocument();
     expect(screen.getByRole('rowheader', { name: 'CVaR (hist.)' })).toBeInTheDocument();
+  });
+});
+
+describe('VarGauge on the Risk page', () => {
+  it('follows the page confidence and scales to a 10-day horizon by √10', () => {
+    const page = ({ children }: { children: ReactNode }) => (
+      <RiskSettingsContext.Provider value={{ confidence: '95', horizonDays: 10 }}>
+        {children}
+      </RiskSettingsContext.Provider>
+    );
+    renderWithProviders(<VarGauge {...widgetProps(defaults, data, 240, 300)} />, {
+      wrapper: page,
+    });
+    expect(screen.getByText('95% · 10-day · page')).toBeInTheDocument();
+    expect(screen.queryByRole('radio', { name: '99%' })).not.toBeInTheDocument();
+    const scaled = data.historical.var95 * Math.sqrt(10) * 100;
+    expect(
+      screen.getByText(new RegExp(`^${scaled.toFixed(2)}% of AUM · 95% 10-day`)),
+    ).toBeInTheDocument();
   });
 });
 

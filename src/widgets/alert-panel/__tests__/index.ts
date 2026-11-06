@@ -13,6 +13,8 @@ export const configuredConfig: AlertPanelConfig = {
   ]),
   dismissed: '',
   snoozes: '{}',
+  read: '',
+  acknowledged: '',
   minSeverity: 'warning',
   pulseCritical: false,
 };

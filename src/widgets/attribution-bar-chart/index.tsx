@@ -114,23 +114,39 @@ function AttributionBarChart({
   const selectedKey: PeriodKey =
     choice && windows.some((w) => w.key === choice) ? choice : config.period;
   const selected = results.find((r) => r.window.key === selectedKey) ?? results[0];
-  const shown: WindowAttribution[] = useMemo(
-    () => (config.compare ? results : selected ? [selected] : []),
-    [config.compare, results, selected],
-  );
 
-  const [drill, setDrill] = useState<{ grouping: Grouping; key: string } | null>(null);
-  const segmentKey = drill && drill.grouping === config.grouping ? drill.key : null;
-  const relativeOk = shown.every((r) => Math.abs(r.active) >= RELATIVE_MIN_ACTIVE);
+  // Drill path: asset class → (Equity) sector → holding, or segment → holding elsewhere.
+  const [path, setPath] = useState<{ grouping: Grouping; keys: string[] }>({
+    grouping: config.grouping,
+    keys: [],
+  });
+  const keys = useMemo(
+    () => (path.grouping === config.grouping ? path.keys : []),
+    [path, config.grouping],
+  );
+  const equityDrill = config.grouping === 'asset-class' && keys[0] === 'Equity';
+  const sectorResults = useMemo(
+    () => (equityDrill ? windows.map((w) => attributeWindow(data, 'sector', w)) : null),
+    [equityDrill, windows, data],
+  );
+  const levelGrouping: Grouping = equityDrill ? 'sector' : config.grouping;
+  const levelResults = sectorResults ?? results;
+  const segmentKey: string | null = equityDrill ? (keys[1] ?? null) : (keys[0] ?? null);
+  const levelSelected = levelResults.find((r) => r.window.key === selectedKey) ?? levelResults[0];
+  const levelShown: WindowAttribution[] = useMemo(
+    () => (config.compare ? levelResults : levelSelected ? [levelSelected] : []),
+    [config.compare, levelResults, levelSelected],
+  );
+  const relativeOk = levelShown.every((r) => Math.abs(r.active) >= RELATIVE_MIN_ACTIVE);
   const unit = config.unit === 'pct' && relativeOk ? 'pct' : 'bps';
 
   const rows: Row[] = useMemo(() => {
-    const base = selected ?? results[0];
+    const base = levelSelected;
     if (!base) return [];
     if (segmentKey) {
-      const per = shown.map((r) => ({
+      const per = levelShown.map((r) => ({
         r,
-        items: holdingContributions(data, config.grouping, r, segmentKey),
+        items: holdingContributions(data, levelGrouping, r, segmentKey),
       }));
       const first = per[0]?.items ?? [];
       return first.map((h) => {
@@ -144,7 +160,7 @@ function AttributionBarChart({
     }
     return base.segments.map((seg) => {
       const row: Row = { key: seg.key, label: seg.label };
-      for (const r of shown) {
+      for (const r of levelShown) {
         const s = r.segments.find((x) => x.key === seg.key);
         for (const e of EFFECTS)
           row[`${r.window.key}_${e.key}`] = inUnit(s?.[e.key] ?? 0, unit, r.active);
@@ -152,12 +168,13 @@ function AttributionBarChart({
       }
       return row;
     });
-  }, [selected, results, shown, segmentKey, data, config.grouping, unit]);
+  }, [levelSelected, levelShown, segmentKey, data, levelGrouping, unit]);
 
   const open = useCallback(
-    (key: string) => setDrill({ grouping: config.grouping, key }),
-    [config.grouping],
+    (key: string) => setPath({ grouping: config.grouping, keys: [...keys, key] }),
+    [config.grouping, keys],
   );
+  const back = () => setPath({ grouping: config.grouping, keys: keys.slice(0, -1) });
   const onBarClick = useCallback(
     (_: unknown, index: number) => {
       const row = rows[index];
@@ -168,7 +185,7 @@ function AttributionBarChart({
 
   const bars = (() => {
     if (segmentKey) {
-      return shown.map((r, i) => (
+      return levelShown.map((r, i) => (
         <Bar
           key={r.window.key}
           dataKey={`${r.window.key}_contribution`}
@@ -179,7 +196,7 @@ function AttributionBarChart({
       ));
     }
     if (config.compare && config.layout === 'grouped') {
-      return shown.map((r, i) => (
+      return levelShown.map((r, i) => (
         <Bar
           key={r.window.key}
           dataKey={`${r.window.key}_total`}
@@ -191,7 +208,7 @@ function AttributionBarChart({
         />
       ));
     }
-    return shown.flatMap((r, i) =>
+    return levelShown.flatMap((r, i) =>
       EFFECTS.map((e) => (
         <Bar
           key={`${r.window.key}_${e.key}`}
@@ -208,9 +225,10 @@ function AttributionBarChart({
     );
   })();
 
-  const drillLabel = segmentKey
-    ? (selected?.segments.find((s) => s.key === segmentKey)?.label ?? segmentKey)
-    : null;
+  const drillLabel =
+    keys.length === 0
+      ? null
+      : `${keys.join(' › ')}: ${segmentKey ? 'holding contributions' : 'sectors (equity vs Nifty 50)'}`;
   const periodOptions = windows.map((w) => ({ value: w.key, label: w.label }));
 
   return (
@@ -220,13 +238,13 @@ function AttributionBarChart({
           <nav aria-label="Attribution level" className="flex items-center gap-1 text-xs">
             <button
               type="button"
-              onClick={() => setDrill(null)}
+              onClick={back}
               className="flex items-center gap-0.5 rounded px-1 py-0.5 text-muted hover:bg-raised hover:text-fg focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus"
             >
               <IconChevronLeft size={14} aria-hidden="true" />
               Back
             </button>
-            <span className="text-fg">{drillLabel}: holding contributions</span>
+            <span className="text-fg">{drillLabel}</span>
           </nav>
         ) : (
           <Segmented<Grouping>
@@ -283,13 +301,13 @@ function AttributionBarChart({
             }}
           />
         ) : null}
-        {!segmentKey && selected ? (
+        {!segmentKey && levelSelected ? (
           <Select<string>
             label="Drill into"
             value=""
             options={[
               { value: '', label: 'Choose…' },
-              ...selected.segments.map((s) => ({ value: s.key, label: s.label })),
+              ...levelSelected.segments.map((s) => ({ value: s.key, label: s.label })),
             ]}
             onValueChange={(key) => {
               if (key) open(key);
@@ -316,7 +334,7 @@ function AttributionBarChart({
       <div className="flex flex-wrap items-center justify-between gap-x-2 px-2 pt-0.5">
         <p className="text-2xs text-muted" title={selected?.window.label}>
           {config.compare
-            ? `Left to right: ${shown.map((r) => SHORT_PERIOD[r.window.key]).join(', ')}`
+            ? `Left to right: ${levelShown.map((r) => SHORT_PERIOD[r.window.key]).join(', ')}`
             : segmentKey
               ? 'Weight × (return − segment benchmark return)'
               : ''}
@@ -326,7 +344,7 @@ function AttributionBarChart({
           {segmentKey
             ? null
             : config.compare && config.layout === 'grouped'
-              ? shown.map((r, i) => (
+              ? levelShown.map((r, i) => (
                   <li key={r.window.key} className="flex items-center gap-1">
                     <span
                       aria-hidden="true"

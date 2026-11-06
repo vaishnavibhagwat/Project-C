@@ -38,4 +38,15 @@ describe('RiskMetrics', () => {
   });
 });
 
+describe('RiskMetrics table layout', () => {
+  it('lists every metric as a table row', () => {
+    render(<RiskMetrics {...widgetProps(configuredConfig, fixtureData(), 600, 400)} />);
+    const tiles = buildTiles(fixtureData(), configuredConfig);
+    expect(screen.getAllByRole('row')).toHaveLength(tiles.length + 1);
+    expect(
+      screen.getByRole('rowheader', { name: new RegExp(`^${tiles[0]?.label ?? ''}`) }),
+    ).toBeInTheDocument();
+  });
+});
+
 describeWidgetStates('risk-metrics', { data: fixtureData, emptyData });

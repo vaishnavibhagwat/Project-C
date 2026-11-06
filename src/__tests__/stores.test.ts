@@ -115,16 +115,16 @@ describe('cross-store actions', () => {
       page: 'risk',
       layouts: {
         lg: [
-          { i: 'risk-risk-metrics', x: 0, y: 0, w: 12, h: 4 },
-          { i: 'risk-var-gauge', x: 0, y: 4, w: 4, h: 11 },
+          { i: 'risk-var-gauge', x: 0, y: 0, w: 6, h: 4 },
+          { i: 'risk-risk-contribution', x: 0, y: 4, w: 4, h: 11 },
         ],
       },
       instances: defaultSnapshot('risk').instances.slice(0, 2),
     });
     applySnapshot('risk', legacy, true);
     expect(useDashboardStore.getState().pages.risk.layouts.desktop).toEqual([
-      { i: 'risk-risk-metrics', x: 0, y: 0, w: 12, h: 2 },
-      { i: 'risk-var-gauge', x: 0, y: 2, w: 4, h: 6 },
+      { i: 'risk-var-gauge', x: 0, y: 0, w: 6, h: 2 },
+      { i: 'risk-risk-contribution', x: 0, y: 2, w: 4, h: 6 },
     ]);
   });
 

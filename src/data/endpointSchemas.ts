@@ -2,6 +2,11 @@ import type { ZodType } from 'zod';
 import type { EndpointId } from '@/types';
 import {
   AlertPanelSchema,
+  ExposureSchema,
+  HoldingHistorySchema,
+  RiskContributionSchema,
+  StressSchema,
+  SymbolHistorySchema,
   AlertsSchema,
   AllocationSchema,
   AttributionInputsSchema,
@@ -19,6 +24,11 @@ import {
   TradesSchema,
   VarSchema,
   type AlertPanelData,
+  type ExposureData,
+  type HoldingHistoryData,
+  type RiskContributionData,
+  type StressData,
+  type SymbolHistoryData,
   type AlertsData,
   type AllocationData,
   type AttributionData,
@@ -52,6 +62,11 @@ export interface EndpointDataMap {
   'risk/var': VarData;
   'risk/metrics': MetricsData;
   'risk/returns': ReturnSeriesData;
+  'risk/exposure': ExposureData;
+  'risk/stress': StressData;
+  'risk/contributions': RiskContributionData;
+  'portfolio/holding-history': HoldingHistoryData;
+  'market/symbol-history': SymbolHistoryData;
   'performance/attribution': AttributionData;
   'performance/attribution-inputs': AttributionInputsData;
   'performance/benchmarks': PerformanceSeriesData;
@@ -94,6 +109,20 @@ export const ENDPOINT_SCHEMAS: SchemaRegistry = {
   },
   'risk/var': { schema: VarSchema, isEmpty: (d) => d.lookbackDays === 0 },
   'risk/metrics': { schema: MetricsSchema, isEmpty: () => false },
+  'risk/exposure': { schema: ExposureSchema, isEmpty: (d) => d.positions.length === 0 },
+  'risk/stress': { schema: StressSchema, isEmpty: (d) => d.scenarios.length === 0 },
+  'risk/contributions': {
+    schema: RiskContributionSchema,
+    isEmpty: (d) => d.positions.length === 0 || d.portfolioSigmaInr === 0,
+  },
+  'market/symbol-history': {
+    schema: SymbolHistorySchema,
+    isEmpty: (d) => d.symbols.length === 0,
+  },
+  'portfolio/holding-history': {
+    schema: HoldingHistorySchema,
+    isEmpty: (d) => d.holdings.length === 0,
+  },
   'risk/returns': {
     schema: ReturnSeriesSchema,
     isEmpty: (d) => d.dates.length < 2,
@@ -143,6 +172,11 @@ export const ENDPOINT_IDS: readonly EndpointId[] = [
   'risk/var',
   'risk/metrics',
   'risk/returns',
+  'risk/exposure',
+  'risk/stress',
+  'risk/contributions',
+  'portfolio/holding-history',
+  'market/symbol-history',
   'performance/attribution',
   'performance/attribution-inputs',
   'performance/benchmarks',

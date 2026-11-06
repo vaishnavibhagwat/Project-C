@@ -58,6 +58,11 @@ export interface DataTableProps<T> {
   exportFileName?: string;
   /** Extra content at the start of the toolbar (e.g. a live indicator). */
   toolbarStart?: ReactNode;
+  /** Row selection (checkbox column) when given; ids from getRowId. */
+  selectedIds?: ReadonlySet<string>;
+  onSelectionChange?: (ids: Set<string>) => void;
+  /** Accessible name of a row's checkbox, e.g. "Select RELIANCE". */
+  selectLabel?: (row: T) => string;
 }
 
 interface RowContext<T> {
@@ -130,6 +135,9 @@ export function DataTable<T>({
   footer,
   exportFileName,
   toolbarStart,
+  selectedIds,
+  onSelectionChange,
+  selectLabel,
 }: DataTableProps<T>) {
   const [query, setQuery] = useState('');
   const [pageIndex, setPageIndex] = useState(0);
@@ -151,6 +159,27 @@ export function DataTable<T>({
     [sorted, page.from, page.to, pageSize],
   );
   const footerCells = useMemo(() => footer?.(sorted), [footer, sorted]);
+  const selectable = selectedIds !== undefined && onSelectionChange !== undefined;
+  const filteredIds = useMemo(() => sorted.map(getRowId), [sorted, getRowId]);
+  const allSelected =
+    selectable && filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+  const someSelected = selectable && filteredIds.some((id) => selectedIds.has(id));
+  const toggleRow = (id: string) => {
+    if (!selectable) return;
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    onSelectionChange(next);
+  };
+  const toggleAll = () => {
+    if (!selectable) return;
+    const next = new Set(selectedIds);
+    for (const id of filteredIds) {
+      if (allSelected) next.delete(id);
+      else next.add(id);
+    }
+    onSelectionChange(next);
+  };
   const context = useMemo<RowContext<T>>(
     () => ({ onRowClick, rowActionLabel }),
     [onRowClick, rowActionLabel],
@@ -310,6 +339,19 @@ export function DataTable<T>({
           increaseViewportBy={160}
           fixedHeaderContent={() => (
             <tr className="bg-panel">
+              {selectable ? (
+                <th scope="col" className="h-7 w-8 border-b border-line px-2">
+                  <input
+                    type="checkbox"
+                    aria-label="Select all rows shown"
+                    checked={allSelected}
+                    ref={(el) => {
+                      if (el) el.indeterminate = someSelected && !allSelected;
+                    }}
+                    onChange={toggleAll}
+                  />
+                </th>
+              ) : null}
               {visible.map((c) => {
                 const ruleIndex = sort.findIndex((r) => r.id === c.id);
                 const rule = sort[ruleIndex];
@@ -354,8 +396,20 @@ export function DataTable<T>({
               })}
             </tr>
           )}
-          itemContent={(_, row) =>
-            visible.map((c) => (
+          itemContent={(_, row) => [
+            selectable ? (
+              <td key="__select" className="h-8 w-8 border-b border-line px-2">
+                <input
+                  type="checkbox"
+                  aria-label={selectLabel?.(row) ?? 'Select row'}
+                  checked={selectedIds.has(getRowId(row))}
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                  onChange={() => toggleRow(getRowId(row))}
+                />
+              </td>
+            ) : null,
+            ...visible.map((c) => (
               <td
                 key={c.id}
                 style={{ minWidth: c.minWidth }}
@@ -366,12 +420,13 @@ export function DataTable<T>({
               >
                 {c.render ? c.render(row) : c.value(row)}
               </td>
-            ))
-          }
+            )),
+          ]}
           fixedFooterContent={
             footerCells
               ? () => (
                   <tr className="bg-raised">
+                    {selectable ? <td className="w-8" /> : null}
                     {visible.map((c) => (
                       <td
                         key={c.id}

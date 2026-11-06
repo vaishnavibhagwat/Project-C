@@ -165,3 +165,12 @@ export const SharePayloadSchema = z.object({
 });
 
 export type SharePayload = z.infer<typeof SharePayloadSchema>;
+
+/** Risk Analytics page controls, applied to the page's risk widgets. */
+export const RiskSettingsSchema = z.object({
+  confidence: z.enum(['95', '99']),
+  /** VaR horizon in trading days (10-day by the square-root-of-time rule). */
+  horizonDays: z.union([z.literal(1), z.literal(10)]),
+});
+export type RiskSettings = z.infer<typeof RiskSettingsSchema>;
+export const DEFAULT_RISK_SETTINGS: RiskSettings = { confidence: '99', horizonDays: 1 };

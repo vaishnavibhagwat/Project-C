@@ -87,3 +87,22 @@ export function totals(rows: readonly Holding[]) {
   const previous = t.marketValue - t.dailyPnL;
   return { ...t, dailyPnLPercent: previous > 0 ? (t.dailyPnL / previous) * 100 : 0 };
 }
+
+/** The holdings passing every filter: sector, asset class and the sign of today's P&L. */
+export function filterHoldings(
+  rows: readonly Holding[],
+  config: Pick<HoldingsTableConfig, 'filterSector' | 'filterAssetClass' | 'filterPnl'>,
+): Holding[] {
+  return rows.filter(
+    (h) =>
+      (config.filterSector === 'all' ||
+        (config.filterSector === 'none' ? h.sector === null : h.sector === config.filterSector)) &&
+      (config.filterAssetClass === 'all' || h.assetClass === config.filterAssetClass) &&
+      (config.filterPnl === 'all' ||
+        (config.filterPnl === 'gainers' ? h.dailyPnL > 0 : h.dailyPnL < 0)),
+  );
+}
+
+export const activeFilterCount = (config: HoldingsTableConfig) =>
+  [config.filterSector, config.filterAssetClass, config.filterPnl].filter((f) => f !== 'all')
+    .length;

@@ -184,7 +184,7 @@ function NewsFeed({
         </ul>
       )}
       <p className="border-t border-line px-3 py-1 text-2xs text-subtle" title={data.disclaimer}>
-        Simulated stories · outlet names are labels only
+        Sample research content · simulated stories; outlet names are labels only
       </p>
     </div>
   );

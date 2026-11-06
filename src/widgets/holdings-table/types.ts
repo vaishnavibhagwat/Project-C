@@ -1,5 +1,6 @@
 import { z } from 'zod';
-import type { HoldingsData } from '@/data/schemas';
+import { ASSET_CLASSES } from '@/data/constants';
+import { SectorSchema, type HoldingsData } from '@/data/schemas';
 import type { Holding } from '@/types';
 
 export const HOLDING_COLUMN_IDS = [
@@ -18,6 +19,9 @@ export type HoldingColumnId = (typeof HOLDING_COLUMN_IDS)[number];
 
 export const PAGE_SIZES = ['all', '25', '50', '100'] as const;
 export const MOCK_ROW_OPTIONS = ['off', '1000', '5000'] as const;
+export const SECTOR_FILTERS = ['all', ...SectorSchema.options, 'none'] as const;
+export const ASSET_CLASS_FILTERS = ['all', ...ASSET_CLASSES] as const;
+export const PNL_FILTERS = ['all', 'gainers', 'losers'] as const;
 
 const idList = z
   .string()
@@ -38,6 +42,10 @@ export const HoldingsTableConfigSchema = z.object({
   pageSize: z.enum(PAGE_SIZES),
   /** Performance demo: replace the book with this many generated rows. */
   mockRows: z.enum(MOCK_ROW_OPTIONS),
+  /** Filters (combined): a sector ("none" = no sector), an asset class, the day's P&L sign. */
+  filterSector: z.enum(SECTOR_FILTERS),
+  filterAssetClass: z.enum(ASSET_CLASS_FILTERS),
+  filterPnl: z.enum(PNL_FILTERS),
 });
 
 export type HoldingsTableConfig = z.infer<typeof HoldingsTableConfigSchema>;

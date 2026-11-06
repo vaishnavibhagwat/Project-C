@@ -25,3 +25,35 @@ export const LIMITS = {
 
 /** relatedEntity for fund-level alerts. */
 export const PORTFOLIO_ENTITY = 'PORTFOLIO';
+
+export const ASSET_CLASSES = ['Equity', 'Fixed Income', 'Derivatives', 'Alternatives'] as const;
+export type MockAssetClass = (typeof ASSET_CLASSES)[number];
+
+export const GEOGRAPHIES = ['India', 'US', 'UK', 'Singapore'] as const;
+export type Geography = (typeof GEOGRAPHIES)[number];
+
+export const INSTRUMENT_TYPES = [
+  'Stock',
+  'ADR',
+  'GDR',
+  'Government Bond',
+  'Corporate Bond',
+  'Treasury Bill',
+  'Index Future',
+  'Index Option',
+  'REIT',
+  'ETF',
+  'Fund',
+  'Cash',
+] as const;
+export type InstrumentType = (typeof INSTRUMENT_TYPES)[number];
+
+export const BENCHMARK_IDS = [
+  'NIFTY50',
+  'SENSEX',
+  'SPX',
+  'NIFTYBANK',
+  'NIFTYIT',
+  'NIFTYPHARMA',
+] as const;
+export type BenchmarkId = (typeof BENCHMARK_IDS)[number];

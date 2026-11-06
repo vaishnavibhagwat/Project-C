@@ -4,9 +4,11 @@ import { isEndpointData } from '@/data/api';
 import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
 import { formatInrCompact, formatPct } from '@/utils/format';
-import { sortedHoldings, totals } from './model';
+import { filterHoldings, sortedHoldings, totals } from './model';
 import {
+  ASSET_CLASS_FILTERS,
   HoldingsTableConfigSchema,
+  SECTOR_FILTERS,
   type HoldingsTableConfig,
   type HoldingsTableData,
 } from './types';
@@ -58,6 +60,28 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
           { const: '100', title: '100' },
         ],
       },
+      filterSector: {
+        title: 'Sector filter',
+        oneOf: SECTOR_FILTERS.map((v) => ({
+          const: v,
+          title: v === 'all' ? 'All sectors' : v === 'none' ? 'No sector (non-equity)' : v,
+        })),
+      },
+      filterAssetClass: {
+        title: 'Asset class filter',
+        oneOf: ASSET_CLASS_FILTERS.map((v) => ({
+          const: v,
+          title: v === 'all' ? 'All classes' : v,
+        })),
+      },
+      filterPnl: {
+        title: 'Day P&L filter',
+        oneOf: [
+          { const: 'all', title: 'All' },
+          { const: 'gainers', title: 'Gainers (P&L > 0)' },
+          { const: 'losers', title: 'Losers (P&L < 0)' },
+        ],
+      },
       mockRows: {
         title: 'Performance demo rows',
         description: 'Replace the book with generated rows to try the table at scale.',
@@ -75,6 +99,9 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
     hiddenColumns: 'sector,assetClass',
     pageSize: 'all',
     mockRows: 'off',
+    filterSector: 'all',
+    filterAssetClass: 'all',
+    filterPnl: 'all',
   },
   component: lazy(() => import('./index')),
   icon: IconTable,
@@ -87,7 +114,7 @@ export const holdingsTableDefinition: WidgetDefinition<HoldingsTableConfig, Hold
 };
 
 export function summarizeHoldings(data: HoldingsTableData, config: HoldingsTableConfig): string {
-  const rows = sortedHoldings(data.holdings, config);
+  const rows = sortedHoldings(filterHoldings(data.holdings, config), config);
   const t = totals(rows);
   const top = rows[0];
   return (

@@ -260,6 +260,45 @@ describe('AlertPanel', () => {
   });
 });
 
+describe('AlertPanel read / acknowledge', () => {
+  it('shows alerts as new until opened or marked read', () => {
+    const onConfigChange = vi.fn();
+    renderWithProviders(<AlertPanel {...widgetProps(defaults, data, 400, 400, onConfigChange)} />);
+    const shown = visibleAlerts(data, defaults, Date.now());
+    expect(screen.getAllByText('New')).toHaveLength(shown.length);
+    expect(screen.getByText(`${shown.length} active · ${shown.length} unread`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Mark all read' }));
+    const patch = onConfigChange.mock.lastCall?.[0] as { read?: string } | undefined;
+    expect(patch?.read?.split(',').sort()).toEqual(shown.map((a) => a.alertId).sort());
+  });
+
+  it('acknowledges an alert: still shown, dimmed, and out of the header count', () => {
+    const first = groupBySeverity(visibleAlerts(data, defaults, Date.now()))[0]?.alerts[0];
+    if (!first) throw new Error('no alerts');
+    const acked = withConfig({ acknowledged: first.alertId, read: first.alertId });
+    renderWithProviders(<AlertPanel {...widgetProps(acked, data, 400, 400)} />);
+    expect(screen.getByText('Acknowledged')).toBeInTheDocument();
+    expect(
+      screen.queryByRole('button', { name: `Acknowledge alert: ${first.message}` }),
+    ).not.toBeInTheDocument();
+    expect(alertPanelWidget.badge(data, acked)).toBe(
+      (alertPanelWidget.badge(data, defaults) ?? 0) - 1,
+    );
+  });
+
+  it('acknowledging marks read too', () => {
+    const onConfigChange = vi.fn();
+    renderWithProviders(<AlertPanel {...widgetProps(defaults, data, 400, 400, onConfigChange)} />);
+    const [ack] = screen.getAllByRole('button', { name: /^Acknowledge alert:/ });
+    if (!ack) throw new Error('no alerts');
+    fireEvent.click(ack);
+    const patch = onConfigChange.mock.lastCall?.[0] as
+      { acknowledged?: string; read?: string } | undefined;
+    expect(patch?.acknowledged).toBeTruthy();
+    expect(patch?.read).toBe(patch?.acknowledged);
+  });
+});
+
 describe('AlertPanel all-clear', () => {
   it('shows its own all-clear view when prices exist but nothing fires', () => {
     renderWithProviders(<AlertPanel {...widgetProps(defaults, calmData())} />);

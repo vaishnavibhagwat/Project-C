@@ -27,9 +27,16 @@ export const riskMetricsDefinition: WidgetDefinition<RiskMetricsConfig, RiskMetr
         ],
       },
       showDefinitions: { type: 'boolean', title: 'Show sub-labels' },
+      layout: {
+        title: 'Layout',
+        oneOf: [
+          { const: 'tiles', title: 'Tiles' },
+          { const: 'table', title: 'Table' },
+        ],
+      },
     },
   },
-  defaultConfig: { period: 'full', showDefinitions: true },
+  defaultConfig: { period: 'full', showDefinitions: true, layout: 'tiles' },
   component: lazy(() => import('./index')),
   icon: IconGauge,
   dataSource: {

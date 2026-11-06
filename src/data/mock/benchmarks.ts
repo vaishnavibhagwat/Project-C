@@ -3,15 +3,8 @@ import { createRng, hashSeed, normal } from '../random';
 import { gbmPath } from './gbm';
 import { windowCloses, type SeriesWindow } from './window';
 
-export const BENCHMARK_IDS = [
-  'NIFTY50',
-  'SENSEX',
-  'SPX',
-  'NIFTYBANK',
-  'NIFTYIT',
-  'NIFTYPHARMA',
-] as const;
-export type BenchmarkId = (typeof BENCHMARK_IDS)[number];
+export { BENCHMARK_IDS, type BenchmarkId } from '../constants';
+import { BENCHMARK_IDS, type BenchmarkId } from '../constants';
 
 export interface BenchmarkSeries {
   id: BenchmarkId;

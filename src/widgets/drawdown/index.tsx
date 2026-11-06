@@ -76,6 +76,12 @@ function Drawdown({
     return sampled;
   }, [model, width]);
   const byDate = useMemo(() => new Map(points.map((p) => [p.date, p])), [points]);
+  // Trading days from the trough back to the previous peak.
+  const recoveryDays = useMemo(() => {
+    const t = model.points.findIndex((p) => p.date === model.troughDate);
+    const r = model.points.findIndex((p) => p.date === model.recoveryDate);
+    return t >= 0 && r > t ? r - t : null;
+  }, [model]);
   const setRange = useCallback(
     (range: DrawdownRange) => onConfigChange({ range }),
     [onConfigChange],
@@ -97,6 +103,16 @@ function Drawdown({
             <div className="hidden gap-1.5 sm:flex">
               <dt className="text-muted">Trough</dt>
               <dd className="num text-fg">{formatDateKey(model.troughDate)}</dd>
+            </div>
+          ) : null}
+          {model.troughDate ? (
+            <div className="hidden gap-1.5 md:flex">
+              <dt className="text-muted">Recovery</dt>
+              <dd className="num text-fg">
+                {model.recoveryDate
+                  ? `${formatDateKey(model.recoveryDate)} (${recoveryDays} trading days)`
+                  : 'Not yet'}
+              </dd>
             </div>
           ) : null}
         </dl>
@@ -174,6 +190,19 @@ function Drawdown({
                   value: `Max ${formatPct(-model.maxDepth, 1)}`,
                   position: 'bottom',
                   fill: cssColor('text'),
+                  fontSize: 10,
+                }}
+              />
+            ) : null}
+            {model.recoveryDate ? (
+              <ReferenceLine
+                x={model.recoveryDate}
+                stroke={cssColor('positive')}
+                strokeDasharray="2 3"
+                label={{
+                  value: 'Recovered',
+                  position: 'insideTopLeft',
+                  fill: cssColor('positive'),
                   fontSize: 10,
                 }}
               />

@@ -14,6 +14,13 @@ import {
 import { deriveMarketNews } from './derive/news';
 import { deriveResearch } from './derive/research';
 import { deriveReturnSeries } from './derive/returns';
+import {
+  deriveContributions,
+  deriveExposure,
+  deriveHoldingHistory,
+  deriveStress,
+  deriveSymbolHistory,
+} from './derive/riskExtra';
 import { deriveTicker } from './derive/ticker';
 import { deriveMetrics, deriveVar } from './derive/risk';
 import { deriveTrades } from './derive/trades';
@@ -46,6 +53,11 @@ export const ENDPOINTS: EndpointRegistry = {
   'risk/var': spec('risk/var', deriveVar),
   'risk/metrics': spec('risk/metrics', deriveMetrics),
   'risk/returns': spec('risk/returns', deriveReturnSeries),
+  'risk/exposure': spec('risk/exposure', deriveExposure),
+  'risk/stress': spec('risk/stress', deriveStress),
+  'risk/contributions': spec('risk/contributions', deriveContributions),
+  'portfolio/holding-history': spec('portfolio/holding-history', deriveHoldingHistory),
+  'market/symbol-history': spec('market/symbol-history', deriveSymbolHistory),
   'performance/attribution': spec('performance/attribution', deriveAttribution),
   'performance/attribution-inputs': spec('performance/attribution-inputs', deriveAttributionInputs),
   'performance/benchmarks': spec('performance/benchmarks', derivePerformanceSeries),

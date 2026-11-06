@@ -131,9 +131,18 @@ describe('AppShell', () => {
     renderShell();
     goTo('#/risk');
     expect(screen.getByRole('heading', { level: 1, name: 'Risk Analytics' })).toBeInTheDocument();
-    await waitFor(() => expect(screen.getAllByRole('region')).toHaveLength(5), {
-      timeout: 5000,
-    });
+    // One region per widget on the Risk page, plus its settings bar.
+    const riskRegions = defaultSnapshot('risk').instances.length + 1;
+    // A selector count: role queries are slow on a page this large.
+    await waitFor(
+      () =>
+        expect(document.querySelectorAll('[role="region"], section[aria-label]')).toHaveLength(
+          riskRegions,
+        ),
+      {
+        timeout: 5000,
+      },
+    );
     goTo('#/marketplace');
     // Lazy routes: compiling their chunks can take over a second when the suite runs in parallel.
     expect(
@@ -199,17 +208,16 @@ describe('AppShell', () => {
     const input = screen.getByRole('combobox', { name: /Search pages, widgets/ });
     fireEvent.change(input, { target: { value: 'RELIANCE' } });
     fireEvent.keyDown(input, { key: 'Enter' });
-    // The panel builds the portfolio model on first open: about 0.1 s in a browser, but 5–9 s
-    // under the full parallel test suite, hence the long waits.
-    expect(
-      await screen.findByRole(
-        'dialog',
-        { name: /RELIANCE · Reliance Industries/ },
-        { timeout: 20_000 },
-      ),
-    ).toBeInTheDocument();
+    // The panel is a lazy chunk; its prices then load like any other endpoint. Find it by its
+    // title text: a role query with a name scans every element of this large page per retry.
+    const title = await screen.findByText(
+      /^RELIANCE · Reliance Industries$/,
+      {},
+      { timeout: 25_000 },
+    );
+    expect(title.closest('[role="dialog"]')).not.toBeNull();
     expect(await screen.findByText('Quantity', {}, { timeout: 8000 })).toBeInTheDocument();
-  }, 15_000);
+  }, 40_000);
 
   it('adds a widget from the marketplace to the chosen page', async () => {
     renderShell();

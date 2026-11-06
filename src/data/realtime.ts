@@ -29,7 +29,7 @@ export interface RealtimeRoute {
 export const REALTIME_ROUTES: readonly RealtimeRoute[] = [
   {
     url: portfolioPricesUrl(PORTFOLIO_ID),
-    endpoints: ['portfolio/holdings', 'portfolio/summary', 'portfolio/allocation'],
+    endpoints: ['portfolio/holdings', 'portfolio/summary', 'portfolio/allocation', 'risk/exposure'],
   },
   { url: MARKET_TICKER_URL, endpoints: ['market/sector-returns', 'market/ticker'] },
   { url: ALERTS_STREAM_URL, endpoints: ['alerts/active', 'alerts/panel'] },

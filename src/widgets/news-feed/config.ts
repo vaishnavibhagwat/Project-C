@@ -17,7 +17,7 @@ export const newsFeedDefinition: WidgetDefinition<NewsFeedConfig, NewsFeedData> 
   category: WidgetCategory.FEED,
   defaultSize: { w: 3, h: 4 },
   minSize: { w: 3, h: 3 },
-  maxSize: { w: 6, h: 10 },
+  maxSize: { w: 8, h: 10 },
   configSchema: {
     type: 'object',
     properties: {

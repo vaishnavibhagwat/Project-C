@@ -3,7 +3,7 @@ import { IconBell } from '@/components/Icons';
 import { isEndpointData } from '@/data/api';
 import { defineWidget } from '@/registry/defineWidget';
 import { WidgetCategory, type WidgetDefinition } from '@/types';
-import { summarizePanel, visibleAlerts } from './model';
+import { summarizePanel, unacknowledgedCount, visibleAlerts } from './model';
 import {
   AlertPanelConfigSchema,
   type AlertPanelConfig,
@@ -42,6 +42,8 @@ export const alertPanelDefinition: WidgetDefinition<AlertPanelConfig, AlertPanel
       rules: readOnlyText('Rules', 4000),
       dismissed: readOnlyText('Dismissed alerts', 2000),
       snoozes: readOnlyText('Snoozed alerts', 2000),
+      read: readOnlyText('Read alerts', 2000),
+      acknowledged: readOnlyText('Acknowledged alerts', 2000),
       minSeverity: {
         title: 'Show alerts from',
         oneOf: [
@@ -61,6 +63,8 @@ export const alertPanelDefinition: WidgetDefinition<AlertPanelConfig, AlertPanel
     rules: JSON.stringify(DEFAULT_RULES),
     dismissed: '',
     snoozes: '{}',
+    read: '',
+    acknowledged: '',
     minSeverity: 'info',
     pulseCritical: true,
   },
@@ -86,8 +90,8 @@ export const alertPanelWidget = defineWidget(alertPanelDefinition, {
   isEmpty: (d) => d.alerts.length === 0 && d.inputs.quotes.length === 0,
   emptyMessage: 'No alerts and no prices to check rules against.',
   summarize: summarizeAlertPanel,
-  // Header badge: alerts still needing attention (not dismissed or snoozed).
-  badge: (data, config) => visibleAlerts(data, config, Date.now()).length,
+  // Header badge: unacknowledged alerts still showing (not dismissed or snoozed).
+  badge: (data, config) => unacknowledgedCount(data, config, Date.now()),
   skeleton: 'feed',
   preload: () => import('./index'),
 });

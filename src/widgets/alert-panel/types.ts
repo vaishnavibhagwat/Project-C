@@ -51,6 +51,10 @@ export const AlertPanelConfigSchema = z.object({
   dismissed: z.string().max(2000),
   /** JSON object alertId → snoozed-until epoch ms (set by Snooze). */
   snoozes: z.string().max(2000),
+  /** Read alert ids, comma-separated (opening an alert or Mark all read). */
+  read: z.string().max(2000),
+  /** Acknowledged alert ids, comma-separated (still shown, dimmed). */
+  acknowledged: z.string().max(2000),
   minSeverity: z.enum(SEVERITIES),
   /** Pulse critical alerts (never under prefers-reduced-motion). */
   pulseCritical: z.boolean(),

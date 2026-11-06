@@ -107,7 +107,9 @@ describe('NewsFeed', () => {
     expect(within(list()).getAllByRole('listitem')).toHaveLength(40);
     const labels = within(list()).getAllByText(/^(Positive|Negative|Neutral)$/);
     expect(labels).toHaveLength(40);
-    expect(screen.getByText('Simulated stories · outlet names are labels only')).toBeVisible();
+    expect(
+      screen.getByText('Sample research content · simulated stories; outlet names are labels only'),
+    ).toBeVisible();
   });
 
   it('expands and collapses a summary', async () => {

@@ -5,6 +5,7 @@ import { assetAllocationWidget } from '@/widgets/asset-allocation/config';
 import { attributionBarChartWidget } from '@/widgets/attribution-bar-chart/config';
 import { correlationMatrixWidget } from '@/widgets/correlation-matrix/config';
 import { drawdownWidget } from '@/widgets/drawdown/config';
+import { exposureBreakdownWidget } from '@/widgets/exposure-breakdown/config';
 import { holdingsTableWidget } from '@/widgets/holdings-table/config';
 import { holdingsTreemapWidget } from '@/widgets/holdings-treemap/config';
 import { marketTickerWidget } from '@/widgets/market-ticker/config';
@@ -14,12 +15,15 @@ import { performanceLineChartWidget } from '@/widgets/performance-line-chart/con
 import { portfolioOverviewWidget } from '@/widgets/portfolio-overview/config';
 import { portfolioPieChartWidget } from '@/widgets/portfolio-pie-chart/config';
 import { researchFeedWidget } from '@/widgets/research-feed/config';
+import { riskContributionWidget } from '@/widgets/risk-contribution/config';
 import { riskMetricsWidget } from '@/widgets/risk-metrics/config';
 import { sectorAttributionWidget } from '@/widgets/sector-attribution/config';
 import { sectorHeatMapWidget } from '@/widgets/sector-heat-map/config';
 import { sectorHeatmapWidget } from '@/widgets/sector-heatmap/config';
+import { stressScenariosWidget } from '@/widgets/stress-scenarios/config';
 import { tradeBlotterWidget } from '@/widgets/trade-blotter/config';
 import { varGaugeWidget } from '@/widgets/var-gauge/config';
+import { volatilityHistoryWidget } from '@/widgets/volatility-history/config';
 import type { RegisteredWidget } from './defineWidget';
 import { WidgetRegistry } from './WidgetRegistry';
 
@@ -42,6 +46,10 @@ const BUILT_IN_WIDGETS: readonly RegisteredWidget[] = [
   alertPanelWidget,
   varGaugeWidget,
   riskMetricsWidget,
+  volatilityHistoryWidget,
+  exposureBreakdownWidget,
+  stressScenariosWidget,
+  riskContributionWidget,
   sectorHeatmapWidget,
   sectorHeatMapWidget,
   holdingsTreemapWidget,

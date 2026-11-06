@@ -1,8 +1,7 @@
 import { useMemo } from 'react';
 import { Delta } from '@/components/Delta';
 import { Modal } from '@/components/Overlay';
-import { getPortfolioModel } from '@/data/model';
-import { findConstituent, NIFTY50 } from '@/data/nifty50';
+import { findConstituent } from '@/data/nifty50';
 import { useEndpoint } from '@/hooks/useEndpoint';
 import { cssColor } from '@/theme/themes';
 import { formatInr, formatInrCompact, formatNumber, formatPct } from '@/utils/format';
@@ -45,14 +44,16 @@ function PriceLine({ closes }: { closes: number[] }) {
 export function SymbolDetail({ symbol, onClose }: { symbol: string | null; onClose: () => void }) {
   const holdings = useEndpoint('portfolio/holdings', 5000, symbol !== null);
   const constituent = symbol ? findConstituent(symbol) : undefined;
+  // Closes come from the (lazily loaded) mock API like every other view, so opening the
+  // panel never blocks on building the portfolio model.
+  const history = useEndpoint('market/symbol-history', 60_000, symbol !== null);
   const series = useMemo(() => {
-    if (!constituent) return null;
-    const ds = getPortfolioModel();
-    const index = NIFTY50.indexOf(constituent);
-    const closes = (ds.stockCloses[index] ?? []).slice(-253);
-    const dates = ds.dates.slice(-253);
+    if (!constituent || !history.data) return null;
+    const closes = history.data.symbols.find((x) => x.symbol === constituent.symbol)?.closes;
+    if (!closes || closes.length < 2) return null;
+    const dates = history.data.dates;
     return { closes, from: dates[0] ?? '', to: dates[dates.length - 1] ?? '' };
-  }, [constituent]);
+  }, [constituent, history.data]);
   const holding = holdings.data?.holdings.find((h) => h.ticker === symbol);
   const first = series?.closes[0] ?? 0;
   const last = series?.closes[series.closes.length - 1] ?? 0;
@@ -109,6 +110,8 @@ export function SymbolDetail({ symbol, onClose }: { symbol: string | null; onClo
             </p>
           )}
         </div>
+      ) : constituent ? (
+        <p className="text-sm text-muted">Loading simulated prices…</p>
       ) : (
         <p className="text-sm text-muted">Unknown symbol.</p>
       )}

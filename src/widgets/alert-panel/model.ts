@@ -203,3 +203,39 @@ export function summarizePanel(alerts: readonly Alert[]): string {
   const counts = `${alerts.length} active alerts: ${n('critical')} critical, ${n('warning')} warning, ${n('info')} info.`;
   return top ? `${counts} First: ${top.message}` : counts;
 }
+
+function mergeIds(current: string, ids: readonly string[], present: readonly string[]): string {
+  const keep = new Set(present);
+  const kept = [...parseIds(current)].filter((x) => keep.has(x));
+  return [...new Set([...kept, ...ids])].join(',');
+}
+
+/** Config patch marking `ids` read (ids no longer present are dropped). */
+export const readPatch = (
+  config: AlertPanelConfig,
+  ids: readonly string[],
+  present: readonly string[],
+) => ({
+  read: mergeIds(config.read, ids, present),
+});
+
+/** Config patch acknowledging `ids` (ids no longer present are dropped). */
+export const acknowledgePatch = (
+  config: AlertPanelConfig,
+  ids: readonly string[],
+  present: readonly string[],
+) => ({ acknowledged: mergeIds(config.acknowledged, ids, present) });
+
+export const isRead = (config: AlertPanelConfig, id: string) => parseIds(config.read).has(id);
+export const isAcknowledged = (config: AlertPanelConfig, id: string) =>
+  parseIds(config.acknowledged).has(id);
+
+/** Alerts showing that nobody has acknowledged yet (the header badge). */
+export function unacknowledgedCount(
+  data: AlertPanelWidgetData,
+  config: AlertPanelConfig,
+  nowMs: number,
+): number {
+  const acked = parseIds(config.acknowledged);
+  return visibleAlerts(data, config, nowMs).filter((a) => !acked.has(a.alertId)).length;
+}

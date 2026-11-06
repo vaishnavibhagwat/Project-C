@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import type { Alert, Holding, NewsArticle, Portfolio } from '@/types';
-import { BENCHMARK_IDS } from './mock/benchmarks';
-import { ASSET_CLASSES, GEOGRAPHIES, INSTRUMENT_TYPES } from './mock/instruments';
+import { ASSET_CLASSES, BENCHMARK_IDS, GEOGRAPHIES, INSTRUMENT_TYPES } from './constants';
 
 /**
  * Runtime validation for every mock API response. z.number() already rejects NaN; `.finite()`
@@ -210,6 +209,89 @@ export const MarketTickerSchema = z.object({
     }),
   ),
 });
+
+const signedInr = z.number().finite();
+
+/** risk/exposure: market value and economic exposure of every position. */
+export const ExposureSchema = z.object({
+  ...meta,
+  totalMarketValueInr: price,
+  positions: z.array(
+    z.object({
+      key: z.string().min(1),
+      ticker: z.string().min(1),
+      assetClass: AssetClassSchema,
+      sector: SectorSchema.nullable(),
+      geography: GeographySchema,
+      currency: CurrencySchema,
+      instrumentType: z.string().min(1),
+      marketValueInr: signedInr,
+      exposureInr: signedInr,
+    }),
+  ),
+});
+
+/** risk/stress: estimated portfolio impact of each stress scenario. */
+export const StressSchema = z.object({
+  ...meta,
+  portfolioValueInr: price,
+  scenarios: z.array(
+    z.object({
+      id: z.string().min(1),
+      name: z.string().min(1),
+      description: z.string().min(1),
+      impactInr: signedInr,
+      impactPct: finite,
+      byAssetClass: z.array(z.object({ assetClass: z.string().min(1), impactInr: signedInr })),
+      largest: z.array(z.object({ ticker: z.string().min(1), impactInr: signedInr })),
+    }),
+  ),
+});
+
+/** risk/contributions: Euler contributions of positions to portfolio volatility (INR/day). */
+export const RiskContributionSchema = z.object({
+  ...meta,
+  lookbackDays: z.number().int().nonnegative(),
+  portfolioValueInr: price,
+  portfolioSigmaInr: z.number().finite().nonnegative(),
+  positions: z.array(
+    z.object({
+      key: z.string().min(1),
+      ticker: z.string().min(1),
+      name: z.string().min(1),
+      assetClass: AssetClassSchema,
+      weightPct: finite,
+      contributionInr: signedInr,
+      standaloneSigmaInr: z.number().finite().nonnegative(),
+    }),
+  ),
+});
+
+/** portfolio/holding-history: recent daily closes of every holding (own currency). */
+export const HoldingHistorySchema = z
+  .object({
+    ...meta,
+    dates: z.array(dateKey),
+    holdings: z.array(
+      z.object({
+        holdingId: z.string().min(1),
+        ticker: z.string().min(1),
+        closes: z.array(z.number().finite().nonnegative()),
+      }),
+    ),
+  })
+  .refine((d) => d.holdings.every((h) => h.closes.length === d.dates.length), 'One close per date');
+
+/** market/symbol-history: one year of closes per Nifty 50 constituent (symbol panel). */
+export const SymbolHistorySchema = z
+  .object({
+    ...meta,
+    dates: z.array(dateKey),
+    symbols: z.array(
+      z.object({ symbol: z.string().min(1), closes: z.array(z.number().finite().nonnegative()) }),
+    ),
+  })
+  .refine((d) => d.symbols.every((x) => x.closes.length === d.dates.length), 'One close per date');
 
 export const AllocationSchema = z.object({
   ...meta,
@@ -461,6 +543,11 @@ export const AlertsSchema = z.object({
 
 export type SummaryData = z.infer<typeof SummarySchema>;
 export type NavHistoryData = z.infer<typeof NavHistorySchema>;
+export type ExposureData = z.infer<typeof ExposureSchema>;
+export type StressData = z.infer<typeof StressSchema>;
+export type RiskContributionData = z.infer<typeof RiskContributionSchema>;
+export type HoldingHistoryData = z.infer<typeof HoldingHistorySchema>;
+export type SymbolHistoryData = z.infer<typeof SymbolHistorySchema>;
 export type MarketTickerData = z.infer<typeof MarketTickerSchema>;
 export type AttributionInputsData = z.infer<typeof AttributionInputsSchema>;
 export type ReturnSeriesData = z.infer<typeof ReturnSeriesSchema>;

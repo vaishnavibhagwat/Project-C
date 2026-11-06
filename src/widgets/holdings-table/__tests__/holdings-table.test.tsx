@@ -9,7 +9,7 @@ import { applyPricesToHoldings } from '@/data/transformers';
 import { subscribeWidgetEvents, type WidgetEvent } from '@/utils/widgetEvents';
 import { holdingsTableDefinition, summarizeHoldings } from '../config';
 import HoldingsTable from '../index';
-import { sortedHoldings, totals } from '../model';
+import { filterHoldings, sortedHoldings, totals } from '../model';
 import type { HoldingsTableConfig } from '../types';
 import { configuredConfig, emptyData, fixtureData } from './index';
 
@@ -92,7 +92,10 @@ describe('HoldingsTable', () => {
       withViewport(<HoldingsTable {...widgetProps(defaults, data, 1000, 600)} />),
     );
     expect(screen.getByText('62 of 62')).toBeInTheDocument();
-    const headers = screen.getAllByRole('columnheader').map((th) => th.textContent);
+    const headers = screen
+      .getAllByRole('columnheader')
+      .map((th) => th.textContent)
+      .filter(Boolean);
     expect(headers).toEqual([
       'Ticker',
       'Name',
@@ -111,7 +114,10 @@ describe('HoldingsTable', () => {
     renderWithProviders(
       withViewport(<HoldingsTable {...widgetProps(configuredConfig, data, 1000, 600)} />),
     );
-    const headers = screen.getAllByRole('columnheader').map((th) => th.textContent ?? '');
+    const headers = screen
+      .getAllByRole('columnheader')
+      .map((th) => th.textContent ?? '')
+      .filter(Boolean);
     expect(headers.map((h) => h.replace(/[▲▼]\d?/g, ''))).toEqual([
       'Ticker',
       'Sector',
@@ -121,7 +127,10 @@ describe('HoldingsTable', () => {
       'Weight',
       'Price',
     ]);
-    expect(screen.getByRole('navigation', { name: 'Pages' })).toHaveTextContent('1–25 of 62');
+    const shown = filterHoldings(data.holdings, configuredConfig).length;
+    expect(screen.getByRole('navigation', { name: 'Pages' })).toHaveTextContent(
+      `1–${Math.min(25, shown)} of ${shown}`,
+    );
   });
 
   it('saves a shift-click sort and a column change to the config', () => {
@@ -148,7 +157,7 @@ describe('HoldingsTable', () => {
     );
     const top = sortedHoldings(data.holdings, defaults)[0];
     if (!top) throw new Error('no rows');
-    fireEvent.click(screen.getByRole('row', { name: `Select ${top.ticker}` }));
+    fireEvent.click(screen.getByRole('row', { name: `Open ${top.ticker} details` }));
     stop();
     expect(events).toEqual([
       { type: 'SYMBOL_SELECTED', symbol: top.ticker, sourceInstanceId: 'test-instance' },
@@ -171,6 +180,68 @@ describe('HoldingsTable', () => {
     expect(screen.getByText('1,000 of 1,000')).toBeInTheDocument();
     expect(screen.getByText('Demo · 1,000 generated rows')).toBeInTheDocument();
     expect(screen.getAllByRole('row').length).toBeLessThan(80);
+  });
+});
+
+describe('Holdings Explorer features', () => {
+  const view = (ui: ReactNode) => renderWithProviders(withViewport(ui));
+
+  it('filters by sector, asset class and P&L sign together', () => {
+    const fin = filterHoldings(data.holdings, {
+      filterSector: 'Financial Services',
+      filterAssetClass: 'all',
+      filterPnl: 'all',
+    });
+    expect(fin.length).toBeGreaterThan(0);
+    expect(fin.every((h) => h.sector === 'Financial Services')).toBe(true);
+    const losersFi = filterHoldings(data.holdings, {
+      filterSector: 'all',
+      filterAssetClass: 'Fixed Income',
+      filterPnl: 'losers',
+    });
+    expect(losersFi.every((h) => h.assetClass === 'Fixed Income' && h.dailyPnL < 0)).toBe(true);
+    const none = filterHoldings(data.holdings, {
+      filterSector: 'none',
+      filterAssetClass: 'all',
+      filterPnl: 'all',
+    });
+    expect(none.every((h) => h.sector === null)).toBe(true);
+  });
+
+  it('applies the configured filters and clears them', () => {
+    const onConfigChange = vi.fn();
+    view(<HoldingsTable {...widgetProps(configuredConfig, data, 1000, 600, onConfigChange)} />);
+    const expected = filterHoldings(data.holdings, configuredConfig).length;
+    expect(screen.getByText(`${expected} of ${expected}`)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Clear filters (2)' }));
+    expect(onConfigChange).toHaveBeenCalledWith({
+      filterSector: 'all',
+      filterAssetClass: 'all',
+      filterPnl: 'all',
+    });
+  });
+
+  it('selects rows and totals the selection', () => {
+    view(<HoldingsTable {...widgetProps(defaults, data, 1000, 600)} />);
+    const [a, b] = sortedHoldings(data.holdings, defaults);
+    if (!a || !b) throw new Error('need rows');
+    fireEvent.click(screen.getByRole('checkbox', { name: `Select ${a.ticker}` }));
+    fireEvent.click(screen.getByRole('checkbox', { name: `Select ${b.ticker}` }));
+    const summary = screen.getByText(/2 selected/);
+    expect(summary).toHaveTextContent(`${(a.weight + b.weight).toFixed(1)}%`);
+    fireEvent.click(screen.getByRole('button', { name: 'Clear' }));
+    expect(screen.queryByText(/selected ·/)).not.toBeInTheDocument();
+  });
+
+  it('opens a detail drawer with the position for a clicked row', async () => {
+    view(<HoldingsTable {...widgetProps(defaults, data, 1000, 600)} />);
+    const top = sortedHoldings(data.holdings, defaults)[0];
+    if (!top) throw new Error('no rows');
+    fireEvent.click(screen.getByRole('row', { name: `Open ${top.ticker} details` }));
+    const drawer = await screen.findByRole('dialog', { name: new RegExp(`^${top.ticker} · `) });
+    expect(drawer).toHaveTextContent('Market value');
+    expect(drawer).toHaveTextContent('Unrealised P&L');
+    expect(drawer).toHaveTextContent('Related news and research');
   });
 });
 

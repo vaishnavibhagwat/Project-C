@@ -22,7 +22,10 @@ import { publishWidgetEvent } from '@/utils/widgetEvents';
 import {
   allAlerts,
   describeRule,
+  acknowledgePatch,
   dismissPatch,
+  parseIds,
+  readPatch,
   formatQuote,
   groupBySeverity,
   parseRules,
@@ -85,6 +88,9 @@ function AlertRow({
   onOpen,
   onDismiss,
   onSnooze,
+  read,
+  acknowledged,
+  onAcknowledge,
 }: {
   alert: Alert;
   domId: string;
@@ -92,6 +98,9 @@ function AlertRow({
   onOpen: (a: Alert) => void;
   onDismiss: (a: Alert) => void;
   onSnooze: (a: Alert, option: SnoozeOption) => void;
+  read: boolean;
+  acknowledged: boolean;
+  onAcknowledge: (a: Alert) => void;
 }) {
   const s = SEVERITY[alert.severity];
   const Icon = s.icon;
@@ -99,7 +108,13 @@ function AlertRow({
     <li
       id={domId}
       tabIndex={-1}
-      className={cx('border-b border-l-2 border-line px-2 py-1.5 outline-none', s.bar)}
+      data-read={read ? 'true' : 'false'}
+      data-acknowledged={acknowledged ? 'true' : 'false'}
+      className={cx(
+        'border-b border-l-2 border-line px-2 py-1.5 outline-none',
+        s.bar,
+        acknowledged && 'opacity-60',
+      )}
     >
       <div className="flex items-start gap-1.5">
         <span
@@ -118,15 +133,38 @@ function AlertRow({
             <time className="num" dateTime={alert.triggeredAt}>
               {formatIstTime(Date.parse(alert.triggeredAt), false)}
             </time>
+            {read ? null : (
+              <span className="font-semibold text-accent">
+                <span aria-hidden="true">● </span>New
+              </span>
+            )}
+            {acknowledged ? (
+              <span className="text-pos">
+                <span aria-hidden="true">✓ </span>Acknowledged
+              </span>
+            ) : null}
           </div>
           <button
             type="button"
             onClick={() => onOpen(alert)}
-            className="mt-0.5 text-left text-xs text-fg hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus"
+            className={cx(
+              'mt-0.5 text-left text-xs text-fg hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-focus',
+              !read && 'font-semibold',
+            )}
           >
             {alert.message}
           </button>
         </div>
+        {acknowledged ? null : (
+          <button
+            type="button"
+            aria-label={`Acknowledge alert: ${alert.message}`}
+            onClick={() => onAcknowledge(alert)}
+            className={smallButton}
+          >
+            <IconCheck size={13} aria-hidden="true" />
+          </button>
+        )}
         <Dropdown
           align="end"
           width="w-60"
@@ -322,6 +360,8 @@ const EMPTY_CONFIG: AlertPanelConfig = {
   rules: '[]',
   dismissed: '',
   snoozes: '{}',
+  read: '',
+  acknowledged: '',
   minSeverity: 'info',
   pulseCritical: false,
 };
@@ -341,8 +381,13 @@ function AlertPanel({
   const presentIds = useMemo(() => allAlerts(data, config).map((a) => a.alertId), [data, config]);
   const domId = useCallback((id: string) => `alert-${instanceId}-${id}`, [instanceId]);
 
+  const readIds = useMemo(() => parseIds(config.read), [config.read]);
+  const ackIds = useMemo(() => parseIds(config.acknowledged), [config.acknowledged]);
+  const unread = shown.filter((a) => !readIds.has(a.alertId)).length;
+  // Opening an alert marks it read and tells other widgets (ALERT_CLICKED).
   const open = useCallback(
-    (a: Alert) =>
+    (a: Alert) => {
+      if (!readIds.has(a.alertId)) onConfigChange(readPatch(config, [a.alertId], presentIds));
       publishWidgetEvent({
         type: 'ALERT_CLICKED',
         alertId: a.alertId,
@@ -350,9 +395,26 @@ function AlertPanel({
         relatedWidget: a.relatedWidget,
         relatedEntity: a.relatedEntity,
         sourceInstanceId: instanceId,
-      }),
-    [instanceId],
+      });
+    },
+    [config, instanceId, onConfigChange, presentIds, readIds],
   );
+  const acknowledge = useCallback(
+    (a: Alert) =>
+      onConfigChange({
+        ...acknowledgePatch(config, [a.alertId], presentIds),
+        ...readPatch(config, [a.alertId], presentIds),
+      }),
+    [config, onConfigChange, presentIds],
+  );
+  const markAllRead = () =>
+    onConfigChange(
+      readPatch(
+        config,
+        shown.map((a) => a.alertId),
+        presentIds,
+      ),
+    );
   const dismiss = useCallback(
     (a: Alert) => onConfigChange(dismissPatch(config, a.alertId, presentIds)),
     [config, onConfigChange, presentIds],
@@ -396,8 +458,19 @@ function AlertPanel({
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between gap-2 border-b border-line px-2 py-1 text-2xs">
         <span className="text-muted">
-          {view === 'alerts' ? `${shown.length} active` : `${rules.length} of ${MAX_RULES} rules`}
+          {view === 'alerts'
+            ? `${shown.length} active · ${unread} unread`
+            : `${rules.length} of ${MAX_RULES} rules`}
         </span>
+        {view === 'alerts' && unread > 0 ? (
+          <button
+            type="button"
+            onClick={markAllRead}
+            className="ml-auto rounded px-1 text-muted underline hover:text-fg"
+          >
+            Mark all read
+          </button>
+        ) : null}
         <button
           type="button"
           aria-pressed={view === 'rules'}
@@ -448,6 +521,9 @@ function AlertPanel({
                     onOpen={open}
                     onDismiss={dismiss}
                     onSnooze={snooze}
+                    read={readIds.has(a.alertId)}
+                    acknowledged={ackIds.has(a.alertId)}
+                    onAcknowledge={acknowledge}
                   />
                 ))}
               </ul>

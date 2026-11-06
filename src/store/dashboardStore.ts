@@ -21,7 +21,15 @@ import {
   LEGACY_GRID_CONFIG,
   resolveLayout,
 } from '@/utils/gridLayout';
-import { BreakpointLayoutsSchema, GridConfigSchema, PAGE_IDS, PageIdSchema } from './schemas';
+import {
+  BreakpointLayoutsSchema,
+  DEFAULT_RISK_SETTINGS,
+  GridConfigSchema,
+  PAGE_IDS,
+  PageIdSchema,
+  RiskSettingsSchema,
+  type RiskSettings,
+} from './schemas';
 import { createValidatedStorage, devtoolsEnabled } from './storage';
 
 export interface PageGrid {
@@ -45,6 +53,8 @@ interface DashboardData {
   /** Whether the widget catalogue sidebar is expanded (edit mode only). */
   catalogueOpen: boolean;
   displayCurrency: DisplayCurrency;
+  /** Risk Analytics page controls: VaR confidence and horizon for the page's risk widgets. */
+  riskSettings: RiskSettings;
   /** Alert ids the user has acknowledged (alert ids are stable per rule and entity). */
   acknowledgedAlertIds: string[];
 }
@@ -90,6 +100,7 @@ interface DashboardActions {
   setDensity: (density: Density) => void;
   setCatalogueOpen: (open: boolean) => void;
   setDisplayCurrency: (currency: DisplayCurrency) => void;
+  setRiskSettings: (patch: Partial<RiskSettings>) => void;
   acknowledgeAlerts: (ids: string[]) => void;
 }
 
@@ -138,6 +149,8 @@ const PersistedSchema = z.preprocess(
     catalogueOpen: z.boolean().default(true),
     displayCurrency: z.enum(['INR', 'USD']),
     acknowledgedAlertIds: z.array(z.string().max(80)).max(500).default([]),
+    /** Absent before the Risk page controls existed. */
+    riskSettings: RiskSettingsSchema.default(DEFAULT_RISK_SETTINGS),
   }),
 );
 
@@ -174,6 +187,7 @@ export const useDashboardStore = create<DashboardState>()(
         density: 'comfortable',
         catalogueOpen: true,
         displayCurrency: 'INR',
+        riskSettings: { ...DEFAULT_RISK_SETTINGS },
         acknowledgedAlertIds: [],
 
         setGridConfig: (patch) => {
@@ -324,6 +338,11 @@ export const useDashboardStore = create<DashboardState>()(
           set((s) => {
             s.displayCurrency = currency;
           }),
+        setRiskSettings: (patch) =>
+          set((s) => {
+            const next = RiskSettingsSchema.safeParse({ ...s.riskSettings, ...patch });
+            if (next.success) s.riskSettings = next.data;
+          }),
 
         acknowledgeAlerts: (ids) =>
           set((s) => {
@@ -344,6 +363,7 @@ export const useDashboardStore = create<DashboardState>()(
           catalogueOpen: s.catalogueOpen,
           displayCurrency: s.displayCurrency,
           acknowledgedAlertIds: s.acknowledgedAlertIds,
+          riskSettings: s.riskSettings,
         }),
         migrate: (persisted, version): Persisted =>
           // Unreadable old state: start from the defaults.
@@ -355,6 +375,7 @@ export const useDashboardStore = create<DashboardState>()(
             catalogueOpen: true,
             displayCurrency: 'INR',
             acknowledgedAlertIds: [],
+            riskSettings: { ...DEFAULT_RISK_SETTINGS },
           },
         merge: (persisted, current) => {
           const parsed = PersistedSchema.safeParse(persisted);

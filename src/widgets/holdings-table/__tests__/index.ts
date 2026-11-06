@@ -13,6 +13,9 @@ export const configuredConfig: HoldingsTableConfig = {
   hiddenColumns: 'name,quantity,assetClass',
   pageSize: '25',
   mockRows: 'off',
+  filterSector: 'Financial Services',
+  filterAssetClass: 'all',
+  filterPnl: 'gainers',
 };
 
 /** A valid response with nothing to show: the widget renders its empty state. */

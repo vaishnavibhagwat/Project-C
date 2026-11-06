@@ -80,7 +80,7 @@ describe('size limits', () => {
 describe('GridContainer interaction', () => {
   it('uses CSS transforms, title-bar dragging and resize handles on every corner and edge', async () => {
     renderGrid();
-    await waitFor(() => expect(document.querySelectorAll('.react-grid-item')).toHaveLength(3));
+    await waitFor(() => expect(document.querySelectorAll('.react-grid-item')).toHaveLength(4));
     for (const cell of document.querySelectorAll('.react-grid-item')) {
       expect(cell).toHaveClass('cssTransforms');
       const handles = [...cell.querySelectorAll(':scope > .react-resizable-handle')];
@@ -94,7 +94,7 @@ describe('GridContainer interaction', () => {
   it('hides resize handles when the layout is locked', async () => {
     act(() => store().setLocked(true));
     renderGrid();
-    await waitFor(() => expect(document.querySelectorAll('.react-grid-item')).toHaveLength(3));
+    await waitFor(() => expect(document.querySelectorAll('.react-grid-item')).toHaveLength(4));
     // react-grid-layout keeps the handles in the DOM and hides them with this class.
     for (const cell of document.querySelectorAll('.react-grid-item')) {
       expect(cell).toHaveClass('react-resizable-hide');
@@ -104,7 +104,7 @@ describe('GridContainer interaction', () => {
 
   it('does not touch the store or re-render widgets while dragging, and commits on drop', async () => {
     renderGrid();
-    const id = 'research-alerts-monitor';
+    const id = 'research-alert-panel';
     await screen.findByRole('region', { name: 'Alerts' });
     // Wait until every widget body has mounted, so only the drag itself is measured.
     await waitFor(() => expect(document.querySelector('[data-testid^="skeleton-"]')).toBeNull());

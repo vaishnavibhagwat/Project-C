@@ -6,7 +6,11 @@ import type { RiskMetricsConfig } from '../types';
 export const fixtureData = () => fixture('risk/metrics');
 
 /** A non-default configuration used by the "configured" story and tests. */
-export const configuredConfig: RiskMetricsConfig = { period: '1Y', showDefinitions: false };
+export const configuredConfig: RiskMetricsConfig = {
+  period: '1Y',
+  showDefinitions: false,
+  layout: 'table',
+};
 
 /** A valid response with nothing to show: the widget renders its empty state. */
 export const emptyData = () => {

@@ -21,7 +21,7 @@ export const researchFeedDefinition: WidgetDefinition<ResearchFeedConfig, Resear
   category: WidgetCategory.FEED,
   defaultSize: { w: 6, h: 4 },
   minSize: { w: 3, h: 3 },
-  maxSize: { w: 8, h: 10 },
+  maxSize: { w: 12, h: 10 },
   configSchema: {
     type: 'object',
     properties: {

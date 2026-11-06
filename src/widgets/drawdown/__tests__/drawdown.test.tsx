@@ -30,6 +30,16 @@ describe('Drawdown', () => {
     expect(screen.getByText(/^▼ \d+\.\d%$/)).toBeInTheDocument();
   });
 
+  it('shows when the worst drawdown recovered and how long it took', () => {
+    render(<Drawdown {...widgetProps(defaults, data, 1000, 400)} />);
+    const m = buildDrawdown(data, defaults);
+    if (m.recoveryDate) {
+      expect(screen.getByText(/\(\d+ trading days\)$/)).toBeInTheDocument();
+    } else {
+      expect(screen.getByText('Not yet')).toBeInTheDocument();
+    }
+  });
+
   it('summarises depth and dates', () => {
     expect(summarizeDrawdown(data, defaults)).toMatch(
       /Worst drawdown over 5Y: \d+\.\d% from .+ to .+/,

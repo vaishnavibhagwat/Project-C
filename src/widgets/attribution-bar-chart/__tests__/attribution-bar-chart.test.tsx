@@ -13,7 +13,7 @@ import {
   inUnit,
   periodWindows,
 } from '../model';
-import type { Grouping } from '../types';
+import type { AttributionBarChartConfig, Grouping } from '../types';
 import { configuredConfig, emptyData, fixtureData } from './index';
 
 const data = fixtureData();
@@ -130,6 +130,36 @@ describe('AttributionBarChart', () => {
     fireEvent.click(screen.getByRole('menuitemradio', { name: seg.label }));
     const nav = screen.getByRole('navigation', { name: 'Attribution level' });
     expect(nav).toHaveTextContent(`${seg.label}: holding contributions`);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(screen.queryByRole('navigation', { name: 'Attribution level' })).not.toBeInTheDocument();
+  });
+
+  it('drills asset class → sector → holding, and back up', () => {
+    renderWithProviders(
+      <AttributionBarChart
+        {...widgetProps<AttributionBarChartConfig, typeof data>(
+          { ...defaults, grouping: 'asset-class' },
+          data,
+          640,
+          300,
+        )}
+      />,
+    );
+    const drillInto = (label: string) => {
+      fireEvent.click(screen.getByRole('button', { name: /^Drill into:/ }));
+      fireEvent.click(screen.getByRole('menuitemradio', { name: label }));
+    };
+    drillInto('Equity');
+    const nav = () => screen.getByRole('navigation', { name: 'Attribution level' });
+    expect(nav()).toHaveTextContent('Equity: sectors (equity vs Nifty 50)');
+    const w = periodWindows(data.dates)[0];
+    if (!w) throw new Error('no window');
+    const sector = attributeWindow(data, 'sector', w).segments[0];
+    if (!sector) throw new Error('no sector');
+    drillInto(sector.label);
+    expect(nav()).toHaveTextContent(`Equity › ${sector.label}: holding contributions`);
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }));
+    expect(nav()).toHaveTextContent('Equity: sectors');
     fireEvent.click(screen.getByRole('button', { name: 'Back' }));
     expect(screen.queryByRole('navigation', { name: 'Attribution level' })).not.toBeInTheDocument();
   });
