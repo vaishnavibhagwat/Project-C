@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { Button } from '@/components/Button';
 import { useToast } from '@/components/Toast';
 import { getPageMeta } from '@/registry/pages';
-import { applySnapshot } from '@/store/actions';
+import { applySnapshot, describeApplyResult } from '@/store/actions';
 import { decodeShare } from '@/store/share';
 import { useThemeStore } from '@/store/themeStore';
 import type { PageId } from '@/types';
@@ -53,7 +53,7 @@ export function SharedLayoutBanner({
           const result = applySnapshot(snapshot.page, snapshot);
           if (themeId) setActiveTheme(themeId);
           notify({
-            message: `Shared layout applied${result.dropped > 0 ? ` (${result.dropped} widget${result.dropped === 1 ? '' : 's'} left out)` : ''}`,
+            message: `Shared layout applied${describeApplyResult(result)}`,
             tone: 'success',
           });
           onDone();

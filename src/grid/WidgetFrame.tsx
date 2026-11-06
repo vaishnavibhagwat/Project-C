@@ -58,9 +58,18 @@ interface FrameBodyProps {
 }
 
 function FrameBody({ page, instance, entry }: FrameBodyProps) {
-  const refresh = entry.dataSource.refreshInterval;
+  // A layout file may override the poll interval for this instance.
+  const override = instance.dataSource?.refreshInterval;
+  const source = useMemo(
+    () =>
+      override === undefined
+        ? entry.dataSource
+        : { ...entry.dataSource, refreshInterval: override },
+    [entry.dataSource, override],
+  );
+  const refresh = source.refreshInterval;
   const title = instance.title ?? entry.name;
-  const query = useDataSource(entry.dataSource);
+  const query = useDataSource(source);
   const connection = useConnection();
   const now = useNow(5000);
   const [bodyRef, size] = useElementSize<HTMLDivElement>();
@@ -172,7 +181,7 @@ function FrameBody({ page, instance, entry }: FrameBodyProps) {
                   <span className="block font-medium">{entry.name}</span>
                   <span className="block text-muted">{entry.description}</span>
                   <span className="mt-1 block text-2xs text-subtle">
-                    Source GET {endpointUrl(entry.dataSource.endpoint)} · refresh every{' '}
+                    Source GET {endpointUrl(source.endpoint)} · refresh every{' '}
                     {Math.round(refresh / 1000)}s · simulated data
                   </span>
                   {updated ? (

@@ -4,7 +4,7 @@ import { IconChevronDown, IconSave } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
 import { useAppRoute } from '@/hooks/useAppRoute';
 import { getPageMeta, PAGES } from '@/registry/pages';
-import { applySnapshot } from '@/store/actions';
+import { applySnapshot, describeApplyResult } from '@/store/actions';
 import { useLayoutStore } from '@/store/layoutStore';
 import type { Layout, PageId } from '@/types';
 import { formatIstDateTime } from '@/utils/time';
@@ -33,7 +33,7 @@ export function WorkspaceSelector({ page, onManageLayouts }: WorkspaceSelectorPr
     setActive(page, layout.id);
     if (!onDashboard) navigate(page);
     notify({
-      message: `Loaded “${layout.name}” v${latest.version}${result.dropped > 0 ? ` (${result.dropped} left out)` : ''}`,
+      message: `Loaded “${layout.name}” v${latest.version}${describeApplyResult(result)}`,
       tone: 'success',
     });
   };

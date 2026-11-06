@@ -5,15 +5,23 @@ import { IconDownload, IconHistory, IconTrash, IconUpload } from '@/components/I
 import { Drawer } from '@/components/Overlay';
 import { useToast } from '@/components/Toast';
 import type { PageMeta } from '@/registry/pages';
-import { applySnapshot, captureSnapshot } from '@/store/actions';
+import { applySnapshot, captureSnapshot, describeApplyResult } from '@/store/actions';
 import { layoutHistory } from '@/store/history';
 import { useLayoutStore } from '@/store/layoutStore';
-import { PageSnapshotSchema } from '@/store/schemas';
-import { MAX_LAYOUT_BYTES, snapshotBytes } from '@/store/share';
-import { downloadJson } from '@/utils/download';
+import { MAX_LAYOUT_BYTES } from '@/store/share';
 import type { Layout } from '@/types';
 import { cx } from '@/utils/cx';
 import { formatIstDateTime, toIstIso } from '@/utils/time';
+import {
+  captureDashboard,
+  exportPageLayout,
+  exportSavedLayout,
+  importLayoutJson,
+  lastValidLayout,
+  startFresh,
+  type ImportOutcome,
+} from './layoutFile';
+import { serializedBytes, toJSON } from './LayoutSerializer';
 
 function SavedRow({
   layout,
@@ -36,7 +44,7 @@ function SavedRow({
     const result = applySnapshot(pageId, version.snapshot);
     setActive(pageId, layout.id);
     notify({
-      message: `Loaded “${layout.name}” v${version.version}${result.dropped > 0 ? ` (${result.dropped} widget${result.dropped === 1 ? '' : 's'} left out)` : ''}`,
+      message: `Loaded “${layout.name}” v${version.version}${describeApplyResult(result)}`,
       tone: 'success',
     });
   };
@@ -63,7 +71,7 @@ function SavedRow({
         <IconButton
           label={`Export ${layout.name}`}
           icon={IconDownload}
-          onClick={() => downloadJson(`${layout.name}.layout.json`, latest?.snapshot)}
+          onClick={() => exportSavedLayout(layout)}
         />
         <IconButton
           label={`Delete ${layout.name}`}
@@ -129,34 +137,41 @@ export function LayoutManager({
   const saveLayout = useLayoutStore((s) => s.saveLayout);
   const notify = useToast();
   const [name, setName] = useState('');
-  const [importError, setImportError] = useState<string | null>(null);
+  const [importError, setImportError] = useState<Extract<ImportOutcome, { ok: false }> | null>(
+    null,
+  );
+  const lastValid = useLayoutStore((s) => s.lastValidByPage[page.id]);
   const fileInput = useRef<HTMLInputElement>(null);
   const forPage = saved.filter((l) => l.page === page.id);
-  const bytes = open ? snapshotBytes(captureSnapshot(page.id)) : 0;
+  const bytes = open ? serializedBytes(toJSON(captureDashboard(page.id))) : 0;
 
-  const importFile = async (file: File) => {
-    setImportError(null);
-    if (file.size > MAX_LAYOUT_BYTES) {
-      setImportError('Layout file exceeds the 50 KB limit.');
+  // Validate first; the page only changes when the whole file is valid.
+  const importJson = (json: string, source: string) => {
+    const outcome = importLayoutJson(page.id, json);
+    if (!outcome.ok) {
+      setImportError(outcome);
       return;
     }
-    try {
-      const parsed = PageSnapshotSchema.safeParse(JSON.parse(await file.text()));
-      if (!parsed.success) {
-        const issue = parsed.error.issues[0];
-        setImportError(
-          `Invalid layout file${issue ? ` (${issue.path.join('.')}: ${issue.message})` : ''}.`,
-        );
-        return;
-      }
-      const result = applySnapshot(page.id, { ...parsed.data, page: page.id });
-      notify({
-        message: `Layout imported${result.dropped > 0 ? ` (${result.dropped} widget${result.dropped === 1 ? '' : 's'} left out)` : ''}`,
-        tone: 'success',
+    setImportError(null);
+    notify({
+      message: `${source} “${outcome.name}”${describeApplyResult(outcome.result)}`,
+      tone: 'success',
+    });
+  };
+  const importFile = async (file: File) => {
+    if (file.size > MAX_LAYOUT_BYTES) {
+      setImportError({
+        ok: false,
+        error: `Layout file is larger than the ${MAX_LAYOUT_BYTES / 1024} KB limit.`,
+        issues: [],
       });
-    } catch {
-      setImportError('That file is not valid JSON.');
+      return;
     }
+    importJson(await file.text(), 'Imported');
+  };
+  const loadLastValid = () => {
+    const json = lastValidLayout(page.id);
+    if (json !== null) importJson(json, 'Loaded last valid layout');
   };
 
   return (
@@ -176,6 +191,7 @@ export function LayoutManager({
               captureSnapshot(page.id),
               toIstIso(Date.now()),
             );
+            useLayoutStore.getState().setLastValid(page.id, toJSON(captureDashboard(page.id)));
             setName('');
             // An explicit save is the new baseline: undo history starts again from here.
             layoutHistory.clear();
@@ -217,9 +233,14 @@ export function LayoutManager({
           )}
         </section>
         <section className="border-t border-line pt-3">
-          <Button size="sm" icon={IconUpload} onClick={() => fileInput.current?.click()}>
-            Import layout JSON…
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" icon={IconDownload} onClick={() => exportPageLayout(page.id)}>
+              Export layout JSON
+            </Button>
+            <Button size="sm" icon={IconUpload} onClick={() => fileInput.current?.click()}>
+              Import layout JSON…
+            </Button>
+          </div>
           <input
             ref={fileInput}
             type="file"
@@ -234,9 +255,49 @@ export function LayoutManager({
             }}
           />
           {importError ? (
-            <p role="alert" className="mt-2 text-xs text-neg">
-              {importError}
-            </p>
+            <div
+              role="alert"
+              aria-labelledby="import-error-title"
+              className="mt-3 rounded border border-neg/50 bg-neg/10 p-3 text-xs"
+            >
+              <p id="import-error-title" className="font-semibold text-neg">
+                {importError.error} The current layout was not changed.
+              </p>
+              {importError.issues.length > 0 ? (
+                <ul aria-label="Validation errors" className="mt-1.5 list-disc pl-4 text-fg">
+                  {importError.issues.map((issue) => (
+                    <li key={issue} className="num break-words">
+                      {issue}
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+              <div className="mt-3 flex flex-wrap items-center gap-2">
+                <Button size="sm" disabled={lastValid === undefined} onClick={loadLastValid}>
+                  Load last valid layout
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => {
+                    startFresh(page.id);
+                    setImportError(null);
+                    notify({ message: `${page.short} reset to its default layout` });
+                  }}
+                >
+                  Start fresh
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setImportError(null)}>
+                  Dismiss
+                </Button>
+              </div>
+              {lastValid === undefined ? (
+                <p className="mt-1.5 text-2xs text-muted">
+                  No earlier valid layout for this page yet: one is kept each time you save, export
+                  or import a layout.
+                </p>
+              ) : null}
+            </div>
           ) : null}
         </section>
       </div>

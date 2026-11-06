@@ -49,6 +49,12 @@ export interface DataSourceConfig {
   onDemand?: boolean;
 }
 
+/** What one widget instance may change about its type's data source. */
+export interface DataSourceOverrides {
+  /** Poll interval in ms (1 s to 1 h). Also moves the stale threshold (2x this value). */
+  refreshInterval?: number;
+}
+
 /** Props every widget component receives from its frame. */
 export interface WidgetComponentProps<TConfig, TData> {
   instanceId: string;
@@ -106,6 +112,8 @@ export interface WidgetInstance {
   position: GridPosition;
   /** Optional user-chosen title; the widget's name is shown when absent. */
   title?: string;
+  /** Per-instance data source changes (layout files). Only the poll interval, for now. */
+  dataSource?: DataSourceOverrides;
   /**
    * Present while the widget is collapsed to its header: the height (rows) to restore on each
    * breakpoint when it is expanded again.

@@ -249,7 +249,7 @@ have not been re-measured since.
 | Theme change < 100 ms, no flash | **37–96 ms** click to next paint (first switch on 5 fresh loads); transitions are suspended for the switch                                                                                                 |
 | Re-render < 100 ms on new data  | **≤ 12.5 ms** per widget render (React Profiler, development build)                                                                                                                                        |
 | Lighthouse > 85                 | Desktop preset: **Performance 98–99, Accessibility 100, Best Practices 100, SEO 100** (3 runs). Mobile preset (4× CPU throttling): Performance **60–62**: the chart-heavy workstation is built for desktop |
-| Layout JSON < 50 KB             | Default pages **< 5 KB** each; enforced at share time                                                                                                                                                      |
+| Layout JSON < 50 KB             | Layout files (`LayoutSerializer`, all breakpoints): default pages **2.4–5.6 KB**, 15 widgets **11.0 KB**; 50 KB enforced on share, import and in a test                                                    |
 | Coverage > 70%                  | **93.9% lines, 82.5% branches, 84.9% functions** (v8, 393 tests, 22 Oct)                                                                                                                                   |
 | Storybook ≥ 90% of components   | **68 / 68** production components referenced by a story (`npm run story-coverage`, 22 Oct)                                                                                                                 |
 

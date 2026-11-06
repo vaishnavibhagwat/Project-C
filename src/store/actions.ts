@@ -287,13 +287,32 @@ export function captureSnapshot(page: PageId): PageSnapshot {
 
 export interface ApplyResult {
   applied: number;
-  /** Widgets left out: unknown types, or beyond the per-page limit. Empty slots are kept. */
+  /** Widgets left out because the page was over MAX_WIDGETS_PER_PAGE. */
   dropped: number;
+  /** Applied widgets whose type this build does not have: they show as placeholders. */
+  unknown: number;
+}
+
+/** Toast suffix for an applied snapshot, e.g. " (1 unknown widget shown as a placeholder)". */
+export function describeApplyResult({ dropped, unknown }: ApplyResult): string {
+  const parts: string[] = [];
+  if (unknown > 0) {
+    parts.push(
+      unknown === 1
+        ? '1 unknown widget shown as a placeholder'
+        : `${unknown} unknown widgets shown as placeholders`,
+    );
+  }
+  if (dropped > 0) {
+    parts.push(`${dropped} widget${dropped === 1 ? '' : 's'} left out (page limit)`);
+  }
+  return parts.length > 0 ? ` (${parts.join('; ')})` : '';
 }
 
 /**
  * Replace a page with a snapshot. Instance ids are re-issued so a snapshot can be applied to
- * any page without colliding with widgets elsewhere. Unknown widget types are skipped and at
+ * any page without colliding with widgets elsewhere. Widget types this build does not have are
+ * kept and render as "Widget unavailable" placeholders (a plugin may provide them later). At
  * most MAX_WIDGETS_PER_PAGE widgets are kept. Instances missing from the desktop layout are placed
  * at their own `position`. Layouts are converted from the snapshot's grid (the old 28 px grid
  * when it has none) to the current grid.
@@ -311,9 +330,7 @@ export function applySnapshot(
 function applySnapshotNow(page: PageId, snapshot: PageSnapshot, keepIds: boolean): ApplyResult {
   const from = snapshot.grid ?? LEGACY_GRID_CONFIG;
   const to = currentGrid();
-  const known = snapshot.instances
-    .filter((i) => widgetRegistry.hasWidget(i.widgetId) || isPlaceholder(i.widgetId))
-    .slice(0, MAX_WIDGETS_PER_PAGE);
+  const known = snapshot.instances.slice(0, MAX_WIDGETS_PER_PAGE);
   const idMap = new Map(
     known.map((i) => [i.instanceId, keepIds ? i.instanceId : createId(i.widgetId)]),
   );
@@ -354,7 +371,13 @@ function applySnapshotNow(page: PageId, snapshot: PageSnapshot, keepIds: boolean
   useDashboardStore
     .getState()
     .replacePage(page, { itemIds: instances.map((i) => i.instanceId), layouts });
-  return { applied: instances.length, dropped: snapshot.instances.length - instances.length };
+  return {
+    applied: instances.length,
+    dropped: snapshot.instances.length - instances.length,
+    unknown: instances.filter(
+      (i) => !isPlaceholder(i.widgetId) && !widgetRegistry.hasWidget(i.widgetId),
+    ).length,
+  };
 }
 
 export function resetPage(page: PageId): void {

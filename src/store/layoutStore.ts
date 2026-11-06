@@ -5,6 +5,7 @@ import { immer } from 'zustand/middleware/immer';
 import type { Layout, LayoutVersion, PageId, PageSnapshot, ShareRecord } from '@/types';
 import { sanitizeText } from '@/utils/sanitize';
 import { LayoutSchema, PageIdSchema, ShareRecordSchema } from './schemas';
+import { MAX_LAYOUT_BYTES } from './share';
 import { createId, createValidatedStorage, devtoolsEnabled } from './storage';
 
 export const MAX_VERSIONS = 20;
@@ -18,6 +19,11 @@ interface LayoutData {
   activeByPage: Partial<Record<PageId, string>>;
   /** Share links the user has copied, newest first. */
   shares: ShareRecord[];
+  /**
+   * Per page, the last layout JSON that was exported, imported or saved and passed validation.
+   * Offered as "Load last valid layout" when an import fails. Validated again before use.
+   */
+  lastValidByPage: Partial<Record<PageId, string>>;
 }
 
 interface LayoutActions {
@@ -32,6 +38,8 @@ interface LayoutActions {
   recordShare: (share: Omit<ShareRecord, 'id'>) => string;
   removeShare: (id: string) => void;
   clearShares: () => void;
+  /** Remember a page's last valid layout JSON (at most MAX_LAYOUT_BYTES). */
+  setLastValid: (page: PageId, json: string) => void;
 }
 
 export type LayoutState = LayoutData & LayoutActions;
@@ -46,6 +54,7 @@ const PersistedSchema = z.preprocess(
     savedLayouts: z.array(LayoutSchema).max(MAX_SAVED_LAYOUTS),
     activeByPage: z.record(PageIdSchema, z.string()),
     shares: z.array(ShareRecordSchema).max(MAX_SHARES).default([]),
+    lastValidByPage: z.record(PageIdSchema, z.string().max(MAX_LAYOUT_BYTES)).default({}),
   }),
 );
 type Persisted = z.infer<typeof PersistedSchema>;
@@ -66,6 +75,7 @@ export const useLayoutStore = create<LayoutState>()(
         savedLayouts: [],
         activeByPage: {},
         shares: [],
+        lastValidByPage: {},
 
         saveLayout: (name, snapshot, nowIso) => {
           const id = createId('layout');
@@ -142,6 +152,11 @@ export const useLayoutStore = create<LayoutState>()(
           set((s) => {
             s.shares = [];
           }),
+
+        setLastValid: (page, json) =>
+          set((s) => {
+            if (json.length <= MAX_LAYOUT_BYTES) s.lastValidByPage[page] = json;
+          }),
       })),
       {
         name: 'meridian:layouts',
@@ -151,12 +166,15 @@ export const useLayoutStore = create<LayoutState>()(
           savedLayouts: s.savedLayouts,
           activeByPage: s.activeByPage,
           shares: s.shares,
+          lastValidByPage: s.lastValidByPage,
         }),
         // Version 1 differs only in naming, which the schema upgrades on load. Saved snapshots
         // without `grid` are converted from the old grid when they are applied.
         migrate: (persisted): Persisted => {
           const parsed = PersistedSchema.safeParse(persisted);
-          return parsed.success ? parsed.data : { savedLayouts: [], activeByPage: {}, shares: [] };
+          return parsed.success
+            ? parsed.data
+            : { savedLayouts: [], activeByPage: {}, shares: [], lastValidByPage: {} };
         },
       },
     ),

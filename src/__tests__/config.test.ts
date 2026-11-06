@@ -164,7 +164,7 @@ describe('per-page widget limit', () => {
       h: 4,
     }));
     const result = applySnapshot('research', { page: 'research', layouts: { desktop }, instances });
-    expect(result).toEqual({ applied: MAX_WIDGETS_PER_PAGE, dropped: 5 });
+    expect(result).toEqual({ applied: MAX_WIDGETS_PER_PAGE, dropped: 5, unknown: 0 });
     expect(widgetCount('research')).toBe(MAX_WIDGETS_PER_PAGE);
   });
 });

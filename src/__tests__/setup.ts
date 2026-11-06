@@ -30,6 +30,18 @@ if (typeof Element.prototype.scrollIntoView !== 'function') {
   Element.prototype.scrollIntoView = () => undefined;
 }
 
+// jsdom's Blob (and so File) has no text(); every browser has it. Read through FileReader.
+if (typeof Blob.prototype.text !== 'function') {
+  Blob.prototype.text = function text(this: Blob) {
+    return new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+      reader.onerror = () => reject(reader.error ?? new Error('read failed'));
+      reader.readAsText(this);
+    });
+  };
+}
+
 if (!window.matchMedia) {
   window.matchMedia = (query: string) =>
     ({

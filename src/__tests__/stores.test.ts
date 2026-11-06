@@ -87,20 +87,23 @@ describe('cross-store actions', () => {
     expect(useDashboardStore.getState().pages.workstation.itemIds).toContain(copy);
   });
 
-  it('applies a snapshot with fresh ids and drops unknown widget types', () => {
+  it('applies a snapshot with fresh ids and keeps unknown widget types as placeholders', () => {
     const snap = defaultSnapshot('research');
-    applySnapshot('holdings', {
+    const result = applySnapshot('holdings', {
       ...snap,
       instances: [
         ...snap.instances,
         { instanceId: 'x', widgetId: 'ghost', config: {}, position: { x: 0, y: 0, w: 4, h: 4 } },
       ],
     });
+    expect(result).toEqual({ applied: snap.instances.length + 1, dropped: 0, unknown: 1 });
     const grid = useDashboardStore.getState().pages.holdings;
-    expect(grid.itemIds).toHaveLength(snap.instances.length);
-    const originalIds = new Set(snap.instances.map((i) => i.instanceId));
+    expect(grid.itemIds).toHaveLength(snap.instances.length + 1);
+    const originalIds = new Set([...snap.instances.map((i) => i.instanceId), 'x']);
     expect(grid.itemIds.some((id) => originalIds.has(id))).toBe(false);
-    expect(grid.layouts.desktop).toHaveLength(snap.instances.length);
+    expect(grid.layouts.desktop).toHaveLength(snap.instances.length + 1);
+    const { instances } = useWidgetStore.getState();
+    expect(grid.itemIds.map((id) => instances[id]?.widgetId)).toContain('ghost');
   });
 
   it('resets a page to its defaults', () => {

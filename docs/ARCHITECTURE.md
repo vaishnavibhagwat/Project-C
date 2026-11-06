@@ -803,10 +803,79 @@ Tests: `src/__tests__/event-bus.test.ts` (the class and the hook) and
 `encodeShare` → `JSON.stringify` → size check (≤ 50 KB) → `lz-string`
 `compressToEncodedURIComponent` → `#/<page>?share=…`. Opening a link decompresses, parses,
 validates with zod (`SharePayloadSchema`) and sanitises titles with DOMPurify. It then shows a
-banner, and nothing changes until the user clicks **Apply layout**. Imported layout and theme
-JSON files go through the same zod schemas. Layout JSON contains grid positions, grid settings,
-widget settings and the theme id, never datasets; the default workstation snapshot is under
-5 KB.
+banner, and nothing changes until the user clicks **Apply layout**. Imported theme JSON goes
+through `ThemeSchema`.
+
+### Layout files (`src/layout/LayoutSerializer.ts`)
+
+The Layouts drawer exports and imports one page as a layout file. `toJSON(dashboardState)`
+writes it and `fromJSON(json)` reads it; `toSnapshot(layout, page)` turns a validated file into
+the page snapshot the stores apply. Files are pretty-printed (2-space indent), keys are always
+in the same order, and optional fields are left out rather than written as `null`.
+
+```json
+{
+  "version": "1.0.0",
+  "id": "1b4e28ba-2fa1-4d3b-a3f5-ef19b5a7633b",
+  "name": "Risk desk",
+  "description": "Morning risk review",
+  "createdAt": "2026-11-06T19:00:00+05:30",
+  "updatedAt": "2026-11-06T19:00:00+05:30",
+  "createdBy": "Portfolio Manager",
+  "gridConfig": { "cols": 12, "rowHeight": 60, "gap": 8, "compaction": "vertical" },
+  "widgets": [
+    {
+      "instanceId": "risk-var-gauge",
+      "widgetId": "var-gauge",
+      "title": "Value at Risk",
+      "position": {
+        "desktop": { "x": 0, "y": 0, "w": 3, "h": 5 },
+        "tablet": { "x": 0, "y": 0, "w": 3, "h": 5 },
+        "mobile": { "x": 0, "y": 0, "w": 1, "h": 5 }
+      },
+      "config": { "confidence": "99" },
+      "dataSource": { "refreshInterval": 15000 }
+    }
+  ],
+  "theme": { "id": "midnight-graphite", "name": "Midnight Graphite", "mode": "dark", "tokens": { … } },
+  "breakpoints": {
+    "desktop": { "minWidth": 1280, "cols": 12 },
+    "tablet": { "minWidth": 768, "cols": 6 },
+    "mobile": { "minWidth": 0, "cols": 1 }
+  }
+}
+```
+
+- `version` is semver. Files with another major version are refused with a clear message.
+  Files from before this format (a bare page snapshot) are still read; they have no theme, so
+  the current theme is kept.
+- `id` is a UUID v4. A saved layout's file keeps the same id on every export.
+- `position` has one entry per breakpoint. `tablet` and `mobile` are written only once the grid
+  has a layout for them. On import they are used only if the file's column counts match this
+  build's (6 and 1); otherwise the grid derives them from desktop again.
+- `dataSource` overrides the widget type's poll interval for that instance (1 s to 1 h). It is
+  the only override: the endpoint and channel stay fixed by the widget definition.
+- `theme` carries the full colour tokens. On import, a theme with the same id and colours (or
+  a custom one with the same name and colours) is reused; otherwise it is added as a custom
+  theme.
+
+Reading a file is untrusted input. `fromJSON` rejects text over 50 KB, then parses with a
+reviver that drops every `__proto__`, `constructor` and `prototype` key, at any depth, before
+zod sees the data. Config keys with those names are refused again by the schema. The zod
+schema checks every field, positions against the grid's columns and unique instance ids; names
+and titles are then sanitised with DOMPurify. Up to five errors are reported with their paths
+(`widgets.0.position.desktop.w: Number must be less than or equal to 24`).
+
+If a file is invalid, nothing changes. The drawer shows the errors with two ways on:
+**Load last valid layout** (the last layout JSON for this page that was saved, exported or
+imported successfully, kept in LayoutStore and validated again) and **Start fresh** (the
+page's default layout, like Reset layout). Both are undoable.
+
+Widget ids this build does not have are kept and render as "Widget unavailable" placeholders
+with a Remove button (a plugin may provide them later); the import toast counts them. The same
+now applies to shared links and saved layouts, which used to drop them. Measured with all three
+breakpoints: a 15-widget layout is 11.0 KB (a test keeps it under 50 KB), and the default pages
+are 2.4–5.6 KB each.
 
 ### Theming
 

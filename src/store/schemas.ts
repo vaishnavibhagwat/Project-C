@@ -52,6 +52,11 @@ export const GridPositionSchema = z.object({
 
 const configRecord = z.record(z.string().max(64), ConfigValueSchema);
 
+/** Per-instance data source changes. Only the poll interval (1 s to 1 h) can be overridden. */
+export const DataSourceOverridesSchema = z
+  .object({ refreshInterval: z.number().int().min(1000).max(3_600_000).optional() })
+  .strict();
+
 const CurrentWidgetInstanceSchema = z.object({
   instanceId: z.string().min(1).max(64),
   widgetId: z.string().min(1).max(64),
@@ -59,6 +64,7 @@ const CurrentWidgetInstanceSchema = z.object({
   position: GridPositionSchema,
   title: z.string().max(80).optional(),
   collapsed: z.record(BreakpointSchema, z.number().int().min(1).max(200)).optional(),
+  dataSource: DataSourceOverridesSchema.optional(),
 });
 
 /** Shape used before the spec-aligned WidgetInstance (saved layouts and share links). */
