@@ -3,6 +3,10 @@ import { Outlet, Route, Routes } from 'react-router-dom';
 import DashboardPage from '@/layout/pages/DashboardPage';
 import MarketplacePage from '@/layout/pages/MarketplacePage';
 import SettingsPage from '@/layout/pages/SettingsPage';
+import SharedLayoutPage from '@/layout/pages/SharedLayoutPage';
+import { encodeLayoutLink } from '@/layout/shareLink';
+import { defaultSnapshot } from '@/registry/pages';
+import { defaultTheme } from '@/theme/themes';
 import type { ShellContext } from '@/layout/shellContext';
 import { fixtureFetcher, WithFetcher } from './helpers';
 
@@ -17,6 +21,7 @@ function PageHost() {
           <Route element={<Outlet context={shell} />}>
             <Route path="marketplace" element={<MarketplacePage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="shared" element={<SharedLayoutPage />} />
             <Route path=":pageId" element={<DashboardPage />} />
           </Route>
         </Routes>
@@ -39,3 +44,15 @@ export const Workstation: Story = { parameters: { route: '/workstation' } };
 export const Risk: Story = { parameters: { route: '/risk' } };
 export const Marketplace: Story = { parameters: { route: '/marketplace' } };
 export const Settings: Story = { parameters: { route: '/settings' } };
+
+const sharedRisk = encodeLayoutLink({
+  snapshot: defaultSnapshot('risk'),
+  theme: defaultTheme(),
+  meta: { name: 'Risk review', createdBy: 'Priya Nair', description: 'Morning risk huddle.' },
+});
+
+/** A read-only shared layout (#/shared?layout=…) with "Save a copy". */
+export const SharedLayout: Story = { parameters: { route: `/shared?layout=${sharedRisk}` } };
+
+/** A share link that does not decode. */
+export const SharedLayoutBroken: Story = { parameters: { route: '/shared?layout=broken' } };

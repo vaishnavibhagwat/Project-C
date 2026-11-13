@@ -7,6 +7,7 @@ import { AppShell } from './AppShell';
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const MarketplacePage = lazy(() => import('./pages/MarketplacePage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const SharedLayoutPage = lazy(() => import('./pages/SharedLayoutPage'));
 
 const HOME = routePath('workstation');
 
@@ -21,6 +22,7 @@ export function AppRoutes() {
         <Route index element={<Navigate to={HOME} replace />} />
         <Route path="marketplace" element={<MarketplacePage />} />
         <Route path="settings" element={<SettingsPage />} />
+        <Route path="shared" element={<SharedLayoutPage />} />
         <Route path=":pageId" element={<DashboardPage />} />
         <Route path="*" element={<Navigate to={HOME} replace />} />
       </Route>

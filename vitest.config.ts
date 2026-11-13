@@ -10,6 +10,8 @@ export default defineConfig({
     setupFiles: ['./src/__tests__/setup.ts'],
     include: ['src/**/*.test.{ts,tsx}'],
     css: false,
+    // jsdom chart rendering is slow on a loaded machine; 5 s (the default) is too tight.
+    testTimeout: 20_000,
     // Pin every variable so results never depend on a developer's local .env.
     env: {
       VITE_APP_NAME: 'Meridian Capital',

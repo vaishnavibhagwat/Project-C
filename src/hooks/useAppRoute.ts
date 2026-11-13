@@ -11,7 +11,12 @@ export const PAGE_ROUTES: readonly PageId[] = [
   'research',
 ];
 
-export const APP_ROUTES: readonly AppRoute[] = [...PAGE_ROUTES, 'marketplace', 'settings'];
+export const APP_ROUTES: readonly AppRoute[] = [
+  ...PAGE_ROUTES,
+  'marketplace',
+  'settings',
+  'shared',
+];
 
 export function isPageRoute(route: AppRoute | null): route is PageId {
   return PAGE_ROUTES.some((p) => p === route);

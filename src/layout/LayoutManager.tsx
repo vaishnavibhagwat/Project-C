@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type DragEvent } from 'react';
 import { Button } from '@/components/Button';
 import { IconDownload, IconSave, IconUpload } from '@/components/Icons';
 import { Drawer } from '@/components/Overlay';
@@ -7,6 +7,7 @@ import type { PageMeta } from '@/registry/pages';
 import { describeApplyResult } from '@/store/actions';
 import { useLayoutStore } from '@/store/layoutStore';
 import { MAX_LAYOUT_BYTES } from '@/store/share';
+import { cx } from '@/utils/cx';
 import { LayoutBrowser } from './LayoutBrowser';
 import {
   captureDashboard,
@@ -31,6 +32,8 @@ export function LayoutManager({
 }) {
   const notify = useToast();
   const [saveOpen, setSaveOpen] = useState(false);
+  const [dropping, setDropping] = useState(false);
+  const hasFiles = (e: DragEvent) => e.dataTransfer.types.includes('Files');
   const [importError, setImportError] = useState<Extract<ImportOutcome, { ok: false }> | null>(
     null,
   );
@@ -74,7 +77,39 @@ export function LayoutManager({
       title={`Layouts · ${page.short}`}
       description="Layouts store grid positions and widget settings only, never market data."
     >
-      <div className="flex flex-col gap-4">
+      {/* The whole panel accepts a dropped layout file, like Import layout JSON… */}
+      <div
+        data-testid="layout-drop-zone"
+        className={cx(
+          'relative flex flex-col gap-4 rounded',
+          dropping && 'outline-dashed outline-2 outline-offset-4 outline-accent',
+        )}
+        onDragOver={(e) => {
+          if (!hasFiles(e)) return;
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'copy';
+          setDropping(true);
+        }}
+        onDragLeave={(e) => {
+          if (!e.currentTarget.contains(e.relatedTarget instanceof Node ? e.relatedTarget : null))
+            setDropping(false);
+        }}
+        onDrop={(e) => {
+          if (!hasFiles(e)) return;
+          e.preventDefault();
+          setDropping(false);
+          const file = e.dataTransfer.files[0];
+          if (file) void importFile(file);
+        }}
+      >
+        {dropping ? (
+          <p
+            aria-live="polite"
+            className="pointer-events-none absolute inset-x-0 top-0 z-10 rounded bg-accent px-3 py-2 text-center text-xs font-medium text-accent-fg"
+          >
+            Drop a layout file to import it
+          </p>
+        ) : null}
         <div className="flex items-center gap-2">
           <Button variant="primary" icon={IconSave} onClick={() => setSaveOpen(true)}>
             Save layout…

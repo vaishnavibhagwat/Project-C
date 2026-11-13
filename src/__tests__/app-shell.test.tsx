@@ -254,11 +254,11 @@ describe('AppShell', () => {
     expect(screen.getByText(/KB of 50 KB budget/)).toBeInTheDocument();
   });
 
-  it('creates a share link for the current page', () => {
+  it('creates a read-only share link for the current page', () => {
     renderShell();
     fireEvent.click(screen.getByRole('button', { name: 'Share' }));
-    const box = screen.getByRole('textbox', { name: 'Share link' });
-    expect(box).toHaveDisplayValue(/#\/workstation\?share=/);
+    const box = screen.getByRole('textbox', { name: 'Read-only link' });
+    expect(box).toHaveDisplayValue(/#\/shared\?layout=/);
   });
 
   it('applies a layout opened from a share link', () => {

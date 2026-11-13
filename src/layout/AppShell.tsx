@@ -41,6 +41,7 @@ const PerformanceOverlay = lazy(() => import('./PerformanceOverlay'));
 const ROUTE_TITLES: Partial<Record<AppRoute, string>> = {
   marketplace: 'Widget Marketplace',
   settings: 'Settings',
+  shared: 'Shared layout',
 };
 
 function isTypingTarget(target: EventTarget | null): boolean {

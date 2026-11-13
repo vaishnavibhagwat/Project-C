@@ -823,11 +823,25 @@ Tests: `src/__tests__/event-bus.test.ts` (the class and the hook) and
 
 ### Sharing and import
 
-`encodeShare` → `JSON.stringify` → size check (≤ 50 KB) → `lz-string`
-`compressToEncodedURIComponent` → `#/<page>?share=…`. Opening a link decompresses, parses,
-validates with zod (`SharePayloadSchema`) and sanitises titles with DOMPurify. It then shows a
-banner, and nothing changes until the user clicks **Apply layout**. Imported theme JSON goes
-through `ThemeSchema`.
+The Share dialog has two parts:
+
+- **With a colleague**: the mock API `POST /api/layouts/share` (`src/data/shareApi.ts`) takes
+  `{ layoutId, targetUserId, permission: 'readonly' | 'editable' }`, validates it with zod
+  (unknown keys refused, 400 for a bad body, 404 for an unknown user), and keeps the share in
+  memory for the session. Sharing the same layout with the same person again updates the
+  permission. The colleagues are five fictional users (`SIMULATED_USERS`); there is no real
+  recipient, so the permission is recorded but nothing else enforces it.
+- **Link**: the page's layout document (LayoutSerializer, compact JSON, ≤ 50 KB) compressed with
+  lz-string `compressToEncodedURIComponent` into `#/shared?layout=…` (`src/layout/shareLink.ts`).
+  Opening it decodes and validates the document exactly like an imported file and shows the
+  layout **read-only** (`SharedLayoutPage`, `ReadOnlyWidget`: live simulated data, no drag,
+  settings, collapse or remove). Nothing is applied to the user's pages. **Save a copy** adds it to
+  the saved layouts of the last dashboard (without loading it); the toast offers to open it. A
+  link that does not decode or validate shows the reason.
+
+Older `?share=` links (a compressed page snapshot) still open: a banner offers **Apply layout**.
+Imported theme JSON goes through `ThemeSchema`. Layout files can be imported with the file picker
+or by dropping the file anywhere on the Layouts panel.
 
 ### Layout files (`src/layout/LayoutSerializer.ts`)
 

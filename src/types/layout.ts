@@ -1,7 +1,7 @@
 import type { WidgetInstance } from './widget';
 
 export type PageId = 'workstation' | 'risk' | 'holdings' | 'performance' | 'research';
-export type AppRoute = PageId | 'marketplace' | 'settings';
+export type AppRoute = PageId | 'marketplace' | 'settings' | 'shared';
 
 /** Viewport classes: desktop ≥ 1280 px, tablet 768–1279 px, mobile < 768 px. */
 export type Breakpoint = 'desktop' | 'tablet' | 'mobile';

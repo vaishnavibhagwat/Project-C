@@ -5,12 +5,14 @@ import { useLayoutStore } from '@/store/layoutStore';
 import { allThemes, resolveTheme, useThemeStore } from '@/store/themeStore';
 import type { Layout, PageId } from '@/types';
 import { downloadText } from '@/utils/download';
+import { toIstIso } from '@/utils/time';
 import {
   fromJSON,
   toJSON,
   toSnapshot,
   type DashboardState,
   type FromJsonResult,
+  type LayoutDocument,
   type LayoutTheme,
 } from './LayoutSerializer';
 import { CURRENT_USER } from './UserMenu';
@@ -157,4 +159,22 @@ export function lastValidLayout(page: PageId): string | null {
 /** "Start fresh": the page's default layout (undoable, like Reset layout). */
 export function startFresh(page: PageId): void {
   resetPage(page);
+}
+
+/**
+ * Save a shared layout to the user's saved layouts for `page` without loading it: the page
+ * keeps whatever it shows now. Returns the new layout id.
+ */
+export function saveSharedCopy(layout: LayoutDocument, page: PageId, now = Date.now()): string {
+  const api = useLayoutStore.getState();
+  const previous = api.activeByPage[page] ?? null;
+  const id = api.saveLayout(
+    `${layout.name} (shared copy)`,
+    toSnapshot(layout, page),
+    toIstIso(now),
+    layout.description,
+  );
+  // saveLayout marks the new layout as loaded; it is not, so keep the page's marker.
+  api.setActive(page, previous);
+  return id;
 }

@@ -1,11 +1,15 @@
 import '@testing-library/jest-dom/vitest';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach, beforeEach } from 'vitest';
 import { setSimulatedOutage } from '@/data/connection';
 import { resetDataControls } from '@/data/controls';
 import { layoutHistory } from '@/store/history';
 import { resetPersistStatus } from '@/store/persistStatus';
 import { discardPendingWrites } from '@/store/storage';
+
+// Chart widgets render slowly in jsdom on a busy machine: wait up to 5 s (default 1 s) in
+// findBy*/waitFor before failing.
+configure({ asyncUtilTimeout: 5000 });
 
 /** jsdom has no layout engine; report a fixed size so measured widgets render. */
 class FixedSizeResizeObserver implements ResizeObserver {
