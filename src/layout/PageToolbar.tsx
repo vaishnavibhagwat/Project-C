@@ -1,9 +1,11 @@
+import { useState } from 'react';
 import { Button } from '@/components/Button';
 import { GridToolbar } from '@/grid/GridToolbar';
-import { IconRotate, IconSave, IconShare } from '@/components/Icons';
+import { IconLayers, IconRotate, IconSave, IconShare } from '@/components/Icons';
 import { useLayoutStore } from '@/store/layoutStore';
 import { useDashboardStore } from '@/store/dashboardStore';
 import type { PageMeta } from '@/registry/pages';
+import { SaveLayoutDialog } from './SaveLayoutDialog';
 
 export interface PageToolbarProps {
   page: PageMeta;
@@ -24,6 +26,8 @@ export function PageToolbar({
   const activeId = useLayoutStore((s) => s.activeByPage[page.id]);
   const activeName = useLayoutStore((s) => s.savedLayouts.find((l) => l.id === activeId)?.name);
 
+  const [saveOpen, setSaveOpen] = useState(false);
+
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pb-2">
       <div className="min-w-0 flex-1">
@@ -36,7 +40,10 @@ export function PageToolbar({
       <div className="flex flex-wrap items-center gap-1.5">
         <GridToolbar page={page.id} onOpenMarketplace={onOpenMarketplace} />
         <span aria-hidden="true" className="mx-1 hidden h-5 border-l border-line sm:block" />
-        <Button size="sm" icon={IconSave} onClick={onOpenLayouts}>
+        <Button size="sm" icon={IconSave} onClick={() => setSaveOpen(true)}>
+          Save
+        </Button>
+        <Button size="sm" icon={IconLayers} onClick={onOpenLayouts}>
           Layouts
         </Button>
         <Button size="sm" icon={IconShare} onClick={onShare}>
@@ -48,6 +55,7 @@ export function PageToolbar({
           </Button>
         )}
       </div>
+      <SaveLayoutDialog open={saveOpen} onClose={() => setSaveOpen(false)} page={page} />
     </div>
   );
 }

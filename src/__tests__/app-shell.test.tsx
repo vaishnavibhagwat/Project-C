@@ -245,12 +245,12 @@ describe('AppShell', () => {
   it('saves a layout from the Layouts panel', () => {
     renderShell();
     fireEvent.click(screen.getByRole('button', { name: 'Layouts' }));
-    fireEvent.change(screen.getByLabelText('Save current layout as'), {
-      target: { value: 'Morning desk' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Save' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Save layout…' }));
+    const dialog = screen.getByRole('dialog', { name: 'Save layout' });
+    fireEvent.change(within(dialog).getByLabelText('Name'), { target: { value: 'Morning desk' } });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Save' }));
     expect(useLayoutStore.getState().savedLayouts[0]?.name).toBe('Morning desk');
-    expect(screen.getByText('Morning desk')).toBeInTheDocument();
+    expect(screen.getByRole('listitem', { name: 'Morning desk' })).toBeInTheDocument();
     expect(screen.getByText(/KB of 50 KB budget/)).toBeInTheDocument();
   });
 

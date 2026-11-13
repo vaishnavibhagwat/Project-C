@@ -1,3 +1,4 @@
+import { startTransition } from 'react';
 import { getPageMeta } from '@/registry/pages';
 import { applySnapshot, captureSnapshot, type ApplyResult, resetPage } from '@/store/actions';
 import { useLayoutStore } from '@/store/layoutStore';
@@ -43,17 +44,20 @@ export function captureDashboard(page: PageId): DashboardState {
   };
 }
 
-/** A saved layout's latest version as layout JSON. */
-export function savedLayoutJson(layout: Layout): string | null {
-  const latest = layout.versions[layout.versions.length - 1];
-  if (!latest) return null;
+/** A saved layout's latest version (or `version`) as layout JSON. */
+export function savedLayoutJson(layout: Layout, version?: number): string | null {
+  const chosen =
+    version === undefined
+      ? layout.versions[layout.versions.length - 1]
+      : layout.versions.find((v) => v.version === version);
+  if (!chosen) return null;
   return toJSON({
-    snapshot: latest.snapshot,
+    snapshot: chosen.snapshot,
     theme: currentTheme(),
     meta: {
       id: fileIdFor(layout),
       name: layout.name,
-      description: getPageMeta(layout.page).description,
+      description: layout.description || getPageMeta(layout.page).description,
       createdAt: layout.createdAt,
       updatedAt: layout.updatedAt,
       createdBy: CURRENT_USER.name,
@@ -118,6 +122,31 @@ export function importLayoutJson(page: PageId, json: string): ImportOutcome {
   if (parsed.hasTheme) applyLayoutTheme(parsed.layout.theme);
   useLayoutStore.getState().setLastValid(page, json);
   return { ok: true, result, name: parsed.layout.name };
+}
+
+export type LoadOutcome =
+  | { ok: true; result: ApplyResult; version: number }
+  | { ok: false; error: string; issues: string[] };
+
+/**
+ * Load a saved layout (its latest version, or `version`) onto `page`: serialise it, parse and
+ * validate it like an imported file, instantiate its widgets and apply their positions. The
+ * store update runs inside startTransition. Note: React renders external-store (Zustand)
+ * updates synchronously even in a transition, so this marks the work as non-urgent without
+ * making the grid render interruptible.
+ */
+export function loadSavedLayout(layout: Layout, page: PageId, version?: number): LoadOutcome {
+  const json = savedLayoutJson(layout, version);
+  if (json === null) return { ok: false, error: 'That version no longer exists.', issues: [] };
+  const parsed = fromJSON(json);
+  if (!parsed.ok) return parsed;
+  let result: ApplyResult = { applied: 0, dropped: 0, unknown: 0 };
+  startTransition(() => {
+    result = applySnapshot(page, toSnapshot(parsed.layout, page));
+    useLayoutStore.getState().setActive(page, layout.id);
+  });
+  const loaded = version ?? layout.versions[layout.versions.length - 1]?.version ?? 1;
+  return { ok: true, result, version: loaded };
 }
 
 /** The page's last valid layout JSON, if there is one. */

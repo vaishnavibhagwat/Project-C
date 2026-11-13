@@ -4,10 +4,11 @@ import { IconChevronDown, IconSave } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
 import { useAppRoute } from '@/hooks/useAppRoute';
 import { getPageMeta, PAGES } from '@/registry/pages';
-import { applySnapshot, describeApplyResult } from '@/store/actions';
+import { describeApplyResult } from '@/store/actions';
 import { useLayoutStore } from '@/store/layoutStore';
 import type { Layout, PageId } from '@/types';
 import { formatIstDateTime } from '@/utils/time';
+import { loadSavedLayout } from './layoutFile';
 
 export interface WorkspaceSelectorProps {
   /** The dashboard being shown, or the last one visited (on Marketplace and Settings). */
@@ -20,20 +21,24 @@ export function WorkspaceSelector({ page, onManageLayouts }: WorkspaceSelectorPr
   const { route, navigate } = useAppRoute();
   const saved = useLayoutStore(useShallow((s) => s.savedLayouts.filter((l) => l.page === page)));
   const activeId = useLayoutStore((s) => s.activeByPage[page]);
-  const setActive = useLayoutStore((s) => s.setActive);
   const notify = useToast();
   const meta = getPageMeta(page);
   const active = saved.find((l) => l.id === activeId);
   const onDashboard = route === page;
 
+  // Same pipeline as the layout browser: serialise, validate, instantiate, position.
   const load = (layout: Layout) => {
-    const latest = layout.versions[layout.versions.length - 1];
-    if (!latest) return;
-    const result = applySnapshot(page, latest.snapshot);
-    setActive(page, layout.id);
+    const outcome = loadSavedLayout(layout, page);
+    if (!outcome.ok) {
+      notify({
+        message: `Could not load “${layout.name}”: ${outcome.issues[0] ?? outcome.error}`,
+        tone: 'error',
+      });
+      return;
+    }
     if (!onDashboard) navigate(page);
     notify({
-      message: `Loaded “${layout.name}” v${latest.version}${describeApplyResult(result)}`,
+      message: `Loaded “${layout.name}” v${outcome.version}${describeApplyResult(outcome.result)}`,
       tone: 'success',
     });
   };

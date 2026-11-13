@@ -101,4 +101,101 @@ describe('LayoutStore', () => {
     expect(store().savedLayouts.map((l) => l.name)).toEqual(['Old desk']);
     expect(store().shares).toEqual([]);
   });
+
+  it('keeps the last 10 versions per layout', () => {
+    expect(MAX_VERSIONS).toBe(10);
+    const id = store().saveLayout('Desk', defaultSnapshot('risk'), T0);
+    for (let i = 0; i < 12; i += 1) store().saveVersion(id, defaultSnapshot('risk'), '', T1);
+    expect(selectVersions(store(), id).map((v) => v.version)).toEqual([
+      4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
+    ]);
+  });
+
+  it('saveLayout stores a description, and updateDetails changes name and description', () => {
+    const id = store().saveLayout(
+      'Desk',
+      defaultSnapshot('risk'),
+      T0,
+      'Morning <i>risk</i> review',
+    );
+    expect(store().savedLayouts[0]?.description).toBe('Morning risk review');
+    store().updateDetails(id, 'Desk v2', '<b>Updated</b>', T1);
+    expect(store().savedLayouts[0]).toMatchObject({
+      name: 'Desk v2',
+      description: 'Updated',
+      updatedAt: T1,
+    });
+  });
+
+  it('duplicateLayout copies a layout, versions included, under a new UUID', () => {
+    const id = store().saveLayout('Desk', defaultSnapshot('risk'), T0, 'note');
+    store().saveVersion(id, defaultSnapshot('holdings'), 'second', T0);
+    const copy = store().duplicateLayout(id, T1);
+    expect(copy).not.toBeNull();
+    expect(copy).not.toBe(id);
+    expect(copy).toMatch(
+      /^layout-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+    );
+    const [original, cloned] = store().savedLayouts;
+    expect(cloned).toMatchObject({
+      id: copy,
+      name: 'Desk (copy)',
+      description: 'note',
+      createdAt: T1,
+    });
+    expect(cloned?.versions).toEqual(original?.versions);
+    // A deep copy: changing the copy leaves the original alone.
+    store().saveVersion(copy ?? '', defaultSnapshot('research'), 'only copy', T1);
+    expect(original?.versions).toHaveLength(2);
+    expect(store().duplicateLayout('missing', T1)).toBeNull();
+  });
+
+  it('revertToVersion saves the old version as the newest one', () => {
+    const id = store().saveLayout('Desk', defaultSnapshot('risk'), T0);
+    store().saveVersion(id, defaultSnapshot('holdings'), 'holdings', T0);
+    expect(store().revertToVersion(id, 1, T1)).toBe(3);
+    const versions = selectVersions(store(), id);
+    expect(versions.map((v) => [v.version, v.note])).toEqual([
+      [1, 'Initial save'],
+      [2, 'holdings'],
+      [3, 'Reverted to v1'],
+    ]);
+    expect(versions[2]?.snapshot).toEqual(defaultSnapshot('risk'));
+    expect(store().revertToVersion(id, 99, T1)).toBeNull();
+    expect(store().revertToVersion('missing', 1, T1)).toBeNull();
+  });
+
+  it('upgrades version 2 storage: no descriptions and up to 20 versions', async () => {
+    const id = store().saveLayout('Old desk', defaultSnapshot('risk'), T0);
+    const old = store().savedLayouts[0];
+    if (!old) throw new Error('not saved');
+    const versions = Array.from({ length: 20 }, (_, i) => ({
+      ...old.versions[0],
+      version: i + 1,
+      note: `v${i + 1}`,
+    }));
+    const v2 = {
+      savedLayouts: [
+        {
+          id: old.id,
+          name: old.name,
+          page: old.page,
+          createdAt: old.createdAt,
+          updatedAt: old.updatedAt,
+          versions,
+        },
+      ],
+      activeByPage: { risk: id },
+      shares: [],
+    };
+    useLayoutStore.setState(initial, true);
+    localStorage.setItem('meridian:layouts', JSON.stringify({ state: v2, version: 2 }));
+    await useLayoutStore.persist.rehydrate();
+    const [layout] = store().savedLayouts;
+    expect(layout?.description).toBe('');
+    expect(layout?.versions.map((v) => v.version)).toEqual([
+      11, 12, 13, 14, 15, 16, 17, 18, 19, 20,
+    ]);
+    expect(store().lastValidByPage).toEqual({});
+  });
 });

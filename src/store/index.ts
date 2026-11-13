@@ -4,6 +4,7 @@ export * from './history';
 export * from './layoutStore';
 export * from './schemas';
 export * from './share';
+export * from './persistStatus';
 export * from './storage';
 export * from './themeStore';
 export * from './widgetStore';

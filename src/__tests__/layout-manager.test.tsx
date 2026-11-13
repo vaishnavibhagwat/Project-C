@@ -181,7 +181,7 @@ describe('LayoutManager layout files', () => {
   it('shows the current layout size against the 50 KB budget', async () => {
     renderManager();
     await waitFor(() =>
-      expect(screen.getByText(/^Current layout JSON: \d+\.\d KB of 50 KB/)).toBeInTheDocument(),
+      expect(screen.getByText(/^Layout JSON: \d+\.\d KB of 50 KB/)).toBeInTheDocument(),
     );
   });
 });

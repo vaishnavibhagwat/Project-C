@@ -1,5 +1,9 @@
 import { useEffect, useRef, type RefObject } from 'react';
 
+/** Open traps, oldest first. Only the newest one handles keys, so a dialog opened from a
+ * drawer closes alone on Escape. */
+const openTraps: symbol[] = [];
+
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
@@ -27,10 +31,13 @@ export function useFocusTrap(
     const focusables = () =>
       container ? Array.from(container.querySelectorAll<HTMLElement>(FOCUSABLE)) : [];
 
+    const token = Symbol('focus-trap');
+    openTraps.push(token);
     const first = initialFocus?.current ?? focusables()[0];
     (first ?? container)?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
+      if (openTraps[openTraps.length - 1] !== token) return;
       if (event.key === 'Escape') {
         event.stopPropagation();
         escapeRef.current();
@@ -52,6 +59,7 @@ export function useFocusTrap(
     document.addEventListener('keydown', onKeyDown);
     return () => {
       document.removeEventListener('keydown', onKeyDown);
+      openTraps.splice(openTraps.indexOf(token), 1);
       if (previous?.isConnected) previous.focus();
       else document.getElementById('main')?.focus();
     };

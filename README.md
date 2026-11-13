@@ -127,7 +127,9 @@ drag it onto the grid to place it. Opening the catalogue prefetches the widget c
 **Workstation features**: drag and resize (react-grid-layout, responsive breakpoints), an edit /
 view mode toggle (`L`), undo and redo of every layout change (`Ctrl+Z` / `Ctrl+Shift+Z`, cleared
 on save), Compact / Comfortable density, global search for pages, widgets, Nifty 50 symbols and commands (`Ctrl/⌘+K` or `/`),
-symbol detail, saved layouts with version history and restore, JSON export/import, compressed
+symbol detail, saved layouts (save dialog, save as new, layout browser with list/grid views and
+thumbnails, last 10 versions with revert, background saving with a storage-full warning), JSON
+export/import, compressed
 share links (lz-string, validated on open), three themes plus a theme builder with computed WCAG
 contrast checks, NSE market status in IST, notifications from rule-based alerts, and a
 **simulated feed outage** switch (command bar → feed) to demonstrate disconnected and stale states.

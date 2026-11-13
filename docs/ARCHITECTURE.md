@@ -219,17 +219,17 @@ that change two stores run in a fixed order instead (see below).
 
 ### Why four stores
 
-| Store            | Owns                                                                                                                 | Persisted under      |
-| ---------------- | -------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `DashboardStore` | `gridConfig`, layouts per page and breakpoint, widget order, lock, density, display currency, acknowledged alert ids | `meridian:dashboard` |
-| `WidgetStore`    | widget instances keyed by `instanceId` (type, title, settings, position); which settings drawer is open              | `meridian:widgets`   |
-| `ThemeStore`     | active theme id, custom themes, theme builder draft (live preview)                                                   | `meridian:theme`     |
-| `LayoutStore`    | `savedLayouts` with up to 20 versions each, active layout per page, the last 10 `shares`                             | `meridian:layouts`   |
+| Store            | Owns                                                                                                                   | Persisted under                |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- | ------------------------------ |
+| `DashboardStore` | `gridConfig`, layouts per page and breakpoint, widget order, lock, density, display currency, acknowledged alert ids   | `meridian:dashboard`           |
+| `WidgetStore`    | widget instances keyed by `instanceId` (type, title, settings, position); which settings drawer is open                | `meridian:widgets`             |
+| `ThemeStore`     | active theme id, custom themes, theme builder draft (live preview)                                                     | `meridian:theme`               |
+| `LayoutStore`    | `savedLayouts` (name, description, last 10 versions), active layout per page, last valid layout JSON, last 10 `shares` | `meridian:layouts` (debounced) |
 
 The split follows how often each kind of state changes and how bad it is to lose it:
 
 - **Writes stay small.** `persist` serialises a store's whole persisted state on every change.
-  A drag fires many layout updates; keeping saved layouts (up to 30 × 20 versions) in their own
+  A drag fires many layout updates; keeping saved layouts (up to 30 × 10 versions) in their own
   store means those updates never re-write the version history.
 - **Failures stay contained.** Each store is validated and migrated on its own. A corrupt or
   outdated theme entry is discarded without touching layouts, and the reverse.
@@ -253,8 +253,31 @@ Actions per store (each has a unit test in `src/__tests__/<store>-store.test.ts`
   `closeSettings`.
 - **ThemeStore**: `setActiveTheme`, `openBuilder`, `closeBuilder`, `setDraftToken`,
   `setDraftName`, `setDraftMode`, `saveDraft`, `deleteCustomTheme`, `importTheme`.
-- **LayoutStore**: `saveLayout`, `saveVersion`, `renameLayout`, `deleteLayout`, `setActive`,
+- **LayoutStore**: `saveLayout`, `saveVersion`, `updateDetails`, `duplicateLayout`,
+  `revertToVersion`, `renameLayout`, `deleteLayout`, `setActive`, `setLastValid`,
   `recordShare`, `removeShare`, `clearShares`.
+
+### Saving to the browser
+
+Every store uses `persist` with a storage that validates what it reads (`createValidatedStorage`
+in `src/store/storage.ts`). LayoutStore uses the background version, `createDebouncedStorage`:
+
+- A change is written to localStorage **2 s after the last change** (`SAVE_DEBOUNCE_MS`), so
+  a burst of edits becomes one write.
+- While there are unsaved changes, they are written **at least every 30 s**
+  (`AUTOSAVE_INTERVAL_MS`), even if changes keep coming. Nothing is written when nothing
+  changed.
+- Pending changes are written at once when the tab is hidden or closed (`visibilitychange`,
+  `pagehide`). The listeners exist only while something is pending.
+- Reads always come from localStorage; the store reads only when it hydrates on start-up.
+
+If a write fails (the browser's storage quota, or storage disabled), the store keeps working in
+memory and nothing is lost for the session. `src/store/persistStatus.ts` records the failure (it
+recognises the quota error in Chromium, Firefox and Safari). `usePersistToasts` in AppShell
+shows one toast for it, even when several stores fail together, and another when saving works
+again. The failed write is retried every 30 s. The layout browser shows the current status:
+"Saved in this browser at …", "Saving…" or "Browser storage is full". The other three stores
+write on every change, as before, and report failures the same way.
 
 ### Grid settings
 
@@ -876,6 +899,33 @@ with a Remove button (a plugin may provide them later); the import toast counts 
 now applies to shared links and saved layouts, which used to drop them. Measured with all three
 breakpoints: a 15-widget layout is 11.0 KB (a test keeps it under 50 KB), and the default pages
 are 2.4–5.6 KB each.
+
+### Saved layouts: save, browse, load
+
+- **Save** (page toolbar, or **Save layout…** in the Layouts drawer) opens a dialog with a name
+  and a description. With a saved layout loaded on the page, **Save** adds a version to it and
+  updates its name and description; **Save as new** creates a separate layout with a new UUID.
+  The drawer's **Save as a new copy** button clones a saved layout, versions included.
+- Each layout keeps its **last 10 versions** (`MAX_VERSIONS`); the oldest is dropped when an
+  eleventh is saved. Older data with up to 20 versions is trimmed to the newest 10 when it loads.
+  Every earlier version has **Revert**, which saves that version again as the newest one ("Reverted
+  to v3"), so the history is never rewritten, and loads it.
+- **LayoutBrowser** (`src/layout/LayoutBrowser.tsx`, in the drawer) shows saved layouts as a list
+  or a 2-column grid, for this page or all pages, newest first. Each card has a thumbnail of the
+  widget positions (`LayoutThumbnail`: one rectangle per widget at its desktop position,
+  coloured by category with theme colours), the name, description, created date, widget count
+  (empty slots not counted) and current version.
+- **Load** goes through the layout-file pipeline: the saved version is serialised
+  (`toJSON`), parsed and validated (`fromJSON`), turned into widget instances and positions
+  (`toSnapshot`), and applied (`applySnapshot`, undoable). A saved layout that fails validation is
+  not loaded; the toast names the first problem. The workspace selector uses the same function
+  (`loadSavedLayout` in `src/layout/layoutFile.ts`).
+- Loads run inside `startTransition` (and `useTransition` in the browser, for the button's
+  pending state). React renders updates to external stores such as Zustand synchronously even
+  inside a transition, so this marks the work as non-urgent but does not make the grid render
+  interruptible.
+- A Save dialog opened over the drawer closes on its own with Escape: `useFocusTrap` keeps a
+  stack, and only the newest trap handles keys.
 
 ### Theming
 

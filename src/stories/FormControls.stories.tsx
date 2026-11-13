@@ -1,6 +1,12 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { useState } from 'react';
-import { Segmented, SelectField, Switch, TextField } from '@/components/FormControls';
+import {
+  Segmented,
+  SelectField,
+  Switch,
+  TextAreaField,
+  TextField,
+} from '@/components/FormControls';
 
 type Range = '1M' | '1Y' | '5Y';
 
@@ -10,9 +16,17 @@ function FormControlsDemo() {
   const [range, setRange] = useState<Range>('1Y');
   const [method, setMethod] = useState('historical');
   const [show, setShow] = useState(true);
+  const [notes, setNotes] = useState('Opening view for the morning meeting.');
   return (
     <div className="flex w-80 flex-col gap-4">
       <TextField label="Layout name" value={name} onValueChange={setName} />
+      <TextAreaField
+        label="Description"
+        description="Optional. Shown in the layout browser."
+        value={notes}
+        maxLength={500}
+        onValueChange={setNotes}
+      />
       <TextField
         label="VaR limit (% of AUM)"
         type="number"
@@ -53,5 +67,5 @@ const meta = {
 
 export default meta;
 
-/** TextField (with validation error), SelectField, Switch and Segmented. */
+/** TextField (with validation error), TextAreaField, SelectField, Switch and Segmented. */
 export const AllControls: StoryObj<typeof meta> = {};

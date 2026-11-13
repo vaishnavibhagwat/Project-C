@@ -26,6 +26,7 @@ import { ShareDialog } from './ShareDialog';
 import { SharedLayoutBanner } from './SharedLayoutBanner';
 import type { ShellContext } from './shellContext';
 import { useAlertNavigation } from './useAlertNavigation';
+import { usePersistToasts } from './usePersistToasts';
 
 // The symbol panel reads the portfolio model directly, so it loads on first use (its own chunk).
 const SymbolDetail = lazy(() =>
@@ -95,6 +96,8 @@ export function AppShell() {
 
   // An alert about a widget on another page opens that page (see useAlertNavigation).
   useAlertNavigation();
+  // Storage full or disabled: say so once; everything keeps working in memory.
+  usePersistToasts();
 
   // Marketplace plugins installed in an earlier session register their widgets again.
   useEffect(() => {

@@ -1,4 +1,9 @@
-import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import {
+  useId,
+  type InputHTMLAttributes,
+  type ReactNode,
+  type TextareaHTMLAttributes,
+} from 'react';
 import { cx } from '@/utils/cx';
 import { IconChevronDown } from './Icons';
 import { Toggle } from './Toggle';
@@ -77,6 +82,46 @@ export function TextField({
           aria-describedby={describedBy}
           aria-invalid={error ? true : undefined}
           className={cx(inputBase, rest.type === 'number' && 'num text-right', className)}
+          onChange={(e) => onValueChange(e.target.value)}
+          {...rest}
+        />
+      )}
+    </FieldShell>
+  );
+}
+
+export interface TextAreaFieldProps extends Omit<
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
+  'onChange'
+> {
+  label: string;
+  description?: string;
+  error?: string | null;
+  onValueChange: (value: string) => void;
+}
+
+/** Multi-line text input with the same label, description and error wiring as TextField. */
+export function TextAreaField({
+  label,
+  description,
+  error,
+  onValueChange,
+  className,
+  rows = 3,
+  ...rest
+}: TextAreaFieldProps) {
+  return (
+    <FieldShell label={label} description={description} error={error}>
+      {({ inputId, describedBy }) => (
+        <textarea
+          id={inputId}
+          rows={rows}
+          aria-describedby={describedBy}
+          aria-invalid={error ? true : undefined}
+          className={cx(
+            'w-full resize-y rounded border border-line-strong bg-bg px-2 py-1.5 text-sm text-fg placeholder:text-subtle focus:border-accent focus:outline-none',
+            className,
+          )}
           onChange={(e) => onValueChange(e.target.value)}
           {...rest}
         />

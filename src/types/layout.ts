@@ -43,6 +43,8 @@ export interface LayoutVersion {
 export interface Layout {
   id: string;
   name: string;
+  /** Optional note shown in the layout browser (max 500 characters). */
+  description: string;
   page: PageId;
   /** IST ISO timestamps. */
   createdAt: string;

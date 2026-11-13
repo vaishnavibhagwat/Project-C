@@ -4,6 +4,8 @@ import { afterEach, beforeEach } from 'vitest';
 import { setSimulatedOutage } from '@/data/connection';
 import { resetDataControls } from '@/data/controls';
 import { layoutHistory } from '@/store/history';
+import { resetPersistStatus } from '@/store/persistStatus';
+import { discardPendingWrites } from '@/store/storage';
 
 /** jsdom has no layout engine; report a fixed size so measured widgets render. */
 class FixedSizeResizeObserver implements ResizeObserver {
@@ -57,6 +59,9 @@ if (!window.matchMedia) {
 }
 
 beforeEach(() => {
+  // Writes left pending by the previous test must not land in this one.
+  discardPendingWrites();
+  resetPersistStatus();
   localStorage.clear();
   setSimulatedOutage(false);
   resetDataControls();

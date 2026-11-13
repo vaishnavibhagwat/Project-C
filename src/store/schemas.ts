@@ -124,6 +124,8 @@ export const LayoutVersionSchema = z.object({
 export const LayoutSchema = z.object({
   id: z.string().min(1),
   name: z.string().min(1).max(60),
+  // Layouts saved before descriptions existed have none.
+  description: z.string().max(500).default(''),
   page: PageIdSchema,
   createdAt: z.string(),
   updatedAt: z.string(),
