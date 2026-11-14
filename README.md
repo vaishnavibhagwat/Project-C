@@ -124,7 +124,8 @@ position, which becomes any widget from its **Choose widget** menu. In edit mode
 catalogue** sidebar lists every widget by category with a search box: click one to add it, or
 drag it onto the grid to place it. Opening the catalogue prefetches the widget code chunks.
 
-**Workstation features**: drag and resize (react-grid-layout, responsive breakpoints), an edit /
+**Workstation features**: five workspace presets (Executive Overview, Portfolio Manager, Risk Command,
+Derivatives Desk, Fixed Income) with a first-run picker, drag and resize (react-grid-layout, responsive breakpoints), an edit /
 view mode toggle (`L`), undo and redo of every layout change (`Ctrl+Z` / `Ctrl+Shift+Z`, cleared
 on save), Compact / Comfortable density, global search for pages, widgets, Nifty 50 symbols and commands (`Ctrl/⌘+K` or `/`),
 symbol detail, saved layouts (save dialog, save as new, layout browser with list/grid views and

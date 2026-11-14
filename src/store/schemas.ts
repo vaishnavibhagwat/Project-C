@@ -175,6 +175,17 @@ export const SharePayloadSchema = z.object({
 export type SharePayload = z.infer<typeof SharePayloadSchema>;
 
 /** Risk Analytics page controls, applied to the page's risk widgets. */
+/** The five workspace presets (src/layout/presets). Kept here so stores need no layout import. */
+export const WORKSPACE_PRESET_IDS = [
+  'executive-overview',
+  'portfolio-manager',
+  'risk-command',
+  'derivatives-desk',
+  'fixed-income',
+] as const;
+export const WorkspacePresetIdSchema = z.enum(WORKSPACE_PRESET_IDS);
+export type WorkspacePresetId = z.infer<typeof WorkspacePresetIdSchema>;
+
 export const RiskSettingsSchema = z.object({
   confidence: z.enum(['95', '99']),
   /** VaR horizon in trading days (10-day by the square-root-of-time rule). */

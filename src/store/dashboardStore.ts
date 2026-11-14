@@ -29,6 +29,8 @@ import {
   PageIdSchema,
   RiskSettingsSchema,
   type RiskSettings,
+  type WorkspacePresetId,
+  WorkspacePresetIdSchema,
 } from './schemas';
 import { createValidatedStorage, devtoolsEnabled } from './storage';
 
@@ -59,6 +61,10 @@ interface DashboardData {
   installedPlugins: string[];
   /** Alert ids the user has acknowledged (alert ids are stable per rule and entity). */
   acknowledgedAlertIds: string[];
+  /** Workspace preset last applied to the Workstation ("Reset to preset"), if any. */
+  workspace: WorkspacePresetId | null;
+  /** The first-run workspace picker has been answered (chosen or skipped). */
+  firstRunDone: boolean;
 }
 
 interface DashboardActions {
@@ -105,6 +111,8 @@ interface DashboardActions {
   setRiskSettings: (patch: Partial<RiskSettings>) => void;
   setPluginInstalled: (pluginId: string, installed: boolean) => void;
   acknowledgeAlerts: (ids: string[]) => void;
+  setWorkspace: (id: WorkspacePresetId | null) => void;
+  setFirstRunDone: (done: boolean) => void;
 }
 
 export type DashboardState = DashboardData & DashboardActions;
@@ -159,6 +167,9 @@ const PersistedSchema = z.preprocess(
       .array(z.string().regex(/^[a-z0-9-]{1,40}$/))
       .max(20)
       .default([]),
+    /** Absent before workspaces existed. */
+    workspace: WorkspacePresetIdSchema.nullable().default(null),
+    firstRunDone: z.boolean().default(false),
   }),
 );
 
@@ -198,6 +209,8 @@ export const useDashboardStore = create<DashboardState>()(
         riskSettings: { ...DEFAULT_RISK_SETTINGS },
         installedPlugins: [],
         acknowledgedAlertIds: [],
+        workspace: null,
+        firstRunDone: false,
 
         setGridConfig: (patch) => {
           const current = get().gridConfig;
@@ -358,6 +371,16 @@ export const useDashboardStore = create<DashboardState>()(
             s.installedPlugins = installed ? [...rest, pluginId].slice(-20) : rest;
           }),
 
+        setWorkspace: (id) =>
+          set((s) => {
+            s.workspace = id;
+          }),
+
+        setFirstRunDone: (done) =>
+          set((s) => {
+            s.firstRunDone = done;
+          }),
+
         acknowledgeAlerts: (ids) =>
           set((s) => {
             s.acknowledgedAlertIds = Array.from(new Set([...s.acknowledgedAlertIds, ...ids])).slice(
@@ -379,6 +402,8 @@ export const useDashboardStore = create<DashboardState>()(
           acknowledgedAlertIds: s.acknowledgedAlertIds,
           riskSettings: s.riskSettings,
           installedPlugins: s.installedPlugins,
+          workspace: s.workspace,
+          firstRunDone: s.firstRunDone,
         }),
         migrate: (persisted, version): Persisted =>
           // Unreadable old state: start from the defaults.
@@ -392,6 +417,8 @@ export const useDashboardStore = create<DashboardState>()(
             acknowledgedAlertIds: [],
             riskSettings: { ...DEFAULT_RISK_SETTINGS },
             installedPlugins: [],
+            workspace: null,
+            firstRunDone: false,
           },
         merge: (persisted, current) => {
           const parsed = PersistedSchema.safeParse(persisted);

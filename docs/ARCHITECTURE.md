@@ -914,6 +914,30 @@ now applies to shared links and saved layouts, which used to drop them. Measured
 breakpoints: a 15-widget layout is 11.0 KB (a test keeps it under 50 KB), and the default pages
 are 2.4–5.6 KB each.
 
+### Workspaces (`src/layout/presets/`, `src/layout/workspaces.ts`)
+
+Five presets give the Workstation page a starting layout for one kind of user. Each has its own
+widget set, arrangement, widget settings and density:
+
+| Preset             | Layout                                                   | Widgets (settings)                                                                                                                  | Density     |
+| ------------------ | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| Executive Overview | Full-width aggregates                                    | Ticker, fund summary, performance vs benchmarks (YTD, Sensex), VaR (no histogram), attribution by asset class (%)                   | Comfortable |
+| Portfolio Manager  | Three columns, large chart in the centre                 | Pie (by sector), performance (6M), sector heat map (±3%), holdings (all columns), news (20)                                         | Comfortable |
+| Risk Command       | Two tall columns                                         | VaR (95%, parametric), alerts (warning and up), correlation (sectors, 1 year), heat map (blue-orange, all classes)                  | Comfortable |
+| Derivatives Desk   | Ticker over three tight columns                          | Ticker (fast), alerts, positions (25 per page), attribution (factor, grouped)                                                       | Compact     |
+| Fixed Income       | One dominant chart, side panel, two labelled empty slots | Performance (1Y, Sensex, 40/60 custom benchmark), alerts; "Yield curve" and "Duration & DV01" are placeholders: no bond data exists | Comfortable |
+
+- Switching (dashboard menu → Workspaces, or the picker) replaces the Workstation layout inside
+  `startTransition`, sets the preset's density, and records the preset in DashboardStore
+  (`workspace`, persisted), so it survives a reload. The switch is undoable like any layout change.
+- **Save as my workspace** saves the Workstation as it is now as "My <preset> workspace" (a saved
+  layout with a new UUID). **Reset to preset** applies the recorded preset again.
+- **First-run picker**: five cards with thumbnails, shown once per browser
+  (`firstRunDone`, persisted) when `VITE_FIRST_RUN_PICKER=true`. Choosing or skipping ends it; it
+  can be reopened from Settings → Workspace. It is not shown on shared-layout links.
+- Tests check that every preset uses registered widgets with valid settings inside their size
+  limits, has no overlaps, and loads and persists after a reload.
+
 ### Saved layouts: save, browse, load
 
 - **Save** (page toolbar, or **Save layout…** in the Layouts drawer) opens a dialog with a name

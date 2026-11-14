@@ -1,14 +1,17 @@
 import { useShallow } from 'zustand/react/shallow';
 import { Dropdown, type DropdownItem } from '@/components/Dropdown';
-import { IconChevronDown, IconSave } from '@/components/Icons';
+import { IconChevronDown, IconRotate, IconSave } from '@/components/Icons';
 import { useToast } from '@/components/Toast';
 import { useAppRoute } from '@/hooks/useAppRoute';
 import { getPageMeta, PAGES } from '@/registry/pages';
 import { describeApplyResult } from '@/store/actions';
+import { useDashboardStore } from '@/store/dashboardStore';
 import { useLayoutStore } from '@/store/layoutStore';
 import type { Layout, PageId } from '@/types';
 import { formatIstDateTime } from '@/utils/time';
 import { loadSavedLayout } from './layoutFile';
+import { WORKSPACE_PAGE, WORKSPACE_PRESETS, type WorkspacePresetId } from './presets';
+import { applyWorkspace, resetToPreset, saveAsMyWorkspace } from './workspaces';
 
 export interface WorkspaceSelectorProps {
   /** The dashboard being shown, or the last one visited (on Marketplace and Settings). */
@@ -54,6 +57,47 @@ export function WorkspaceSelector({ page, onManageLayouts }: WorkspaceSelectorPr
           onSelect: () => load(layout),
         }));
 
+  // Workspaces (presets) always apply to the Workstation, which opens if needed.
+  const workspace = useDashboardStore((s) => s.workspace);
+  const switchWorkspace = (id: WorkspacePresetId) => {
+    const preset = applyWorkspace(id);
+    if (route !== WORKSPACE_PAGE) navigate(WORKSPACE_PAGE);
+    notify({ message: `Workspace: ${preset.name}`, tone: 'success' });
+  };
+  const workspaceItems: DropdownItem[] = [
+    { type: 'separator', id: 'separator-workspaces' },
+    { type: 'label', id: 'workspaces', label: 'Workspaces · Workstation' },
+    ...WORKSPACE_PRESETS.map((p) => ({
+      id: `workspace-${p.id}`,
+      label: p.name,
+      description: p.audience,
+      checked: p.id === workspace,
+      onSelect: () => switchWorkspace(p.id),
+    })),
+    {
+      id: 'workspace-save',
+      label: 'Save as my workspace',
+      icon: IconSave,
+      onSelect: () => {
+        const name = saveAsMyWorkspace();
+        notify({ message: `Saved “${name}”`, tone: 'success' });
+      },
+    },
+    {
+      id: 'workspace-reset',
+      label: workspace === null ? 'Reset to preset (choose a workspace first)' : 'Reset to preset',
+      icon: IconRotate,
+      disabled: workspace === null,
+      onSelect: () => {
+        const preset = resetToPreset();
+        if (preset) {
+          if (route !== WORKSPACE_PAGE) navigate(WORKSPACE_PAGE);
+          notify({ message: `Workstation reset to ${preset.name}` });
+        }
+      },
+    },
+  ];
+
   const items: DropdownItem[] = [
     { type: 'label', id: 'dashboards', label: 'Dashboards' },
     ...PAGES.map((p) => ({
@@ -65,6 +109,7 @@ export function WorkspaceSelector({ page, onManageLayouts }: WorkspaceSelectorPr
     { type: 'separator', id: 'separator-layouts' },
     { type: 'label', id: 'layouts', label: `Saved layouts · ${meta.short}` },
     ...layoutItems,
+    ...workspaceItems,
     { type: 'separator', id: 'separator-manage' },
     { id: 'manage', label: 'Manage layouts…', icon: IconSave, onSelect: onManageLayouts },
   ];

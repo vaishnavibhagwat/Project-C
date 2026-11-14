@@ -6,6 +6,7 @@ import { useToast } from '@/components/Toast';
 import { useRegistryVersion } from '@/registry/pluginHost';
 import { CATEGORIES, CATEGORY_LABELS, widgetRegistry } from '@/registry/registry';
 import { useDashboardStore } from '@/store/dashboardStore';
+import { useWidgetStore } from '@/store/widgetStore';
 import { fillPlaceholder, removeWidgetFromPage, restoreRemovedWidget } from '@/store/actions';
 import type { PageId } from '@/types';
 import { cx } from '@/utils/cx';
@@ -41,6 +42,10 @@ export const PlaceholderCard = memo(function PlaceholderCard({
 }) {
   const notify = useToast();
   const editing = !useDashboardStore((s) => s.locked);
+  // A labelled slot (e.g. a preset's "Yield curve (placeholder)") says what belongs there.
+  const title = useWidgetStore((s) => s.instances[instanceId]?.title);
+  const noteValue = useWidgetStore((s) => s.instances[instanceId]?.config.note);
+  const note = typeof noteValue === 'string' ? noteValue : null;
   useRegistryVersion();
   const items = widgetMenu((widgetId, name) => {
     if (fillPlaceholder(page, instanceId, widgetId)) {
@@ -61,7 +66,7 @@ export const PlaceholderCard = memo(function PlaceholderCard({
   return (
     <section
       role="region"
-      aria-label="Empty widget slot"
+      aria-label={title ?? 'Empty widget slot'}
       data-testid={`placeholder-${instanceId}`}
       className="flex h-full flex-col overflow-hidden rounded border border-dashed border-line-strong bg-panel/60"
     >
@@ -74,7 +79,7 @@ export const PlaceholderCard = memo(function PlaceholderCard({
           )}
         >
           {editing ? <IconDrag size={14} className="shrink-0 text-subtle" /> : null}
-          <h2 className="truncate text-xs font-semibold text-muted">Empty slot</h2>
+          <h2 className="truncate text-xs font-semibold text-muted">{title ?? 'Empty slot'}</h2>
         </div>
         {editing ? (
           <IconButton
@@ -87,6 +92,7 @@ export const PlaceholderCard = memo(function PlaceholderCard({
         ) : null}
       </header>
       <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2 p-3 text-center">
+        {note ? <p className="text-xs text-fg">{note}</p> : null}
         <p className="text-xs text-muted">Choose a widget for this space.</p>
         <div className={NO_DRAG_CLASS}>
           <Dropdown

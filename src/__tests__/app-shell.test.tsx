@@ -1,5 +1,5 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getConnectionState } from '@/data/connection';
 import { EndpointFetcherContext, type EndpointFetcher } from '@/hooks/useEndpoint';
 import { routeFromPath, routePath } from '@/hooks/useAppRoute';
@@ -44,6 +44,9 @@ function goTo(hash: string) {
   });
 }
 
+// Each test renders the whole app in jsdom; on a busy machine that alone can take ~20 s.
+vi.setConfig({ testTimeout: 60_000 });
+
 // Compile every lazy widget and page chunk once, up front, so the first test that renders one
 // does not pay the one-off transform cost (Recharts, D3, react-virtuoso, react-grid-layout)
 // inside its own timeout. This matters most under coverage instrumentation.
@@ -51,6 +54,8 @@ const lazyChunks = {
   ...import.meta.glob('/src/widgets/*/index.tsx'),
   ...import.meta.glob('/src/layout/pages/*.tsx'),
   ...import.meta.glob('/src/layout/PerformanceOverlay.tsx'),
+  // The symbol panel also loads the portfolio model: by far the slowest chunk to transform.
+  ...import.meta.glob('/src/layout/SymbolDetail.tsx'),
 };
 beforeAll(async () => {
   await Promise.all(Object.values(lazyChunks).map((load) => load()));
@@ -140,7 +145,7 @@ describe('AppShell', () => {
           riskRegions,
         ),
       {
-        timeout: 5000,
+        timeout: 20_000,
       },
     );
     goTo('#/marketplace');
@@ -149,12 +154,12 @@ describe('AppShell', () => {
       await screen.findByRole(
         'heading',
         { level: 1, name: 'Widget Marketplace' },
-        { timeout: 5000 },
+        { timeout: 20_000 },
       ),
     ).toBeInTheDocument();
     goTo('#/settings');
     expect(
-      await screen.findByRole('heading', { level: 1, name: 'Settings' }, { timeout: 5000 }),
+      await screen.findByRole('heading', { level: 1, name: 'Settings' }, { timeout: 20_000 }),
     ).toBeInTheDocument();
   });
 
@@ -213,11 +218,11 @@ describe('AppShell', () => {
     const title = await screen.findByText(
       /^RELIANCE · Reliance Industries$/,
       {},
-      { timeout: 25_000 },
+      { timeout: 50_000 },
     );
     expect(title.closest('[role="dialog"]')).not.toBeNull();
     expect(await screen.findByText('Quantity', {}, { timeout: 8000 })).toBeInTheDocument();
-  }, 40_000);
+  }, 80_000);
 
   it('adds a widget from the marketplace to the chosen page', async () => {
     renderShell();

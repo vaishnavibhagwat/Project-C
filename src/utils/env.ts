@@ -34,6 +34,8 @@ const EnvSchema = z.object({
   VITE_MAX_WIDGETS: z.coerce.number().int().min(1).max(60).default(20),
   /** Sign in automatically as the demo user (there is no real authentication). */
   VITE_ENABLE_MOCK_AUTH: booleanString.default('true'),
+  /** Offer the workspace picker on first run (once per browser; reopen it from Settings). */
+  VITE_FIRST_RUN_PICKER: booleanString.default('true'),
 
   VITE_DATA_SEED: z.coerce.number().int().nonnegative().default(20240615),
   VITE_API_LATENCY_MS: z.coerce.number().int().min(0).max(10_000).default(180),

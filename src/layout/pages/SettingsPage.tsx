@@ -16,6 +16,9 @@ import type { GridCompaction, GridConfig } from '@/types';
 import { env } from '@/utils/env';
 import { columnsFor, DEFAULT_GRID_CONFIG, GRID_BREAKPOINTS, GRID_LIMITS } from '@/utils/gridLayout';
 import { ShortcutsList } from '../ShortcutsList';
+import { useAppRoute } from '@/hooks/useAppRoute';
+import { getPreset } from '../presets';
+import { WorkspacePicker } from '../WorkspacePicker';
 
 type Section = 'grid' | 'appearance' | 'data' | 'workspace' | 'shortcuts';
 type NumericKey = 'cols' | 'rowHeight' | 'gap';
@@ -229,8 +232,28 @@ function WorkspaceSection() {
   const shareCount = useLayoutStore((s) => s.shares.length);
   const clearShares = useLayoutStore((s) => s.clearShares);
   const [confirmReset, setConfirmReset] = useState(false);
+  const workspace = useDashboardStore((s) => s.workspace);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const { navigate } = useAppRoute();
   return (
     <div className="flex flex-col gap-3">
+      <SettingsGroup title="Workspace preset">
+        <p className="text-xs text-muted">
+          {workspace === null
+            ? 'The Workstation is not based on a preset.'
+            : `The Workstation started from the ${getPreset(workspace).name} preset.`}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={() => setPickerOpen(true)}>
+            Choose a workspace…
+          </Button>
+        </div>
+        <WorkspacePicker
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          onChosen={() => navigate('workstation')}
+        />
+      </SettingsGroup>
       <SettingsGroup title="Layout">
         <Switch
           label="Lock layout"

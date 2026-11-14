@@ -11,6 +11,7 @@ import { SymbolDetailContext, type SymbolDetailApi } from '@/hooks/useSymbolDeta
 import { getPageMeta } from '@/registry/pages';
 import { restoreInstalledPlugins } from '@/registry/pluginHost';
 import { addWidgetToPage, MAX_WIDGETS_PER_PAGE, resetPage } from '@/store/actions';
+import { env } from '@/utils/env';
 import { useDashboardStore } from '@/store/dashboardStore';
 import { useThemeStore } from '@/store/themeStore';
 import type { AppRoute, PageId } from '@/types';
@@ -27,6 +28,7 @@ import { SharedLayoutBanner } from './SharedLayoutBanner';
 import type { ShellContext } from './shellContext';
 import { useAlertNavigation } from './useAlertNavigation';
 import { usePersistToasts } from './usePersistToasts';
+import { WorkspacePicker } from './WorkspacePicker';
 
 // The symbol panel reads the portfolio model directly, so it loads on first use (its own chunk).
 const SymbolDetail = lazy(() =>
@@ -76,6 +78,9 @@ export function AppShell() {
   const [layoutsOpen, setLayoutsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
+  // First run: offer the workspace presets once (VITE_FIRST_RUN_PICKER; reopen from Settings).
+  const firstRunDone = useDashboardStore((s) => s.firstRunDone);
+  const [pickerDismissed, setPickerDismissed] = useState(false);
   const [symbol, setSymbol] = useState<string | null>(null);
   // Mounted from the first time a symbol opens (keeps the drawer's close animation after that).
   const [symbolPanelLoaded, setSymbolPanelLoaded] = useState(false);
@@ -90,6 +95,8 @@ export function AppShell() {
   const page: PageId = isPageRoute(route) ? route : lastPage;
   const meta = getPageMeta(page);
   const shared = params.get('share');
+  const showPicker =
+    env.VITE_FIRST_RUN_PICKER && !firstRunDone && !pickerDismissed && !shared && route !== 'shared';
 
   useEffect(() => {
     if (isPageRoute(route)) setLastPage(route);
@@ -261,6 +268,11 @@ export function AppShell() {
         </div>
       </div>
 
+      <WorkspacePicker
+        open={showPicker}
+        onClose={() => setPickerDismissed(true)}
+        onChosen={() => navigate('workstation')}
+      />
       <CommandPalette open={searchOpen} onClose={() => setSearchOpen(false)} onSelect={onSelect} />
       <ConfigPanel />
       <LayoutManager open={layoutsOpen} onClose={() => setLayoutsOpen(false)} page={meta} />

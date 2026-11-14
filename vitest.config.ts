@@ -21,6 +21,8 @@ export default defineConfig({
       VITE_DATA_REFRESH_INTERVAL: '30000',
       VITE_MAX_WIDGETS: '20',
       VITE_ENABLE_MOCK_AUTH: 'true',
+      // Tests open the app directly; the first-run picker has its own tests.
+      VITE_FIRST_RUN_PICKER: 'false',
       VITE_DATA_SEED: '20240615',
       VITE_API_LATENCY_MS: '0',
       VITE_MOCK_ERROR_RATE: '0',
